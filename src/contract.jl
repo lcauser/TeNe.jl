@@ -61,11 +61,15 @@ end
 
 ### Calculates all the needed dimensions and permutations for contractions 
 function _contract_permuted_dimensions(x, y, cix, ciy)
+    #=
+        the setdiff function returns as a vector and thus makes allocations...
+        can we do this in a different way which returns a tuple?
+    =#
     # Find the dimensions of the tensors 
     sx = size(x)
     sy = size(y)
 
-    # Find the indices which aren't contracted & permutation indic
+    # Find the indices which aren't contracted & permutation indices 
     rix = tuple(setdiff(1:length(sx), cix)...)
     riy = tuple(setdiff(1:length(sy), ciy)...)
 
