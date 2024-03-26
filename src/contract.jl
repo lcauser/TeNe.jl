@@ -3,16 +3,16 @@
 =#
 
 ### General contractions 
-function contract(x, y, cix::Tuple{Int}, ciy::Tuple{Int}, conjx=false, conjy=false)
+function contract(x, y, cix, ciy, conjx=false, conjy=false)
     _contract_checkdims!(x, y, cix, ciy)
     sx, sy, rix, riy, pix, piy = _contract_permuted_dimensions(x, y, cix, ciy)
-    z = zeros(Base.promote_op(*, eltype(x), eltype(y)), union(_contract_dims(sx, rix), _contract_dims(sy, riy))...)
+    z = zeros(Base.promote_op(*, eltype(x), eltype(y)), _contract_dims(sx, rix)..., _contract_dims(sy, riy)...)
     _contract!(z, x, y, sx, sy, cix, ciy, rix, riy, pix, piy, conjx, conjy)  
     return z
 end
 contract(x, y, cix::Int, ciy::Int, conjx::Bool=false, conjy::Bool=false) = contract(x, y, (cix,), (ciy,), conjx, conjy)
 
-function contract!(z, x, y, cix::Tuple{Int}, ciy::Tuple{Int}, conjx::Bool=false, conjy::Bool=false)
+function contract!(z, x, y, cix, ciy, conjx::Bool=false, conjy::Bool=false)
     _contract_checkdims!(x, y, cix, ciy)
     sx, sy, rix, riy, pix, piy= _contract_permuted_dimensions(x, y, cix, ciy)
     _contract_checkreturn!(z, sx, sy, rix, riy)
@@ -23,9 +23,12 @@ contract!(z, x, y, cix::Int, ciy::Int, conjx::Bool=false, conjy::Bool=false) = c
 
 ### Matrix-vector contractions to reduce overhead 
 function contract!(z, x::S, y::T, cix::Int=2, ciy::Int=1, conjx::Bool=false, conjy::Bool=false) where {S<:AbstractArray{<:Number, 2}, T<:AbstractArray{<:Number, 1}}
-    ciy != 1 && throw(ArgumentError("Invalid contraction indices."))
-    if !conjx x = (cache(eltype(x), size(x), 1) .= conj.(x)) end
-    if !conjy y = cache(eltype(y), size(y), !conjx ? 1 : 2) end
+    _contract_checkdims!(x, y, cix, ciy)
+    if (ndims(z) != 1) || length(z) != size(x, cix == 1 ? 2 : 1)
+        throw(ArgumentError("Destination tensor has the wrong dimensions."))
+    end
+    if conjx x = (cache(eltype(x), size(x), 1) .= conj.(x)) end
+    if conjy y = cache(eltype(y), size(y), (!conjx || (length(x) != length(y))) ? 1 : 2) .= conj.(y) end
     mul!(z, cix == 2 ? x : transpose(x), y)
 end
 function contract!(z, x::S, y::T, cix::Int=1, ciy::Int=1, conjx::Bool=false, conjy::Bool=false) where {S<:AbstractArray{<:Number, 1}, T<:AbstractArray{<:Number, 2}}
@@ -34,16 +37,33 @@ end
 function contract(x::S, y::T, cix::Int=2, ciy::Int=1, conjx::Bool=false, conjy::Bool=false) where {S<:AbstractArray{<:Number, 2}, T<:AbstractArray{<:Number, 1}}
     z = zeros(Base.promote_op(*, eltype(x), eltype(y)), size(x, cix == 2 ? 1 : 2))
     contract!(z, x, y, cix, ciy, conjx, conjy)
+    return z
 end
 function contract(x::S, y::T, cix::Int=1, ciy::Int=1, conjx::Bool=false, conjy::Bool=false) where {S<:AbstractArray{<:Number, 1}, T<:AbstractArray{<:Number, 2}}
     z = zeros(Base.promote_op(*, eltype(x), eltype(y)), size(y, ciy == 2 ? 1 : 2))
     contract!(z, x, y, cix, ciy, conjx, conjy)
+    return z
 end
 
 ### Matrix-matrix multiplications to reduce overhead
+function contract!(z, x::S, y::T, cix::Int=2, ciy::Int=1, conjx::Bool=false, conjy::Bool=false) where {S<:AbstractArray{<:Number, 2}, T<:AbstractArray{<:Number, 2}}
+    _contract_checkdims!(x, y, cix, ciy)
+    if (ndims(z) != 2) || (size(z, 1) != size(x, cix == 1 ? 2 : 1)) || (size(z, 2) != size(y, ciy == 1 ? 2 : 1))
+        throw(ArgumentError("Destination tensor has the wrong dimensions."))
+    end
+    if conjx x = (cache(eltype(x), size(x), 1) .= conj.(x)) end
+    if conjy y = cache(eltype(y), size(y), (!conjx || (length(x) != length(y))) ? 1 : 2) .= conj.(y) end
+    mul!(z, cix == 2 ? x : transpose(x), ciy == 1 ? y : transpose(y))
+end
+function contract(x::S, y::T, cix::Int=2, ciy::Int=1, conjx::Bool=false, conjy::Bool=false) where {S<:AbstractArray{<:Number, 2}, T<:AbstractArray{<:Number, 2}}
+    z = zeros(Base.promote_op(*, eltype(x), eltype(y)), size(x, cix == 2 ? 1 : 2), size(y, ciy == 2 ? 1 : 2))
+    contract!(z, x, y, cix, ciy, conjx, conjy)
+    return z
+end
 
 
-### Unsafe contractions 
+### Unsafe contractions
+# Contraction with permutation 
 function _contract!(z, x, y, sx, sy, cix, ciy, rix, riy, pix, piy, conjx, conjy)
     # Permute tensors
     px = permutedims!(cache(eltype(x), _contract_dims(sx, pix)), x, pix)
@@ -58,6 +78,7 @@ function _contract!(z, x, y, sx, sy, cix, ciy, rix, riy, pix, piy, conjx, conjy)
          reshape(px, (prod(_contract_dims(sx, rix)), prod(_contract_dims(sx, cix)))),
          reshape(py, (prod(_contract_dims(sy, ciy)), prod(_contract_dims(sy, riy)))))
 end
+
 
 ### Calculates all the needed dimensions and permutations for contractions 
 function _contract_permuted_dimensions(x, y, cix, ciy)
@@ -87,13 +108,22 @@ end
 ### Checks 
 # Check to see if contraction tensors are the right size
 function _contract_checkdims!(x, y, cix, ciy)
-    length(cix) != length(ciy) && throw(ArgumentError("Contraction indices have different lengths"))
+    if length(cix) != length(ciy)
+        throw(ArgumentError("Contraction indices have different lengths"))
+    end
     for i in eachindex(cix)
-        size(x, cix[i]) != size(y, ciy[i]) && throw(ArgumentError("Contraction indices do not match."))
+        if cix[i] < 1 || cix[i] > ndims(x) || ciy[i] < 1 || ciy[i] > ndims(y)
+            throw(ArgumentError("Contraction indices are out of range."))
+        end
+        if size(x, cix[i]) != size(y, ciy[i])
+            throw(ArgumentError("Contraction indices do not match."))
+        end
     end
 end
 
 # Check to see if the tensor the contraction is stored in is correct
 function _contract_checkreturn!(z, sx, sy, rix, riy)
-    size(z) != (_contract_dims(sx, rix)..., _contract_dims(sy, riy)...) && throw(ArgumentError("Destination tensor has the wrong dimensions."))
+    if (size(z) != (_contract_dims(sx, rix)..., _contract_dims(sy, riy)...))
+        throw(ArgumentError("Destination tensor has the wrong dimensions."))
+    end
 end
