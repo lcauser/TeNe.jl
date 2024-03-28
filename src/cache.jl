@@ -33,6 +33,7 @@ function cache(x::Q, level::Int, sublevel::Int, threadid::Int) where {Q<:Abstrac
     backend = typeof(get_backend(x))
     return cache(eltype(x), size(x), level, sublevel, threadid; backend=backend)
 end
+
 function cache(x::Q, level::Int=1, sublevel::Int=1) where {Q<:AbstractArray}
     return cache(x, level, sublevel, Threads.threadid())
 end
@@ -40,6 +41,7 @@ end
 function cache(x::Q, dims, level::Int, sublevel::Int, threadid::Int) where {Q<:AbstractArray}
     return reshape(cache(x, level, sublevel, threadid), dims)
 end
+
 function cache(x::Q, dims, level::Int=1, sublevel::Int=1) where {Q<:AbstractArray}
     return reshape(cache(x, level, sublevel, Threads.threadid()), dims)
 end
@@ -49,6 +51,7 @@ end
 function deletecache!(T::DataType, length::Int, level::Int, sublevel::Int, threadid::Int)
     _CACHE[(T, length, level, sublevel, threadid)] = nothing
 end
+
 function deletecache!(T::DataType, length::Int, level::Int=1, sublevel::Int=1) 
     deletecache!(T, length, level, sublevel, Threads.threadid())
 end

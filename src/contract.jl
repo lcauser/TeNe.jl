@@ -3,11 +3,19 @@
 =#
 
 ### General contractions 
-function contract(x, y, cix, ciy, conjx=false, conjy=false)
+function contract(x, y, cix, ciy, conjx=false, conjy=false; tocache=false, sublevel=1)
+    # Dimensions of the problem
     _contract_checkdims!(x, y, cix, ciy)
     sx, sy, rix, riy, pix, piy = _contract_permuted_dimensions(x, y, cix, ciy)
+
+    # Create new matrix to store result 
     t = Base.promote_op(*, eltype(x), eltype(y))
-    z = zeros(t, _contract_dims(sx, rix)..., _contract_dims(sy, riy)...)
+    dims = (_contract_dims(sx, rix)...,  _contract_dims(sy, riy)...)
+    if tocache
+        z = cache(t, dims, 2, sublevel; backend=typeof(get_backend(x)))
+    else
+        z = zeros(t, _contract_dims(sx, rix)..., _contract_dims(sy, riy)...)
+    end
     _contract!(z, x, y, sx, sy, cix, ciy, rix, riy, pix, piy, conjx, conjy)  
     return z
 end
@@ -39,16 +47,19 @@ function contract!(z, x::S, y::T, cix::Int=2, ciy::Int=1,conjx::Bool=false,
     if conjy y = cache(eltype(y), size(y), 1, (!conjx || (length(x) != length(y))) ? 1 : 2) .= conj.(y) end
     mul!(z, cix == 2 ? x : transpose(x), y)
 end
+
 function contract!(z, x::S, y::T, cix::Int=1, ciy::Int=1, conjx::Bool=false,
     conjy::Bool=false) where {S<:AbstractArray{<:Number, 1}, T<:AbstractArray{<:Number, 2}}
     contract!(z, y, x, ciy, cix, conjx, conjy)
 end
+
 function contract(x::S, y::T, cix::Int=2, ciy::Int=1, conjx::Bool=false,
     conjy::Bool=false) where {S<:AbstractArray{<:Number, 2}, T<:AbstractArray{<:Number, 1}}
     z = zeros(Base.promote_op(*, eltype(x), eltype(y)), size(x, cix == 2 ? 1 : 2))
     contract!(z, x, y, cix, ciy, conjx, conjy)
     return z
 end
+
 function contract(x::S, y::T, cix::Int=1, ciy::Int=1, conjx::Bool=false,
     conjy::Bool=false) where {S<:AbstractArray{<:Number, 1}, T<:AbstractArray{<:Number, 2}}
     z = zeros(Base.promote_op(*, eltype(x), eltype(y)), size(y, ciy == 2 ? 1 : 2))
@@ -67,6 +78,7 @@ function contract!(z, x::S, y::T, cix::Int=2, ciy::Int=1, conjx::Bool=false,
     if conjy y = cache(y, 1, (!conjx || (length(x) != length(y))) ? 1 : 2) .= conj.(y) end
     mul!(z, cix == 2 ? x : transpose(x), ciy == 1 ? y : transpose(y))
 end
+
 function contract(x::S, y::T, cix::Int=2, ciy::Int=1, conjx::Bool=false,
     conjy::Bool=false) where {S<:AbstractArray{<:Number, 2}, T<:AbstractArray{<:Number, 2}}
     z = zeros(Base.promote_op(*, eltype(x), eltype(y)), size(x, cix == 2 ? 1 : 2), size(y, ciy == 2 ? 1 : 2))
@@ -122,8 +134,11 @@ end
 ### Checks 
 # Check to see if contraction tensors are the right size
 function _contract_checkdims!(x, y, cix, ciy)
+    if typeof(get_backend(x)) != typeof(get_backend(y))
+        throw(ArgumentError("Tensors are stored on different backends."))
+    end
     if length(cix) != length(ciy)
-        throw(ArgumentError("Contraction indices have different lengths"))
+        throw(ArgumentError("Contraction indices have different lengths."))
     end
     for i in eachindex(cix)
         if cix[i] < 1 || cix[i] > ndims(x) || ciy[i] < 1 || ciy[i] > ndims(y)
