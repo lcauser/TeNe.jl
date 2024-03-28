@@ -1,7 +1,4 @@
-using SimpleTensors
-using Test
-
-@testset "contract.jl" begin
+@testset "Contract matrix-vector" begin
     ### Test matrix-vector multiplication
     A = randn(ComplexF64, 5, 5)
     B = randn(ComplexF64, 4)
@@ -17,12 +14,13 @@ using Test
     @test check
 
     A = randn(ComplexF64, 4, 4)
-    @test contract(A, B, 2, 1) == A * B
+    @testitem  contract(A, B, 2, 1) == A * B
     @test contract(A, B, 1, 1) == transpose(A) * B
     @test contract(A, B, 1, 1, true) == adjoint(A) * B
     @test contract(A, B, 1, 1, true, true) == adjoint(A) * conj(B)
+end
 
-
+@testset "Contract matrix-matrix" begin
     ### Test matrix-matrix multiplications
     A = randn(ComplexF64, 5, 5)
     B = randn(ComplexF64, 4, 4)
@@ -46,7 +44,9 @@ using Test
     @test contract(A, B, 2, 2) == A * transpose(B)
     B = randn(ComplexF64, 4, 3)
     @test contract(A, B, 1, 2) == transpose(A) * transpose(B)
+end
 
+@testset "General contractions" begin
     # General tensor contractions
     A = rand(ComplexF64, 4, 5, 6)
     B = rand(ComplexF64, 3, 6, 5)
@@ -59,4 +59,12 @@ using Test
     B = rand(ComplexF64, 4, 5, 6, 7)
     C = reshape(reshape(A, (6, 20)) * reshape(B, (20, 42)), (2, 3, 6, 7))
     @test C == contract(A, B, (3, 4), (1, 2))
+
+    A = randn(ComplexF64, 3, 4, 5, 6)
+    B = randn(ComplexF64, 2, 6, 3, 5)
+    C = contract(A, B, (1, 3), (3, 4))
+    D = permutedims(A, (2, 4, 1, 3))
+    E = reshape(D, (24, 15)) * transpose(reshape(B, (12, 15)))
+    E = reshape(E, (4, 6, 2, 6))
+    @test C == E
 end
