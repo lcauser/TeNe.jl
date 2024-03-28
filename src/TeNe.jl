@@ -1,4 +1,4 @@
-module SimpleTensors
+module TeNe
 
 # Dependancies
 using LinearAlgebra 
