@@ -12,8 +12,11 @@ const _CACHE = LRU{Tuple{DataType, Int64, Int64, Int64, Int64}, Any}(maxsize=_CA
 # exports 
 export contract, contract!
 
-# Files 
+### Includes 
+# Caching; intermediate contractions memory can be pre-allocated and reused.
 include("cache.jl")
-include("contract.jl")
+
+# Tensors
+include("tensors/contract.jl")
 
 end
