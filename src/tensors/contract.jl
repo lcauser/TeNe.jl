@@ -3,7 +3,27 @@
 =#
 
 ### General contractions 
-function contract(x, y, cix, ciy, conjx=false, conjy=false; tocache=false, sublevel=1)
+
+"""
+    contract(x, y, cix, ciy, [conjx=false, conjy=false]; kwargs...)
+
+Contract tensors x and y across dimensions cix and ciy, and returns it as z.
+
+# Arguments
+
+    - `x`: first array to contract.
+    - `y': second array to contract.
+    - `cix``: the dimensions of the first array to contract.
+    - `ciy``: the dimensions of the second array to contract.
+    - `conjx::Bool=false`: Take the complex conjugate of argument x?
+    - `conjy::Bool=false`: Take the complex conjugate of argument y?
+
+# Optional Keyword Arguments
+    
+    - 'tocache::Bool=false': store the result in the second level of the cache?
+    - 'sublevel::Int=1': if stored in cache, at which sublevel?
+"""
+function contract(x, y, cix, ciy, conjx::Bool=false, conjy::Bool=false; tocache::Bool=false, sublevel::Int=1)
     # Dimensions of the problem
     _contract_checkdims!(x, y, cix, ciy)
     sx, sy, rix, riy, pix, piy = _contract_permuted_dimensions(x, y, cix, ciy)
@@ -24,6 +44,22 @@ function contract(x, y, cix::Int, ciy::Int, conjx::Bool=false, conjy::Bool=false
     return contract(x, y, (cix,), (ciy,), conjx, conjy)
 end
 
+
+"""
+    contract!(z, x, y, cix, ciy, [conjx=false, conjy=false]; kwargs...)
+
+Contract tensors x and y across dimensions cix and ciy, and store the result in z.
+In-place version of contract.
+
+# Arguments
+
+    - `x`: first array to contract.
+    - `y': second array to contract.
+    - `cix``: the dimensions of the first array to contract.
+    - `ciy``: the dimensions of the second array to contract.
+    - `conjx::Bool=false`: Take the complex conjugate of argument x?
+    - `conjy::Bool=false`: Take the complex conjugate of argument y?
+"""
 function contract!(z, x, y, cix, ciy, conjx::Bool=false, conjy::Bool=false)
     _contract_checkdims!(x, y, cix, ciy)
     sx, sy, rix, riy, pix, piy= _contract_permuted_dimensions(x, y, cix, ciy)
