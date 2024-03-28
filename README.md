@@ -1,2 +1,2 @@
-# SimpleTensors.jl
-Perform tensor contractions and operations.
+# TeNe.jl
+A package for dealing with tensor networks.
