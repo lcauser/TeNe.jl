@@ -16,5 +16,7 @@ include("cache.jl")
 # Tensors
 include("tensors/contract.jl")
 include("tensors/tensorproduct.jl")
+include("tensors/trace.jl")
+include("tensors/permutedim.jl")
 
 end

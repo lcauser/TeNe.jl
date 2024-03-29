@@ -14,7 +14,7 @@
     @test check
 
     A = randn(ComplexF64, 4, 4)
-    @test  contract(A, B, 2, 1) == A * B
+    @test contract(A, B, 2, 1) == A * B
     @test contract(A, B, 1, 1) == transpose(A) * B
     @test contract(A, B, 1, 1, true) == adjoint(A) * B
     @test contract(A, B, 1, 1, true, true) == adjoint(A) * conj(B)

@@ -7,7 +7,7 @@ export tensorproduct, tensorproduct!
 
 ### Tensor products
 """
-    tensorproduct(z, x, y, [conjx=false, conjy=false])
+    tensorproduct(x, y, [conjx=false, conjy=false])
 
 Compute the tensor product of the two tensors x and y, and store the 
 result in z. Optionally, do the tensor product using the conjugate of
@@ -70,11 +70,12 @@ end
 function _tensorproduct!(z, x, y, conjx::Bool, conjy::Bool)
     # Take the conjugates?
     if conjx x = cache(x, 1) .= conj.(x) end
-    if conjy y = cache(x, 1, length(x) == length(y) ? 2 : 1) .= conj(y) end 
+    if conjy y = cache(y, 1, length(x) == length(y) ? 2 : 1) .= conj(y) end 
 
     # Tensor product 
     mul!(reshape(z, (prod(size(x)), prod(size(y)))),
-         reshape(x, (prod(size(x)), 1)), reshape(y, (1, prod(size(y)))))
+         reshape(x, (prod(size(x)), 1)),
+         reshape(y, (1, prod(size(y)))))
 end
 
 ### Checks 
