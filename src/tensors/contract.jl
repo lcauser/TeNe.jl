@@ -2,6 +2,8 @@
     Functions for contracting tensors 
 =#
 
+export contract, contract!
+
 ### General contractions 
 
 """
@@ -11,10 +13,10 @@ Contract tensors x and y across dimensions cix and ciy, and returns it as z.
 
 # Arguments
 
-    - `x`: first array to contract.
-    - `y': second array to contract.
-    - `cix``: the dimensions of the first array to contract.
-    - `ciy``: the dimensions of the second array to contract.
+    - `x`: first tensor to contract.
+    - `y': second tensor to contract.
+    - `cix``: the dimensions of the first tensor to contract.
+    - `ciy``: the dimensions of the second tensor to contract.
     - `conjx::Bool=false`: Take the complex conjugate of argument x?
     - `conjy::Bool=false`: Take the complex conjugate of argument y?
 
@@ -34,7 +36,7 @@ function contract(x, y, cix, ciy, conjx::Bool=false, conjy::Bool=false; tocache:
     if tocache
         z = cache(t, dims, 2, sublevel; backend=typeof(get_backend(x)))
     else
-        z = zeros(t, _contract_dims(sx, rix)..., _contract_dims(sy, riy)...)
+        z = zeros(t, dims...)
     end
     _contract!(z, x, y, sx, sy, cix, ciy, rix, riy, pix, piy, conjx, conjy)  
     return z
@@ -46,17 +48,18 @@ end
 
 
 """
-    contract!(z, x, y, cix, ciy, [conjx=false, conjy=false]; kwargs...)
+    contract!(z, x, y, cix, ciy, [conjx=false, conjy=false])
 
 Contract tensors x and y across dimensions cix and ciy, and store the result in z.
 In-place version of contract.
 
 # Arguments
 
-    - `x`: first array to contract.
-    - `y': second array to contract.
-    - `cix``: the dimensions of the first array to contract.
-    - `ciy``: the dimensions of the second array to contract.
+    - `z`: tensor to store the result.
+    - `x`: first tensor to contract.
+    - `y': second tensor to contract.
+    - `cix``: the dimensions of the first tensor to contract.
+    - `ciy``: the dimensions of the second tensor to contract.
     - `conjx::Bool=false`: Take the complex conjugate of argument x?
     - `conjy::Bool=false`: Take the complex conjugate of argument y?
 """
