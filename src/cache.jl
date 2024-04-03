@@ -16,7 +16,7 @@ function cache(T::DataType, length::Int, level::Int, sublevel::Int, threadid::In
     if backend != CPU
         return _CACHE[(T, length, level, sublevel, threadid)] |> backend
     else
-        _CACHE[(T, length, level, sublevel, threadid)]
+        return _CACHE[(T, length, level, sublevel, threadid)]
     end
 end
 
