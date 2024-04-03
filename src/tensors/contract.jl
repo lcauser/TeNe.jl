@@ -27,7 +27,7 @@ Contract tensors x and y across dimensions cix and ciy, and returns it as z.
 """
 function contract(x, y, cix, ciy, conjx::Bool=false, conjy::Bool=false; tocache::Bool=false, sublevel::Int=1)
     # Dimensions of the problem
-    _contract_checkdims!(x, y, cix, ciy)
+    _contract_checkdims(x, y, cix, ciy)
     sx, sy, rix, riy, pix, piy = _contract_permuted_dimensions(x, y, cix, ciy)
 
     # Create new matrix to store result 
@@ -64,9 +64,9 @@ In-place version of contract.
     - `conjy::Bool=false`: Take the complex conjugate of argument y?
 """
 function contract!(z, x, y, cix, ciy, conjx::Bool=false, conjy::Bool=false)
-    _contract_checkdims!(x, y, cix, ciy)
+    _contract_checkdims(x, y, cix, ciy)
     sx, sy, rix, riy, pix, piy= _contract_permuted_dimensions(x, y, cix, ciy)
-    _contract_checkreturn!(z, sx, sy, rix, riy)
+    _contract_checkreturn(z, sx, sy, rix, riy)
     _contract!(z, x, y, sx, sy, cix, ciy, rix, riy, pix, piy, conjx, conjy)  
 end
 
@@ -78,7 +78,7 @@ end
 ### Matrix-vector contractions to reduce overhead 
 function contract!(z, x::S, y::T, cix::Int=2, ciy::Int=1,conjx::Bool=false,
     conjy::Bool=false) where {S<:AbstractArray{<:Number, 2}, T<:AbstractArray{<:Number, 1}}
-    _contract_checkdims!(x, y, cix, ciy)
+    _contract_checkdims(x, y, cix, ciy)
     if (ndims(z) != 1) || length(z) != size(x, cix == 1 ? 2 : 1)
         throw(ArgumentError("Destination tensor has the wrong dimensions."))
     end
@@ -109,7 +109,7 @@ end
 ### Matrix-matrix multiplications to reduce overhead
 function contract!(z, x::S, y::T, cix::Int=2, ciy::Int=1, conjx::Bool=false,
     conjy::Bool=false) where {S<:AbstractArray{<:Number, 2}, T<:AbstractArray{<:Number, 2}}
-    _contract_checkdims!(x, y, cix, ciy)
+    _contract_checkdims(x, y, cix, ciy)
     if (ndims(z) != 2) || (size(z, 1) != size(x, cix == 1 ? 2 : 1)) || (size(z, 2) != size(y, ciy == 1 ? 2 : 1))
         throw(ArgumentError("Destination tensor has the wrong dimensions."))
     end
@@ -172,7 +172,7 @@ end
 
 ### Checks 
 # Check to see if contraction tensors are the right size
-function _contract_checkdims!(x, y, cix, ciy)
+function _contract_checkdims(x, y, cix, ciy)
     if typeof(get_backend(x)) != typeof(get_backend(y))
         throw(ArgumentError("Tensors are stored on different backends."))
     end
@@ -190,7 +190,7 @@ function _contract_checkdims!(x, y, cix, ciy)
 end
 
 # Check to see if the tensor the contraction is stored in is correct
-function _contract_checkreturn!(z, sx, sy, rix, riy)
+function _contract_checkreturn(z, sx, sy, rix, riy)
     if (size(z) != (_contract_dims(sx, rix)..., _contract_dims(sy, riy)...))
         throw(ArgumentError("Destination tensor has the wrong dimensions."))
     end
