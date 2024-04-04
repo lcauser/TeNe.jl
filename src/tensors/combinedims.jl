@@ -28,7 +28,7 @@ function combinedims(x, cixs; return_copy=false)
         y = reshape(x, shape)
         return (return_copy ? copy(y) : y, (cixs, sc))
     else
-        y = reshape(similar(x), shape)
+        y = similar(x, shape)
         _combinedims!(y, x, pixs, sr, sc)
         return (y, (cixs, sc))
     end
@@ -92,18 +92,47 @@ function _combinedims_check_perm(pixs)
 end
 
 ### Functions for uncombining dimensions
-function uncombinedims!(y, x, cixs, scs)
-    _uncombinedims_check_dims(x, cixs, scs)
-    sxs, perms = _uncombinedims_perms(x, cixs, scs)
-    _uncombinedims_check_result(y, sxs, perms)
-    _uncombinedims(y, x, sxs, perms)
+"""
+    uncombinedims(x, key; kwargs...)
+
+Uncombine the end dimension in tensor x according to the key.
+
+# Key arguments
+
+    - `return_copy=false`: Return the result in newly allocated memory? Only
+       necessary if the combined dimensions are the last dimensions of x.
+"""
+function uncombinedims(x, key; return_copy=false)
+    _uncombinedims_check_dims(x, key[1], key[2])
+    sxs, pixs = _uncombinedims_perms(x, key[1], key[2])
+    if !_combinedims_check_perm(pixs)
+        # Just reshape 
+        y = reshape(x, sxs)
+        return return_copy ? copy(y) : y
+    else
+        y = similar(x, map(i -> sxs[i], pixs))
+        _uncombinedims!(y, x, sxs, pixs)
+    end
+end
+
+
+"""
+    uncombinedims!(y, x, key)
+
+Uncombine the end dimensions of x according to the key, and store the result in y.
+"""
+function uncombinedims!(y, x, key)
+    _uncombinedims_check_dims(x, key[1], key[2])
+    sxs, pixs = _uncombinedims_perms(x, key[1], key[2])
+    _uncombinedims_check_result(y, sxs, pixs)
+    _uncombinedims!(y, x, sxs, pixs)
 end
 
 
 ### Unsafe uncombination of dimensions 
-function _uncombinedims!(y, x, sxs, perms)
+function _uncombinedims!(y, x, sxs, pixs)
     x = reshape(x, sxs)
-    permutedims!(y, x, perms)
+    permutedims!(y, x, pixs)
 end
 
 
@@ -113,6 +142,8 @@ mutable struct _uncombinedims_counter
     j::Int64
 end
 function _uncombinedims_perms(x, cixs, scs)
+    ### Need to think how to do this with vectors. If not, remove the mutable struct for
+    ### a more friendly approach...
     # Reshape sizes 
     sxs = (map(i -> size(x, i), Base.OneTo(ndims(x)-1))..., scs...)
 
@@ -126,9 +157,9 @@ function _uncombinedims_perms(x, cixs, scs)
             return j.j - 1
         end
     end
-    perms = map(i -> f(i, cixs, j, ndims(x)-length(scs)+1), Base.OneTo(ndims(x)-1+length(cixs)))
+    pixs = tuple(map(i -> f(i, cixs, j, ndims(x)-length(scs)+1), Base.OneTo(ndims(x)-1+length(cixs)))...)
 
-    return sxs, perms 
+    return sxs, pixs 
 end
 
 ### Checks 
@@ -136,17 +167,17 @@ function _uncombinedims_check_dims(x, cixs, scs)
     if prod(scs) != size(x, ndims(x))
         throw(ArgumentError("Incorrect sizes for combined dimensions."))
     end
-    max_len = ndims(x) - 1 + len(cixs)
+    max_len = ndims(x) - 1 + length(cixs)
     if !all(i -> (i <= max_len && i >= 1), cixs)
         throw(ArgumentError("Incorrect permutation of dimensions."))
     end
 end
 
-function _uncombineidxs_check_result(y, sxs, perms)
+function _uncombinedims_check_result(y, sxs, pixs)
     if ndims(y) != length(sxs)
         throw(ArgumentError("Desination tensor has incorrect number of dimensions."))
     end
-    if !all(i -> sxs[perms[i]] == size(y, i), Base.OneTo(length(sxs)))
-        throw(ArgumentError("Desination tensor has wrong dimensions: $(size(y)) != $(sxs[perms])"))
+    if !all(i -> sxs[pixs[i]] == size(y, i), Base.OneTo(length(sxs)))
+        throw(ArgumentError("Desination tensor has wrong dimensions: $(size(y)) != $(sxs[pixs])"))
     end
 end
