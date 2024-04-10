@@ -15,7 +15,7 @@ If unspecified, the innerdims will be assumed to be the remaining dimensions in 
 
 # Key arguments
 
-    - 'prefactor': multiply the matrix by a prefactor before exponetiating.
+    - `prefactor`: multiply the matrix by a prefactor before exponetiating.
 """
 function exp(x, outerdims; prefactor=1)
     innerdims = setdiff(Base.OneTo(ndims(x)), outerdims)

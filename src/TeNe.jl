@@ -3,6 +3,7 @@ module TeNe
 # Dependancies
 using LinearAlgebra 
 using LRUCache
+using StaticArrays
 using KernelAbstractions
 
 # Caching; intermediate contractions memory can be pre-allocated and reused.
@@ -17,5 +18,6 @@ include("tensors/trace.jl")
 include("tensors/permutedim.jl")
 include("tensors/combinedims.jl")
 include("tensors/exp.jl")
+include("tensors/svd.jl")
 
 end
