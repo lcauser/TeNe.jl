@@ -9,12 +9,20 @@ export trace, trace!
 """
     trace!(z, x, cix::Int...; kwargs)
 
-Compute the trace of x over dimensions cix, and store the result in z.
+Compute the trace of `x`` over dimensions `cix`, and store the result in `z`.
 In place version of trace.
 
 # Optional Keyword Arguments
     
     - 'conj::Bool=false': take the conjugate?
+
+# Examples 
+
+```jldoctest
+julia> x = randn(ComplexF64, 2, 3, 4, 3);
+julia> z = similar(x, (2, 4));
+julia> trace!(z, x, (2, 4));
+```
 """
 function trace!(z, x, cix::Int...; conj::Bool=false)
     # Fetch the dimensions & do checks 
@@ -29,13 +37,22 @@ end
 """
     trace(x, cix::Int...; kwargs)
 
-Compute the trace of x over dimensions cix.
+Compute the trace of `x` over dimension `cix`.
 
 # Optional Keyword Arguments
     
-    - 'conj::Bool=false': take the conjugate?
-    - 'tocache::Bool=false': store the result in the second level of the cache?
-    - 'sublevel::Int=1': if stored in cache, at which sublevel?
+    - `conj::Bool=false`: take the conjugate?
+    - `tocache::Bool=false`: store the result in the second level of the cache?
+    - `sublevel::Int=1`: if stored in cache, at which sublevel?
+
+# Examples 
+
+```jldoctest
+julia> x = randn(ComplexF64, 2, 3, 4, 3);
+julia> y = trace(x, (2, 4));
+julia> size(y)
+(2, 4)
+```
 """
 function trace(x, cix::Int...; conj::Bool=false, tocache::Bool=false, sublevel::Int=1)
     # Fetch the dimensions & do checks 
