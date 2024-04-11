@@ -1,14 +1,19 @@
 #=
     Singular value decomposition of tensors.
+
+    For future: this implementantion could use some work. For example, using cached memory
+    and an implementation of SVD which provides U, S and V (that are preallocated).
 =#
+
+export tsvd
 
 ### Perform a singular value decomposition 
 """
     svd(x, dims; kwargs...)
     svd(x, dim::Int; kwargs...)
 
-Computer a singular value decomposition of tensor x. Seperates the dimensions
-dims from the remainder.
+Computer a singular value decomposition of tensor `x`. Seperates the dimensions
+`dims` from the remainder.
 
 # Key arguments
 
@@ -19,12 +24,14 @@ dims from the remainder.
       no limit.
     
 """
-function svd(x, dims; cutoff::Float64=0.0, mindim::Int=1, maxdim::Int=0)
+function tsvd(x, dims; cutoff::Float64=0.0, mindim::Int=1, maxdim::Int=0)
+    _svd_checkdims(x, dims)
+    return _svd(x, dims; cutoff, mindim, maxdim)
 end
 
-function svd(x, dim::Int; kwargs...)
+function tsvd(x, dim::Int; kwargs...)
     if dim == -1 dim = ndims(x) end 
-    return svd(x, (dims); kwargs...)
+    return tsvd(x, Tuple(dim); kwargs...)
 end
 
 ### Unsafe SVD 
@@ -37,7 +44,7 @@ function _svd(x, dims; cutoff::Float64=0.0, mindim::Int=1, maxdim::Int=0)
     else 
         y = x
     end
-    y = reshape(y, (prod(sinners), prod(sinners)))
+    y = reshape(y, (prod(sinners), prod(souters)))
     
     # Do the SVD using LinearAlgebra 
     local t
@@ -46,15 +53,30 @@ function _svd(x, dims; cutoff::Float64=0.0, mindim::Int=1, maxdim::Int=0)
     catch e
         t = LinearAlgebra.svd(y, alg=LinearAlgebra.QRIteration())
     end
-    U, S, V = t.U, t.S, t.Vt
 
     # Truncatation criteria 
     idx = findfirst(t.S .== 0)
     maxdim = max(min(maxdim, isnothing(idx) ? length(t.S) : idx-1), 1) 
     mindim = min(mindim, maxdim)
     if cutoff != 0.0
-
+        S2 = t.S .^ 2
+        S2cum = reverse(cumsum(reverse(S2))) ./ sum(S2)
+        idxs = findlast([x > cutoff for x = S2cum])
+        idxs = isnothing(idxs) ? 1 : idxs
+        maxdim = min(maxdim, idxs)
     end
+    vals = max(maxdim, mindim)
+
+    # Truncate 
+    U = t.U[:, 1:vals]
+    S = Diagonal(t.S[1:vals])
+    V = t.Vt[1:vals, :]
+
+    # Ungroup the dimensions
+    U = reshape(U, (sinners..., vals))
+    V = reshape(V, (vals, souters...))
+
+    return U, S, V
 end
 
 ### Permuting dimensions 
@@ -62,12 +84,12 @@ function _svd_permute_dims(x, dims)
     inner_dims = tuple(setdiff(1:ndims(x), dims)...)
     sinners = map(i->size(x, i), inner_dims)
     souters = map(i->size(x, i), dims)
-    return sinners, souters, tuple(inner_dims..., outerdims...)
+    return sinners, souters, tuple(inner_dims..., dims...)
 end
 
 ### Checks 
 function _svd_checkdims(x, dims)
-    if ndims(x) >= length(dims)
+    if ndims(x) < length(dims)
         throw(ArgumentError("The number of dimensions given exceed that of the tensor."))
     end
     if !all(i -> isinteger(i) , dims)

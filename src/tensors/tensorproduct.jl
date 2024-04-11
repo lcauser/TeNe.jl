@@ -7,10 +7,10 @@ export tensorproduct, tensorproduct!
 
 ### Tensor products
 """
-    tensorproduct(x, y, [conjx=false, conjy=false])
+    tensorproduct!(z, x, y, [conjx=false, conjy=false])
 
-Compute the tensor product of the two tensors x and y, and store the 
-result in z. Optionally, do the tensor product using the conjugate of
+Compute the tensor product of the two tensors `x` and `y`, and store the 
+result in `z`. Optionally, do the tensor product using the conjugate of
 the tensors.
 
 # Arguments
@@ -20,20 +20,28 @@ the tensors.
     - `y': second tensor.
     - `conjx::Bool=false`: Take the complex conjugate of argument x?
     - `conjy::Bool=false`: Take the complex conjugate of argument y?
+
+# Examples 
+
+```jldoctest
+julia> x = randn(ComplexF64, 2, 3);
+julia> y = randn(ComplexF64, 4, 5);
+julia> z = similar(x, (2, 3, 4, 5));
+julia> tensorproduct!(z, x, y);
+```
 """
 function tensorproduct!(z, x, y, conjx::Bool=false, conjy::Bool=false)
     # Checks on args 
     _tensorproduct_check_result(z, x, y)
     _tensorproduct!(z, x, y, conjx, conjy)
-
 end
 
 
 """
     tensorproduct(z, x, y, [conjx=false, conjy=false])
 
-Compute the tensor product of the two tensors x and y, and store the 
-result in z. Optionally, do the tensor product using the conjugate of
+Compute the tensor product of the two tensors `x` and `y`, and store the 
+result in `z`. Optionally, do the tensor product using the conjugate of
 the tensors.
 
 # Arguments
@@ -45,8 +53,18 @@ the tensors.
 
 # Optional Keyword Arguments
     
-    - 'tocache::Bool=false': store the result in the second level of the cache?
-    - 'sublevel::Int=1': if stored in cache, at which sublevel?
+    - `tocache::Bool=false`: store the result in the second level of the cache?
+    - `sublevel::Int=1`: if stored in cache, at which sublevel?
+
+# Examples 
+
+```jldoctest
+julia> x = randn(ComplexF64, 2, 3);
+julia> y = randn(ComplexF64, 4, 5);
+julia> z = tensorproduct(x, y);
+julia> size(z)
+(2, 3, 4, 5)
+```
 """
 function tensorproduct(x, y, conjx::Bool=false, conjy::Bool=false;
                        tocache::Bool=false, sublevel::Int=1)

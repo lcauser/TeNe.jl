@@ -16,6 +16,22 @@ If unspecified, the innerdims will be assumed to be the remaining dimensions in 
 # Key arguments
 
     - `prefactor`: multiply the matrix by a prefactor before exponetiating.
+
+# Examples 
+
+```jldoctest
+julia> x = randn(ComplexF64, 2, 3, 2, 3);
+julia> y = exp(x, (3, 4));
+julia> size(y)
+(2, 3, 2, 3)
+```
+
+```jldoctest
+julia> x = randn(ComplexF64, 2, 3, 2, 3);
+julia> y = exp(x, (1, 2), (3, 4));
+julia> size(y)
+(2, 3, 2, 3)
+```
 """
 function exp(x, outerdims; prefactor=1)
     innerdims = setdiff(Base.OneTo(ndims(x)), outerdims)
