@@ -9,21 +9,39 @@ export contract, contract!
 """
     contract(x, y, cix, ciy, [conjx=false, conjy=false]; kwargs...)
 
-Contract tensors x and y across dimensions cix and ciy, and returns it as z.
+Contract tensors `x` and `y` across dimensions `cix` and `ciy`, and returns it as `z`.
 
 # Arguments
 
     - `x`: first tensor to contract.
     - `y': second tensor to contract.
-    - `cix``: the dimensions of the first tensor to contract.
-    - `ciy``: the dimensions of the second tensor to contract.
+    - `cix`: the dimensions of the first tensor to contract.
+    - `ciy`: the dimensions of the second tensor to contract.
     - `conjx::Bool=false`: Take the complex conjugate of argument x?
     - `conjy::Bool=false`: Take the complex conjugate of argument y?
 
 # Optional Keyword Arguments
     
-    - 'tocache::Bool=false': store the result in the second level of the cache?
-    - 'sublevel::Int=1': if stored in cache, at which sublevel?
+    - `tocache::Bool=false`: store the result in the second level of the cache?
+    - `sublevel::Int=1`: if stored in cache, at which sublevel?
+
+# Examples 
+
+```jldoctest
+julia> x = randn(ComplexF64, 2, 3, 4);
+julia> y = randn(ComplexF64, 3, 5, 6);
+julia> z = contract(x, y, 2, 1);
+julia> size(z)
+(2, 4, 5, 6)
+```
+
+```jldoctest
+julia> x = randn(ComplexF64, 2, 3, 4, 5);
+julia> y = randn(ComplexF64, 6, 5, 2, 7);
+julia> z = contract(x, y, (1, 4), (3, 2));
+julia> size(z)
+(3, 4, 6, 7)
+```
 """
 function contract(x, y, cix, ciy, conjx::Bool=false, conjy::Bool=false; tocache::Bool=false, sublevel::Int=1)
     # Dimensions of the problem
@@ -50,7 +68,7 @@ end
 """
     contract!(z, x, y, cix, ciy, [conjx=false, conjy=false])
 
-Contract tensors x and y across dimensions cix and ciy, and store the result in z.
+Contract tensors `x` and `y` across dimensions `cix` and `ciy`, and store the result in `z`.
 In-place version of contract.
 
 # Arguments
@@ -58,10 +76,19 @@ In-place version of contract.
     - `z`: tensor to store the result.
     - `x`: first tensor to contract.
     - `y': second tensor to contract.
-    - `cix``: the dimensions of the first tensor to contract.
-    - `ciy``: the dimensions of the second tensor to contract.
+    - `cix`: the dimensions of the first tensor to contract.
+    - `ciy`: the dimensions of the second tensor to contract.
     - `conjx::Bool=false`: Take the complex conjugate of argument x?
     - `conjy::Bool=false`: Take the complex conjugate of argument y?
+
+# Examples 
+
+```jldoctest
+julia> x = randn(ComplexF64, 2, 3, 4);
+julia> y = randn(ComplexF64, 3, 5, 6);
+julia> z = similar(x, (2, 4, 5, 6));
+julia> contract!(z, x, y, 2, 1)
+```
 """
 function contract!(z, x, y, cix, ciy, conjx::Bool=false, conjy::Bool=false)
     _contract_checkdims(x, y, cix, ciy)

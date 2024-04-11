@@ -7,12 +7,21 @@ export permutedim, permutedim!
 """
     permutedim(x, i, j; kwargs...)
 
-Permute dimension i to j for tensor x.
+Permute dimension with position `i` to position `j` for tensor `x`.
 
 # Optional Keyword Arguments
     
-    - 'tocache::Bool=false': store the result in the second level of the cache?
-    - 'sublevel::Int=1': if stored in cache, at which sublevel?
+    - `tocache::Bool=false`: store the result in the second level of the cache?
+    - `sublevel::Int=1`: if stored in cache, at which sublevel?
+
+# Examples 
+
+```jldoctest
+julia> x = randn(ComplexF64, 2, 3, 4, 5);
+julia> x = permutedim(x, 2, 4);
+julia> size(x)
+(2, 4, 5, 3)
+```
 """
 function permutedim(x, i::Int, j::Int; tocache::Bool=false, sublevel::Int=1)
     i == j && return copy(x)
@@ -32,8 +41,16 @@ end
 """
     permutedim!(z, x, i, j; kwargs...)
 
-Permute dimension i to j for tensor x. Store the result in z.
+Permute dimension `i` to `j` for tensor `x`. Store the result in `z`.
 In place version of permutedim.
+
+# Examples 
+
+```jldoctest
+julia> x = randn(ComplexF64, 2, 3, 4, 5);
+julia> z = similar(x, (2, 4, 5, 3));
+julia> permutedims!(z, x, 2, 4);
+```
 """
 function permutedim!(z, x, i::Int, j::Int)
     i == j && return nothing

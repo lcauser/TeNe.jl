@@ -8,14 +8,25 @@ export uncombinedims, uncombinedims!
 
 ### Functions for combining dimensions
 """
-    combinedims(y, x, cixs; kwargs...)
+    combinedims(x, cixs; kwargs...)
 
-Combine the dimensions cixs in tensor x.
+Combine the dimensions `cixs` in tensor `x`. 
+
+Returns the reshaped tensor, along with a `key` to restore the original permutations.
 
 # Key arguments
 
     - `return_copy=false`: Return the result in newly allocated memory? Only
-       necessary if the combined dimensions are the last dimensions of x.
+       necessary if the combined dimensions are the last dimensions of `x`.
+
+# Examples 
+
+```jldoctest
+julia> x = randn(ComplexF64, 4, 5, 6, 7);
+julia> y, key = combinedims(x, (2, 3));
+julia> size(y)
+(4, 7, 30)
+```
 """
 function combinedims(x, cixs; return_copy=false)
     # Checks and permutations 
@@ -37,7 +48,16 @@ end
 """
     combinedims!(y, x, cixs)
 
-Combine the dimensions cixs in tensor x, and store the result in y.
+Combine the dimensions cixs in tensor `x`, and store the result in `y`.
+
+# Examples 
+
+```jldoctest
+julia> x = randn(ComplexF64, 4, 5, 6, 7);
+julia> y = similar(x, (4, 7, 30));
+julia> key = combinedims!(y, x, (2, 3))
+((2, 3), (5, 6))
+```
 """
 function combinedims!(y, x, cixs)
     # Checks and permutations 
@@ -95,12 +115,22 @@ end
 """
     uncombinedims(x, key; kwargs...)
 
-Uncombine the end dimension in tensor x according to the key.
+Uncombine the end dimension in tensor `x` according to the `key`.
 
 # Key arguments
 
     - `return_copy=false`: Return the result in newly allocated memory? Only
-       necessary if the combined dimensions are the last dimensions of x.
+       necessary if the combined dimensions are the last dimensions of `x`.
+
+# Examples 
+
+```jldoctest
+julia> x = randn(ComplexF64, 4, 5, 6, 7);
+julia> y, key = combinedims(x, (2, 3));
+julia> z = uncombinedims(y, key);
+julia> size(z)
+(4, 5, 6, 7)
+```
 """
 function uncombinedims(x, key; return_copy=false)
     _uncombinedims_check_dims(x, key[1], key[2])
@@ -119,7 +149,17 @@ end
 """
     uncombinedims!(y, x, key)
 
-Uncombine the end dimensions of x according to the key, and store the result in y.
+Uncombine the end dimensions of `x` according to the key, and store the result in `y`.
+
+# Examples 
+
+```jldoctest
+julia> x = randn(ComplexF64, 4, 5, 6, 7);
+julia> z, key = combinedims(x, (2, 3));
+julia> y = similar(x);
+julia> isapprox(y, x);
+true
+```
 """
 function uncombinedims!(y, x, key)
     _uncombinedims_check_dims(x, key[1], key[2])
