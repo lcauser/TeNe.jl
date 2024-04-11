@@ -56,7 +56,7 @@ function _svd(x, dims; cutoff::Float64=0.0, mindim::Int=1, maxdim::Int=0)
 
     # Truncatation criteria 
     idx = findfirst(t.S .== 0)
-    maxdim = max(min(maxdim, isnothing(idx) ? length(t.S) : idx-1), 1) 
+    maxdim = max(min(maxdim == 0 ? length(t.S) : maxdim, isnothing(idx) ? length(t.S) : idx-1), 1) 
     mindim = min(mindim, maxdim)
     if cutoff != 0.0
         S2 = t.S .^ 2
