@@ -20,4 +20,7 @@ include("tensors/combinedims.jl")
 include("tensors/exp.jl")
 include("tensors/svd.jl")
 
+# MPS 
+include("mps/abstractmps.jl")
+
 end
