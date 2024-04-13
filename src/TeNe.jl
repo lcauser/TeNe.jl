@@ -5,6 +5,7 @@ using LinearAlgebra
 using LRUCache
 using StaticArrays
 using KernelAbstractions
+using HDF5
 
 # Caching; intermediate contractions memory can be pre-allocated and reused.
 const _CACHE_MEM_LIM = 4294967296

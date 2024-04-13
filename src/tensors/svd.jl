@@ -9,8 +9,8 @@ export tsvd
 
 ### Perform a singular value decomposition 
 """
-    svd(x, dims; kwargs...)
-    svd(x, dim::Int; kwargs...)
+    tsvd(x, dims; kwargs...)
+    tsvd(x, dim::Int; kwargs...)
 
 Computer a singular value decomposition of tensor `x`. Seperates the dimensions
 `dims` from the remainder.

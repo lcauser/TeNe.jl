@@ -148,67 +148,256 @@ end
 
 
 ### Moving the orthogonal center
-export moveleft!, moveright!, movecenter!
+export movecenter!
 
-"""
-    moveleft!(ψ::GMPS, idx::Int; kwargs...)
-
-Move the gauge from a tensor within the GMPS to the left.
-"""
-function moveleft!(ψ::GMPS, idx::Int; kwargs...)
+function _moveleft!(ψ::GMPS, idx::Int; kwargs...)
+    # Maybe TODO later: re-use memory
     if 1 < idx && idx <= length(ψ)
-        U, S, V = svd(ψ[idx], 1; kwargs...)
-        V = contract(S, V, 2, 1)
-        ψ[idx] = U
-        ψ[idx-1] = contract(ψ[idx-1], V, 2+rank(ψ), 2)
+        U, S, V = tsvd(ψ[idx], Base.range(2, ndims(ψ[idx])); kwargs...)
+        U = contract(U, S, 2, 1)
+        ψ[idx] = V
+        ψ[idx-1] = contract(ψ[idx-1], U, 2+rank(ψ), 1; tocache=false)
     end
 end
 
-"""
-    moveright!(ψ::GMPS, idx::Int; kwargs...)
-
-Move the gauge from a tensor within the GMPS to the right.
-"""
-function moveright!(ψ::GMPS, idx; kwargs...)
+function _moveright!(ψ::GMPS, idx; kwargs...)
     if 0 < idx && idx < length(ψ)
-        U, S, V = svd(ψ[idx], 2+rank(ψ); kwargs...)
+        # Maybe TODO later: re-use memory
+        U, S, V = tsvd(ψ[idx], 2+rank(ψ); kwargs...)
         V = contract(S, V, 2, 1)
         ψ[idx] = U
-        ψ[idx+1] = contract(V, ψ[idx+1], 2, 1)
+        ψ[idx+1] = contract(V, ψ[idx+1], 2, 1; tocache=false)
     end
 end
 
 """
     movecenter!(ψ::GMPS, idx::Int; kwargs...)
 
-Move the orthogonal center of an GMPS.
+Move the orthogonal center of an GMPS `ψ` to center `idx`.
+
+# Key arguments
+
+    - `cutoff::Float64=0.0`: Truncation criteria to reduce the bond dimension.
+      Good values range from 1e-8 to 1e-14.
+    - `mindim::Int=1`: Mininum dimension for truncated.
+    - `maxdim::Int=0`: Maximum bond dimension for truncation. Set to 0 to have
+      no limit.
 """
 function movecenter!(ψ::GMPS, idx::Int; kwargs...)
-    (idx < 1 || idx > length(ψ)) && error("The index is out of range.")
+    # Checks bounds 
+    if idx < 1 || idx > length(ψ)
+        throw(BoundsError("Center index is out of bounds."))
+    end
+    
+    # Move center
     if center(ψ) == 0
-        for i = 1:idx-1
-            moveright!(ψ, i; kwargs...)
+        for i = Base.OneTo(idx-1)
+            _moveright!(ψ, i; kwargs...)
         end
-        N = length(ψ)
-        for i = 1:N-idx
-            moveleft!(ψ, N+1-i; kwargs...)
+        for i = length(ψ):-1:idx+1
+            _moveleft!(ψ, i; kwargs...)
         end
     else
         if idx > center(ψ)
             for i = center(ψ):idx-1
-                moveright!(ψ, i; kwargs...)
+                _moveright!(ψ, i; kwargs...)
             end
         elseif idx < center(ψ)
-            for i = 1:center(ψ)-idx
-                moveleft!(ψ, center(ψ)+1-i; kwargs...)
+            for i = center(ψ):-1:idx+1
+                _moveleft!(ψ, i; kwargs...)
             end
         end
     end
     ψ.center = idx
 end
 
+### Replace the sites within a MPS with a contraction of multiple sites
+"""
+    replacesites!(ψ::GMPS, A, site::Int, direction::Bool=false, normalize::Bool=false; kwargs...)
 
-### Information operators 
+Replace the tensors over a small range of sites in a GMPS.
+
+# Arguments 
+
+    - `ψ`: The GMPS.
+    - `A': The updated composite tensor.
+    - `site::Int`: The first site in the range which is replaced.
+    - `direction::Bool=false`: The sweeping direction; `true` is sweeping left, `false` sweeping right.
+    - `normalize::Bool=false`: Normalize the GMPS after replacing the sites?
+
+# Key arguments
+
+    - `cutoff::Float64=0.0`: Truncation criteria to reduce the bond dimension.
+      Good values range from 1e-8 to 1e-14.
+    - `mindim::Int=1`: Mininum dimension for truncated.
+    - `maxdim::Int=0`: Maximum bond dimension for truncation. Set to 0 to have
+      no limit.
+"""
+function replacesites!(ψ::GMPS, A, site::Int, direction::Bool=false, normalize::Bool=false; kwargs...)
+    # Determine the number of sites
+    nsites = (ndims(A) - 2) / rank(ψ)
+
+    # Deal with case of just one site
+    if nsites == 1
+        ψ[site] = A
+        ctr = site + 1 - 2*direction
+        if 0 < ctr && ctr <= length(ψ)
+            movecenter!(ψ, ctr)
+        end
+        if normalize
+            normalize!(ψ)
+        end
+    end
+
+    # Repeatidly apply SVD to split the tensors
+    U = A
+    for i = 1:nsites-1
+        if direction
+            ### Sweeping Left
+            # Group together the last indices
+            idxs = collect(length(size(U))-rank(ψ):length(size(U)))
+            U, cmb = combineidxs(U, idxs)
+
+            # Find the next site to update
+            site1 = site+nsites-i
+
+            # Apply SVD and determine the tensors
+            U, S, V = svd(U, -1; kwargs...)
+            U = contract(U, S, length(size(U)), 1)
+            D = site1 == length(ψ) ? 1 : size(ψ[site1+1])[1]
+            dims = (size(S)[2], [dim(ψ) for i=1:rank(ψ)]..., D)
+            V = reshape(V, dims)
+
+            # Update tensors
+            ψ[site1] = V
+        else
+            ### Sweeping right
+            # Combine first two indexs together
+            idxs = collect(1:1+rank(ψ))
+            U, cmb = combineidxs(U, idxs)
+
+            # Find the next site to update
+            site1 = site + i - 1
+
+            # Apply SVD and determine the tensors
+            U, S, V = svd(U, -1; kwargs...)
+            U = contract(U, S, length(size(U)), 1)
+            U = moveidx(U, length(size(U)), 1)
+            D = site1 == 1 ? 1 : size(ψ[site1-1])[2+rank(ψ)]
+            dims = (size(S)[2], D, [dim(ψ) for i=1:rank(ψ)]...)
+            V = reshape(V, dims)
+            V = moveidx(V, 1, -1)
+
+            # Update tensors
+            ψ[site1] = V
+        end
+    end
+
+    # Update the final site
+    site1 = direction ? site : site + nsites - 1
+    ψ[site1] = U
+    ψ.center = site1
+    if normalize
+        normalize!(ψ)
+    end
+end
+
+### Products with numbers
+import Base.*
+function *(ψ::AbstractMPS, a::Number)
+    ϕ = deepcopy(ψ)
+    if center(ψ) != 0
+        ϕ.tensors[center(ϕ)] .*= a
+    else
+        ϕ.tensors[1] .*= a
+    end
+    return ϕ
+end
+*(a::Number, ψ::AbstractMPS) = *(ψ, a)
+/(ψ::AbstractMPS, a::Number) = *(ψ, 1/a)
+
+
+### Adjusting the bond dimensions 
+export truncate!, expand!
+
+"""
+    truncate!(ψ::GMPS; kwargs...)
+
+Truncate the bond dimension of a GMPS `ψ`.
+
+# Optional Keyword Arguments
+    
+    - `cutoff::Float64=0.0`: Truncation criteria to reduce the bond dimension.
+    Good values range from 1e-8 to 1e-14.
+    - `mindim::Int=1`: Mininum dimension for truncated.
+    - `maxdim::Int=0`: Maximum bond dimension for truncation. Set to 0 to have
+    no limit.
+"""
+function truncate!(ψ::GMPS; kwargs...)
+    if ψ.center != 1 && ψ.center != length(ψ)
+        movecenter!(ψ, 1)
+    end
+    ctr = center(ψ) == 1 ? length(ψ) : 1
+    movecenter!(ψ, ctr; kwargs...)
+end
+
+"""
+    expand!(ψ::GMPS, bonddim::Int, noise=0.0)
+
+Increase the bond dimension of a GMPS `ψ` to `bonddim`. 
+Optionally, make the new parameters noisy, with strength `noise`.
+"""
+function expand!(ψ::GMPS, bonddim::Int, noise=0.0)
+    movecenter!(ψ, 1)
+    for i = 1:length(ψ)
+        D1 = i == 1 ? 1 : bonddim 
+        D2 = i == length(ψ) ? 1 : bonddim
+        tensor = noise .* randn(eltype(ψ[i]), D1, map(j -> size(ψ[i], j), 2:ndims(ψ[i])-1)..., D2)
+        tensor[map(j->Base.OneTo(size(ψ[i], j)), Base.OneTo(ndims(ψ[i])))...] .= ψ[i]
+        ψ[i] = tensor
+        if i > 1
+            _moveright!(ψ, i-1)
+        end
+    end
+    ψ.center = length(ψ)
+    movecenter!(ψ, 1)
+end
+
+### Conjugation
+"""
+    conj(ψ::GMPS)
+
+Return the conjugate of the GMPS `ψ`.
+"""
+function conj(ψ::GMPS)
+    ϕ = GMPS(rank(ψ), dim(ψ), [conj.(ψ[i]) for i = Base.OneTo(length(ψ))])
+    ϕ.center = ψ.center 
+    return ϕ
+end
+
+
+### Check to see if MPS share properties 
+"""
+    issimilar(ψ::GMPS, ϕ::GMPS)
+
+Check to see if GMPS `ψ` and `ϕ` share the same properties.
+"""
+function issimilar(ψ::GMPS, ϕ::GMPS)
+    rank(ψ) != rank(ϕ) && return false 
+    length(ψ) != length(ϕ) && return false 
+    if dim(ϕ) == 0 || dim(ψ) == 0
+        for i = 1:length(ψ)
+            ψ_dims = map(j -> size(ψ[i], j), Base.range(2, 1+rank(ψ)))
+            ϕ_dims = map(j -> size(ϕ[i], j), Base.range(2, 1+rank(ϕ)))
+            ψ_dims != ϕ_dims && return false
+        end
+    elseif dim(ϕ) != dim(ψ)
+        return false 
+    end
+    return true
+end
+
+### Information
 function Base.show(io::IO, ψ::GMPS)
     println(io, "$(typeof(ψ))")
     for i = Base.OneTo(Base.length(ψ))
@@ -220,3 +409,32 @@ end
 Base.copy(ψ::GMPS) = typeof(ψ)(LinearAlgebra.rank(ψ), dim(ψ), ψ.tensors, center(ψ))
 Base.deepcopy(ψ::GMPS) = typeof(ψ)(Base.copy(LinearAlgebra.rank(ψ)), Base.copy(dim(ψ)), Base.copy(ψ.tensors),
                                         Base.copy(center(ψ)))
+
+
+### Save and write
+function HDF5.write(parent::Union{HDF5.File, HDF5.Group}, name::AbstractString,
+                    M::GMPS{r}) where {r}
+    g = create_group(parent, name)
+    attributes(g)["type"] = "MPS"
+    attributes(g)["version"] = 1
+    write(g, "length", length(M))
+    write(g, "center", center(M))
+    write(g, "rank", r)
+    for i = 1:length(M)
+        write(g, "MPS[$(i)]", M[i])
+    end
+end
+
+
+function HDF5.read(parent::Union{HDF5.File, HDF5.Group}, name::AbstractString,
+                    ::Type{GMPS})
+    g = open_group(parent, name)
+    if read(attributes(g)["type"]) != "MPS"
+        error("HDF5 group of file does not contain MPS data.")
+    end
+    N = read(g, "length")
+    center = read(g, "center")
+    tensors = [read(g, "MPS[$(i)]") for i=Base.OneTo(N)]
+    rank = read(g, "rank")
+    return GMPS(rank, size(tensors[1])[2], tensors, center)
+end
