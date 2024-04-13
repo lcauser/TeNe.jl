@@ -42,7 +42,7 @@ Compute the trace of `x` over dimension `cix`.
 # Optional Keyword Arguments
     
     - `conj::Bool=false`: take the conjugate?
-    - `tocache::Bool=false`: store the result in the second level of the cache?
+    - `tocache::Bool=true`: store the result in the second level of the cache?
     - `sublevel::Int=1`: if stored in cache, at which sublevel?
 
 # Examples 
@@ -54,7 +54,7 @@ julia> size(y)
 (2, 4)
 ```
 """
-function trace(x, cix::Int...; conj::Bool=false, tocache::Bool=false, sublevel::Int=1)
+function trace(x, cix::Int...; conj::Bool=true, tocache::Bool=false, sublevel::Int=1)
     # Fetch the dimensions & do checks 
     sx, rix, pos = _trace_dimensions(x, cix)
     _trace_check_args(sx, cix)

@@ -11,7 +11,7 @@ Permute dimension with position `i` to position `j` for tensor `x`.
 
 # Optional Keyword Arguments
     
-    - `tocache::Bool=false`: store the result in the second level of the cache?
+    - `tocache::Bool=true`: store the result in the second level of the cache?
     - `sublevel::Int=1`: if stored in cache, at which sublevel?
 
 # Examples 
@@ -23,7 +23,7 @@ julia> size(x)
 (2, 4, 5, 3)
 ```
 """
-function permutedim(x, i::Int, j::Int; tocache::Bool=false, sublevel::Int=1)
+function permutedim(x, i::Int, j::Int; tocache::Bool=true, sublevel::Int=1)
     i == j && return copy(x)
     if j==-1 j=ndims(x) end
     _permutedim_checkbounds(x, i, j)

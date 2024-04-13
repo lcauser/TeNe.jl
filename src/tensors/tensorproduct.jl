@@ -53,7 +53,7 @@ the tensors.
 
 # Optional Keyword Arguments
     
-    - `tocache::Bool=false`: store the result in the second level of the cache?
+    - `tocache::Bool=true`: store the result in the second level of the cache?
     - `sublevel::Int=1`: if stored in cache, at which sublevel?
 
 # Examples 
@@ -67,7 +67,7 @@ julia> size(z)
 ```
 """
 function tensorproduct(x, y, conjx::Bool=false, conjy::Bool=false;
-                       tocache::Bool=false, sublevel::Int=1)
+                       tocache::Bool=true, sublevel::Int=1)
     # Checks on arguments 
     _tensorproduct_check_args(x, y)
 

@@ -22,7 +22,7 @@ Contract tensors `x` and `y` across dimensions `cix` and `ciy`, and returns it a
 
 # Optional Keyword Arguments
     
-    - `tocache::Bool=false`: store the result in the second level of the cache?
+    - `tocache::Bool=true`: store the result in the second level of the cache?
     - `sublevel::Int=1`: if stored in cache, at which sublevel?
 
 # Examples 
@@ -43,7 +43,7 @@ julia> size(z)
 (3, 4, 6, 7)
 ```
 """
-function contract(x, y, cix, ciy, conjx::Bool=false, conjy::Bool=false; tocache::Bool=false, sublevel::Int=1)
+function contract(x, y, cix, ciy, conjx::Bool=false, conjy::Bool=false; tocache::Bool=true, sublevel::Int=1)
     # Dimensions of the problem
     _contract_checkdims(x, y, cix, ciy)
     sx, sy, rix, riy, pix, piy = _contract_permuted_dimensions(x, y, cix, ciy)
@@ -60,8 +60,8 @@ function contract(x, y, cix, ciy, conjx::Bool=false, conjy::Bool=false; tocache:
     return z
 end
 
-function contract(x, y, cix::Int, ciy::Int, conjx::Bool=false, conjy::Bool=false)
-    return contract(x, y, (cix,), (ciy,), conjx, conjy)
+function contract(x, y, cix::Int, ciy::Int, conjx::Bool=false, conjy::Bool=false; kwargs...)
+    return contract(x, y, (cix,), (ciy,), conjx, conjy; kwargs...)
 end
 
 
