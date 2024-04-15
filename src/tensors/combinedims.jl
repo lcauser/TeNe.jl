@@ -14,7 +14,7 @@ Combine the dimensions `cixs` in tensor `x`.
 
 Returns the reshaped tensor, along with a `key` to restore the original permutations.
 
-# Key arguments
+# Optional Keyword Arguments
 
     - `return_copy=false`: Return the result in newly allocated memory? Only
        necessary if the combined dimensions are the last dimensions of `x`.

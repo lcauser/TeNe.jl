@@ -24,5 +24,5 @@ include("tensors/svd.jl")
 # MPS 
 abstract type AbstractMPS end
 include("mps/structures/gmps.jl")
-
+include("mps/structures/mps.jl")
 end

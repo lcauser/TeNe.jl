@@ -1,9 +1,22 @@
+#=
+    Generalised matrix product states describe a decomposition of one-dimensional
+    space into a product of tensors, where each tensor has the physical dimensions
+    for a local subsystem. The generalised here means that any rank tensor can be
+    decomposed into MPS representation: e.g., a vector is an MPO, operator is an
+    MPO... Functionality for specific structures, such as an MPS, can be found
+    seperately.
+=#
+
 """
     GMPS(rank::Int, dim::Int, tensors::Vector{Array{Complex{Float64}}},
          center::Int)
     GMPS(rank::Int, dim::Int, length::Int)
 
 Create a generalised matrix product state with physical dimension dim.
+
+# Optional Keyword Arguments
+
+    - `T::Type=ComplexF64`: The element type for the tensors.
 """
 
 mutable struct GMPS{r} <: AbstractMPS
@@ -12,11 +25,6 @@ mutable struct GMPS{r} <: AbstractMPS
     center::Int
 end
 export GMPS
-
-function GMPS(rank::Int, d::Int, N::Int; T::Type=ComplexF64)
-    tensors = [zeros(T, (1, [d for __ = Base.OneTo(rank)]..., 1)) for _ = Base.OneTo(N)]
-    return GMPS{rank}(d, tensors, 0)
-end
 
 ### Indexing an MPS 
 """
@@ -67,11 +75,11 @@ Returns the type of parameters within a GMPS.
 Base.eltype(ψ::GMPS) = Base.eltype(ψ[begin])
 
 """
-    LinearAlgebra.rank(::GMPS)
+    rank(::GMPS)
 
 Returns the rank of an MPS object.
 """
-LinearAlgebra.rank(::GMPS{r}) where {r} = r
+TeNe.rank(::GMPS{r}) where {r} = r
 
 """
     dim(::GMPS)
@@ -122,12 +130,13 @@ end
 
 
 ### Norms
+export norm, normalize!
 """
-    LinearAlgebra.norm(ψ::GMPS)
+    norm(ψ::GMPS)
 
 Calculate the norm of an GMPS.
 """
-function LinearAlgebra.norm(ψ::GMPS)
+function TeNe.norm(ψ::GMPS)
     if center(ψ) == 0
         movecenter!(ψ, 1)
     end
@@ -139,11 +148,11 @@ end
 
 Normalize a GMPS.
 """
-function LinearAlgebra.normalize!(ψ::GMPS)
+function TeNe.normalize!(ψ::GMPS)
     if center(ψ) == 0
         movecenter!(ψ, 1)
     end
-    ψ[center(ψ)] .*= LinearAlgebra.norm(ψ)^-1
+    ψ[center(ψ)] .*= TeNe.norm(ψ)^-1
 end
 
 
@@ -175,7 +184,7 @@ end
 
 Move the orthogonal center of an GMPS `ψ` to center `idx`.
 
-# Key arguments
+# Optional Keyword Arguments
 
     - `cutoff::Float64=0.0`: Truncation criteria to reduce the bond dimension.
       Good values range from 1e-8 to 1e-14.
@@ -225,7 +234,7 @@ Replace the tensors over a small range of sites in a GMPS.
     - `direction::Bool=false`: The sweeping direction; `true` is sweeping left, `false` sweeping right.
     - `normalize::Bool=false`: Normalize the GMPS after replacing the sites?
 
-# Key arguments
+# Optional Keyword Arguments
 
     - `cutoff::Float64=0.0`: Truncation criteria to reduce the bond dimension.
       Good values range from 1e-8 to 1e-14.
@@ -303,8 +312,8 @@ function replacesites!(ψ::GMPS, A, site::Int, direction::Bool=false, normalize:
 end
 
 ### Products with numbers
-import Base.*
-function *(ψ::AbstractMPS, a::Number)
+import Base.*, Base./
+function *(ψ::GMPS, a::Number)
     ϕ = deepcopy(ψ)
     if center(ψ) != 0
         ϕ.tensors[center(ϕ)] .*= a
@@ -313,8 +322,8 @@ function *(ψ::AbstractMPS, a::Number)
     end
     return ϕ
 end
-*(a::Number, ψ::AbstractMPS) = *(ψ, a)
-/(ψ::AbstractMPS, a::Number) = *(ψ, 1/a)
+*(a::Number, ψ::GMPS) = *(ψ, a)
+/(ψ::GMPS, a::Number) = *(ψ, 1/a)
 
 
 ### Adjusting the bond dimensions 
@@ -364,12 +373,13 @@ function expand!(ψ::GMPS, bonddim::Int, noise=0.0)
 end
 
 ### Conjugation
+export conj
 """
     conj(ψ::GMPS)
 
 Return the conjugate of the GMPS `ψ`.
 """
-function conj(ψ::GMPS)
+function TeNe.conj(ψ::GMPS)
     ϕ = GMPS(rank(ψ), dim(ψ), [conj.(ψ[i]) for i = Base.OneTo(length(ψ))])
     ϕ.center = ψ.center 
     return ϕ
@@ -397,6 +407,40 @@ function issimilar(ψ::GMPS, ϕ::GMPS)
     return true
 end
 
+### Initialising GMPS 
+export randomgmps
+function GMPS(rank::Int, d::Int, N::Int; T::Type=ComplexF64)
+    tensors = [zeros(T, (1, [d for __ = Base.OneTo(rank)]..., 1)) for _ = Base.OneTo(N)]
+    return GMPS{rank}(d, tensors, 0)
+end
+
+"""
+    randomgmps(rank::Int, dim::Int, length::Int, bonddim::Int; kwargs...)
+
+Create a GMPS with random entries.
+
+# Optional Keyword Arguments
+
+    - `T::Type=ComplexF64`: The element type for the tensors.
+"""
+function randomgmps(rank::Int, dim::Int, length::Int, bonddim::Int; T::Type=ComplexF64)
+    # Create the GMPS
+    ψ = GMPS(rank, dim, length)
+    for i = 1:length
+        D1 = i == 1 ? 1 : bonddim
+        D2 = i == length ? 1 : bonddim
+        idxs = (D1, ntuple(i->dim, rank)..., D2)
+        ψ[i] = randn(T, idxs)
+        if i > 1
+            _moveright!(ψ, i-1)
+            ψ.tensors[i] ./= norm(ψ[i])
+        end
+    end
+    ψ.center = length
+    movecenter!(ψ, 1)
+    return ψ
+end
+
 ### Information
 function Base.show(io::IO, ψ::GMPS)
     println(io, "$(typeof(ψ))")
@@ -406,8 +450,8 @@ function Base.show(io::IO, ψ::GMPS)
 end
 
 ### Creating copies
-Base.copy(ψ::GMPS) = typeof(ψ)(LinearAlgebra.rank(ψ), dim(ψ), ψ.tensors, center(ψ))
-Base.deepcopy(ψ::GMPS) = typeof(ψ)(Base.copy(LinearAlgebra.rank(ψ)), Base.copy(dim(ψ)), Base.copy(ψ.tensors),
+Base.copy(ψ::GMPS) = typeof(ψ)(TeNe.rank(ψ), dim(ψ), ψ.tensors, center(ψ))
+Base.deepcopy(ψ::GMPS) = typeof(ψ)(Base.copy(TeNe.rank(ψ)), Base.copy(dim(ψ)), Base.copy(ψ.tensors),
                                         Base.copy(center(ψ)))
 
 

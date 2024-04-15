@@ -13,7 +13,7 @@ export exp
 Calculate the exponential over a set of outer dimensions. 
 If unspecified, the innerdims will be assumed to be the remaining dimensions in order.
 
-# Key arguments
+# Optional Keyword Arguments
 
     - `prefactor`: multiply the matrix by a prefactor before exponetiating.
 

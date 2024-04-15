@@ -158,7 +158,7 @@ end
 function _contract!(z, x, y, sx, sy, cix, ciy, rix, riy, pix, piy, conjx, conjy)
     # Permute tensors
     px = permutedims!(cache(x, _contract_dims(sx, pix)), x, pix)
-    py = permutedims!(cache(y, _contract_dims(sy, piy),
+    py = permutedims!(cache(y, _contract_dims(sy, piy), 1,
                       length(x) == length(y) ? 2 : 1),y, piy)
 
     # Conjugations 
