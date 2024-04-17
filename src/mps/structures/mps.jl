@@ -4,34 +4,35 @@
     degrees of freedom.
 =#
 
-const MPS = GMPS{1}
+### Conjugation of MPS 
+export conj
+struct ConjMPS <: AbstractMPS
+    MPS::GMPS{1}
+end
+TeNe.conj(ψ::GMPS{1}) = ConjMPS(ψ)
+TeNe.conj(ψ::ConjMPS) = ψ.MPS
+Base.collect(ψ::ConjMPS) = ψ.MPS # Don't like using collect here... Anything else to use?
+
+const MPS = Union{GMPS{1}, ConjMPS}
 export MPS 
 
-
+export ismps
 """
     ismps(ψ)
 
 Check to see if an object is an MPS.
 """
 function ismps(ψ)
-    return typeof(ψ) == MPS
+    return typeof(ψ) <: MPS
 end
-
-
-### Conjugation of MPS 
-export conj
-struct ConjMPS <: AbstractMPS
-    MPS::GMPS
-end
-TeNe.conj(ψ::MPS) = ConjMPS(ψ)
-Base.collect(ψ::ConjMPS) = ψ.MPS # Don't like using collect here... Anything else to use?
 
 ### Initalising MPSs 
 export randommps, productmps
+
 """
     MPS(dim::Int, length::Int)
 
-Create a MPS with physical dimension `dim` and `length` sites.
+Create an MPS with physical dimension `dim` and `length` sites.
 
 # Optional Keyword Arguments
 
@@ -40,7 +41,6 @@ Create a MPS with physical dimension `dim` and `length` sites.
 function MPS(dim::Int, length::Int; kwargs...)
     return GMPS(1, dim, length; kwargs...)
 end
-
 
 """
     randommps(dim::Int, length::Int, bonddim::Int)
@@ -59,7 +59,7 @@ end
 """
     productmps(N::Int, A<:AbstractArray; kwargs...)
 
-Create a proudct MPS of size `N`, composed of array `A`. 
+Create a product MPS of size `N`, composed of array `A`. 
 `A` can be a vector or rank-3 tensor.
 
 # Optional Keyword Arguments
@@ -81,7 +81,7 @@ function productmps(N::Int, A::Q; T::Type=ComplexF64, normalize::Bool=false) whe
         end
         ψ[N] = A[:, :, end:end]
     else
-        throw(ArgumentError("You must provide an MPS with just one or three dimensions."))
+        throw(ArgumentError("You must provide an array with just one or three dimensions."))
     end
     if normalize 
         movecenter!(ψ, 1)
@@ -94,16 +94,36 @@ end
 ### Inner products 
 export inner, dot
 
-function inner(ψ::Union{MPS, ConjMPS}, ϕ::Union{MPS, ConjMPS})
+"""
+    inner(ψ::MPS, ϕ::MPS)
+
+Calculate the inner product of two MPSs `ψ` and `ϕ`.
+"""
+function inner(ψ::MPS, ϕ::MPS)
     # Checks 
     if !issimilar(collect(ψ), collect(ϕ))
         throw(ArgumentError("Arguments have properties that do not match."))
     end
-    return _mps_mps_product(collect(ψ), collect(ϕ), typeof(ψ)==MPS, typeof(ϕ)==ConjMPS)
+    return _mps_mps_product(collect(ψ), collect(ϕ), typeof(ψ)==GMPS{1}, typeof(ϕ)==ConjMPS)
 end
-dot(ψ::Union{MPS, ConjMPS}, ϕ::Union{MPS, ConjMPS}) = inner(ϕ, ψ)
 
-function _mps_mps_product(ψ::MPS, ϕ::MPS, conjψ::Bool=true, conjϕ::Bool=false)
+"""
+    dot(ψ::MPS, ϕ::MPS)
+
+Calculate the inner product of two MPSs `ψ` and `ϕ`.
+"""
+dot(ψ::MPS, ϕ::MPS) = inner(ψ, ϕ)
+
+import Base.*
+"""
+    *(ψ::MPS, ϕ::MPS)
+
+Calculate the inner product of two MPSs `ψ` and `ϕ`.
+"""
+*(ψ::MPS, ϕ::MPS) = inner(ψ, ϕ)
+
+
+function _mps_mps_product(ψ::MPS, ϕ::MPS, conjψ::Bool, conjϕ::Bool)
     T = Base.promote_op(*, eltype(ψ), eltype(ϕ))
     dims_prev = (size(ψ[begin], 1), size(ϕ[begin], 1))
     block = cache(T, dims_prev, 2, 1)
