@@ -2,7 +2,7 @@
     Generalised matrix product states describe a decomposition of one-dimensional
     space into a product of tensors, where each tensor has the physical dimensions
     for a local subsystem. The generalised here means that any rank tensor can be
-    decomposed into MPS representation: e.g., a vector is an MPO, operator is an
+    decomposed into MPS representation: e.g., a vector is an MPS, operator is an
     MPO... Functionality for specific structures, such as an MPS, can be found
     seperately.
 =#
@@ -390,21 +390,22 @@ end
 
 ### Check to see if MPS share properties 
 """
-    issimilar(ψ::GMPS, ϕ::GMPS)
+    issimilar(::GMPS...)
 
-Check to see if GMPS `ψ` and `ϕ` share the same properties.
+Check to see if GMPSs share the same properties
 """
-function issimilar(ψ::GMPS, ϕ::GMPS)
-    rank(ψ) != rank(ϕ) && return false 
-    length(ψ) != length(ϕ) && return false 
-    if dim(ϕ) == 0 || dim(ψ) == 0
-        for i = 1:length(ψ)
-            ψ_dims = map(j -> size(ψ[i], j), Base.range(2, 1+rank(ψ)))
-            ϕ_dims = map(j -> size(ϕ[i], j), Base.range(2, 1+rank(ϕ)))
-            ψ_dims != ϕ_dims && return false
+function issimilar(ψs::GMPS...)
+    for i = Base.range(2, length(ψs))
+        length(ψs[i]) != length(ψs[1]) && return false 
+        if dim(ψs[1]) == 0 || dim(ψs[i]) == 0
+            for j = 1:length(ψ)
+                ψ_dims = map(k -> size(ψs[1][j], k), Base.range(2, 1+rank(ψs[1])))
+                ϕ_dims = map(k -> size(ψs[i][j], k), Base.range(2, 1+rank(ψs[i])))
+                ψ_dims != ϕ_dims && return false
+            end
+        elseif dim(ψs[1]) != dim(ψs[i])
+            return false 
         end
-    elseif dim(ϕ) != dim(ψ)
-        return false 
     end
     return true
 end
@@ -482,5 +483,5 @@ function HDF5.read(parent::Union{HDF5.File, HDF5.Group}, name::AbstractString,
     center = read(g, "center")
     tensors = [read(g, "MPS[$(i)]") for i=Base.OneTo(N)]
     rank = read(g, "rank")
-    return GMPS(rank, size(tensors[1])[2], tensors, center)
+    return GMPS{rank}(size(tensors[1])[2], tensors, center)
 end
