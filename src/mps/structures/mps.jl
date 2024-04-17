@@ -18,6 +18,14 @@ function ismps(ψ)
 end
 
 
+### Conjugation of MPS 
+export conj
+struct ConjMPS <: AbstractMPS
+    MPS::GMPS
+end
+TeNe.conj(ψ::MPS) = ConjMPS(ψ)
+Base.collect(ψ::ConjMPS) = ψ.MPS # Don't like using collect here... Anything else to use?
+
 ### Initalising MPSs 
 export randommps, productmps
 """
@@ -84,9 +92,18 @@ end
 
 
 ### Inner products 
-export inner 
+export inner, dot
 
-function _mps_mps_product(ψ::MPS, ϕ::MPS; conjψ::Bool=true, conjϕ::Bool=false)
+function inner(ψ::Union{MPS, ConjMPS}, ϕ::Union{MPS, ConjMPS})
+    # Checks 
+    if !issimilar(collect(ψ), collect(ϕ))
+        throw(ArgumentError("Arguments have properties that do not match."))
+    end
+    return _mps_mps_product(collect(ψ), collect(ϕ), typeof(ψ)==MPS, typeof(ϕ)==ConjMPS)
+end
+dot(ψ::Union{MPS, ConjMPS}, ϕ::Union{MPS, ConjMPS}) = inner(ϕ, ψ)
+
+function _mps_mps_product(ψ::MPS, ϕ::MPS, conjψ::Bool=true, conjϕ::Bool=false)
     T = Base.promote_op(*, eltype(ψ), eltype(ϕ))
     dims_prev = (size(ψ[begin], 1), size(ϕ[begin], 1))
     block = cache(T, dims_prev, 2, 1)

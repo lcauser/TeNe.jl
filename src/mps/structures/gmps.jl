@@ -64,6 +64,8 @@ function Base.setindex!(ψ::GMPS, x, i::Int)
     ψ.tensors[i...] = x
 end
 
+Base.collect(ψ::GMPS) = ψ
+
 ### MPS Properties 
 export rank, dim, center, bonddim, maxbonddim
 
