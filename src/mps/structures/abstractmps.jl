@@ -38,3 +38,7 @@ movecenter!(ψ::GMPSTrait, site::Int) = movecenter!(ψ.MPS, site)
 bonddim(ψ::GMPSTrait, site::Int) = bonddim(ψ.MPS, site)
 maxbonddim(ψ::GMPSTrait) = maxbonddim(ψ.MPS)
 TeNe.norm(ψ::GMPSTrait) = TeNe.norm(ψ.MPS)
+
+# Default properties to false, but override later for true...
+isconj(ψ) = false 
+istranspose(ψ) = false

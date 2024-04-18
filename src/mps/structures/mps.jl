@@ -128,10 +128,10 @@ function _mps_mps_product(ψ::MPS, ϕ::MPS)
         # Caching...
         dims1 = (dims_prev[2], size(ψ[i], 2), size(ψ[i], 3))
         dims2 = (size(ψ[i], 3), size(ϕ[i], 3))
-        sub_level = (prod(dims_prev) == prod(dims1)) || (prod(dims1) == prod(dims2)) ? 2 : 1
+        #sub_level = (prod(dims_prev) == prod(dims1)) || (prod(dims1) == prod(dims2)) ? 2 : 1
 
         # Contract the new block 
-        block_new = contract(block, ψ[i], 1, 1, false, conjψ; sublevel=sub_level)
+        block_new = contract(block, ψ[i], 1, 1, false, conjψ)
         block = contract(block_new, ϕ[i], (1, 2), (1, 2), false, conjϕ)
         dims_prev = dims2
     end

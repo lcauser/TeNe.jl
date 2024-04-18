@@ -459,4 +459,3 @@ end
 TeNe.conj(ψ::GMPS) = ConjGMPS(ψ)
 TeNe.conj(ψ::ConjGMPS) = ψ.MPS
 isconj(ψ::ConjGMPS) = true
-isconj(ψ::GMPS) = false

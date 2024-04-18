@@ -43,7 +43,7 @@ julia> size(z)
 (3, 4, 6, 7)
 ```
 """
-function contract(x, y, cix, ciy, conjx::Bool=false, conjy::Bool=false; tocache::Bool=true, sublevel::Int=1)
+function contract(x, y, cix, ciy, conjx::Bool=false, conjy::Bool=false; tocache::Bool=true, sublevel=:auto)
     # Dimensions of the problem
     _contract_checkdims(x, y, cix, ciy)
     sx, sy, rix, riy, pix, piy = _contract_permuted_dimensions(x, y, cix, ciy)
@@ -52,7 +52,18 @@ function contract(x, y, cix, ciy, conjx::Bool=false, conjy::Bool=false; tocache:
     t = Base.promote_op(*, eltype(x), eltype(y))
     dims = (_contract_dims(sx, rix)...,  _contract_dims(sy, riy)...)
     if tocache
-        z = cache(t, dims, 2, sublevel; backend=typeof(get_backend(x)))
+        if sublevel == :auto 
+            sublevel = 1
+            z = cache(t, dims, 2, sublevel; backend=typeof(get_backend(x)))
+            if prod(dims) == prod(sx) || prod(dims) != prod(sy)
+                while Base.mightalias(x, z) || Base.mightalias(y, z)
+                    sublevel += 1
+                    z = cache(t, dims, 2, sublevel; backend=typeof(get_backend(x)))
+                end
+            end
+        else
+            z = cache(t, dims, 2, sublevel; backend=typeof(get_backend(x)))
+        end
     else
         z = zeros(t, dims...)
     end

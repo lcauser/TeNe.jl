@@ -5,13 +5,14 @@
 =#
 
 ### Traits for MPOs 
-export conj, transpose, adjoint
+export conj, transpose, adjoint, istranspose
 # Transpose
 struct TransposeMPO <: GMPSTrait
     MPS::GMPS{2}
 end
 TeNe.transpose(O::GMPS{2}) = TransposeMPO(O)
 TeNe.transpose(O::TransposeMPO) = O.MPS
+istranspose(ψ::TransposeMPO) = true
 
 # Adjoint
 struct AdjointMPO <: GMPSTrait
@@ -19,6 +20,8 @@ struct AdjointMPO <: GMPSTrait
 end
 TeNe.adjoint(O::GMPS{2}) = AdjointMPO(O)
 TeNe.adjoint(O::AdjointMPO) = O.MPS
+isconj(ψ::AdjointMPO) = true
+istranspose(ψ::AdjointMPO) = true
 
 # Trait rules
 TeNe.conj(O::TransposeMPO) = AdjointMPO(O.MPS)
@@ -113,8 +116,30 @@ function productmpo(N::Int, A::Q; T::Type=ComplexF64) where {Q<:AbstractArray}
     return O
 end
 
-
 ### Inner products 
-#function _mps_mpo_mps_product(ψ, ϕ, conjs, transposes, Os...)
-#
-#end
+#=
+function _mps_mpo_mps_product(ψ::MPS, Os::MPO..., ϕ::MPS)
+    # Type info...
+    T = Base.promote_op(*, eltype(ψ), eltype(ϕ), eltype.(Os)...)
+
+    # Contraction 
+    dims_prev = (size(ψ[begin], 1), map(O->size(O[begin], 1), Os)..., size(ϕ[begin], 1))
+    sub_level_prev = 1
+    block = cache(T, dims_prev, 2, sub_level_prev)
+    block .= 1
+    for i = 1:length(ψ)
+        # Contract with ψ
+        dims1 = (dims_prev[2:end]..., size(ψ[i], 2), size(ψ[i], 3))
+
+        # Caching...
+        dims1 = (dims_prev[2], size(ψ[i], 2), size(ψ[i], 3))
+        dims2 = (size(ψ[i], 3), size(ϕ[i], 3))
+        sub_level = (prod(dims_prev) == prod(dims1)) || (prod(dims1) == prod(dims2)) ? 2 : 1
+
+        # Contract the new block 
+        block_new = contract(block, ψ[i], 1, 1, false, conjψ; sublevel=sub_level)
+        block = contract(block_new, ϕ[i], (1, 2), (1, 2), false, conjϕ)
+        dims_prev = dims2
+    end
+end
+=#
