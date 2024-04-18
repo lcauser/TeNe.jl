@@ -22,7 +22,7 @@ include("tensors/exp.jl")
 include("tensors/svd.jl")
 
 # MPS 
-abstract type AbstractMPS end
+include("mps/structures/abstractmps.jl")
 include("mps/structures/gmps.jl")
 include("mps/structures/mps.jl")
 include("mps/structures/mpo.jl")

@@ -64,7 +64,7 @@ function Base.setindex!(ψ::GMPS, x, i::Int)
     ψ.tensors[i...] = x
 end
 
-Base.collect(ψ::GMPS) = ψ
+#Base.collect(ψ::GMPS) = ψ
 
 ### MPS Properties 
 export rank, dim, center, bonddim, maxbonddim
@@ -374,41 +374,6 @@ function expand!(ψ::GMPS, bonddim::Int, noise=0.0)
     movecenter!(ψ, 1)
 end
 
-### Conjugation
-export conj
-"""
-    conj(ψ::GMPS)
-
-Return the conjugate of the GMPS `ψ`.
-"""
-function TeNe.conj(ψ::GMPS)
-    ϕ = GMPS(rank(ψ), dim(ψ), [conj.(ψ[i]) for i = Base.OneTo(length(ψ))])
-    ϕ.center = ψ.center 
-    return ϕ
-end
-
-
-### Check to see if MPS share properties 
-"""
-    issimilar(::GMPS...)
-
-Check to see if GMPSs share the same properties
-"""
-function issimilar(ψs::GMPS...)
-    for i = Base.range(2, length(ψs))
-        length(ψs[i]) != length(ψs[1]) && return false 
-        if dim(ψs[1]) == 0 || dim(ψs[i]) == 0
-            for j = 1:length(ψ)
-                ψ_dims = map(k -> size(ψs[1][j], k), Base.range(2, 1+rank(ψs[1])))
-                ϕ_dims = map(k -> size(ψs[i][j], k), Base.range(2, 1+rank(ψs[i])))
-                ψ_dims != ϕ_dims && return false
-            end
-        elseif dim(ψs[1]) != dim(ψs[i])
-            return false 
-        end
-    end
-    return true
-end
 
 ### Initialising GMPS 
 export randomgmps
@@ -485,3 +450,13 @@ function HDF5.read(parent::Union{HDF5.File, HDF5.Group}, name::AbstractString,
     rank = read(g, "rank")
     return GMPS{rank}(size(tensors[1])[2], tensors, center)
 end
+
+### Conjugation of GMPS 
+export conj, isconj
+struct ConjGMPS{r} <: GMPSTrait where {r}
+    MPS::GMPS{r}
+end
+TeNe.conj(ψ::GMPS) = ConjGMPS(ψ)
+TeNe.conj(ψ::ConjGMPS) = ψ.MPS
+isconj(ψ::ConjGMPS) = true
+isconj(ψ::GMPS) = false

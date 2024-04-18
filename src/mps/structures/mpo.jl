@@ -6,37 +6,30 @@
 
 ### Traits for MPOs 
 export conj, transpose, adjoint
-# Conjugation
-struct ConjMPO <: AbstractMPS
-    MPO::GMPS{2}
-end
-TeNe.conj(O::GMPS{2}) = ConjMPO(O)
-TeNe.conj(O::ConjMPO) = O.MPO
-
 # Transpose
-struct TransposeMPO <: AbstractMPS
-    MPO::GMPS{2}
+struct TransposeMPO <: GMPSTrait
+    MPS::GMPS{2}
 end
 TeNe.transpose(O::GMPS{2}) = TransposeMPO(O)
-TeNe.transpose(O::TransposeMPO) = O.MPO
+TeNe.transpose(O::TransposeMPO) = O.MPS
 
 # Adjoint
-struct AdjointMPO <: AbstractMPS
-    MPO::GMPS{2}
+struct AdjointMPO <: GMPSTrait
+    MPS::GMPS{2}
 end
 TeNe.adjoint(O::GMPS{2}) = AdjointMPO(O)
-TeNe.adjoint(O::AdjointMPO) = O.MPO
+TeNe.adjoint(O::AdjointMPO) = O.MPS
 
 # Trait rules
-TeNe.conj(O::TransposeMPO) = AdjointMPO(O.MPO)
-TeNe.conj(O::AdjointMPO) = TransposeMPO(O.MPO)
-TeNe.transpose(O::ConjMPO) = AdjointMPO(O.MPO)
-TeNe.transpose(O::AdjointMPO) = ConjMPO(O.MPO)
-TeNe.adjoint(O::ConjMPO) = TransposeMPO(O.MPO)
-TeNe.adjoint(O::TransposeMPO) = ConjMPO(O.MPO)
+TeNe.conj(O::TransposeMPO) = AdjointMPO(O.MPS)
+TeNe.conj(O::AdjointMPO) = TransposeMPO(O.MPS)
+TeNe.transpose(O::ConjGMPS{2}) = AdjointMPO(O.MPS)
+TeNe.transpose(O::AdjointMPO) = ConjGMPS(O.MPS)
+TeNe.adjoint(O::ConjGMPS{2}) = TransposeMPO(O.MPS)
+TeNe.adjoint(O::TransposeMPO) = ConjGMPS(O.MPS)
 
 
-const MPO = Union{GMPS{2}, ConjMPO, TransposeMPO, AdjointMPO}
+const MPO = Union{GMPS{2}, ConjGMPS{2}, TransposeMPO, AdjointMPO}
 export MPO 
 
 
@@ -78,7 +71,7 @@ with random tensors.
     - `T::Type=ComplexF64`: The element type for the tensors.
 """
 function randommpo(dim::Int, length::Int, bonddim::Int; kwargs...)
-    return randomgmpo(2, dim, length, bonddim; kwargs...)
+    return randomgmps(2, dim, length, bonddim; kwargs...)
 end
 
 

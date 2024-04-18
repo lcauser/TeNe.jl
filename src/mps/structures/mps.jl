@@ -4,16 +4,7 @@
     degrees of freedom.
 =#
 
-### Conjugation of MPS 
-export conj
-struct ConjMPS <: AbstractMPS
-    MPS::GMPS{1}
-end
-TeNe.conj(ψ::GMPS{1}) = ConjMPS(ψ)
-TeNe.conj(ψ::ConjMPS) = ψ.MPS
-Base.collect(ψ::ConjMPS) = ψ.MPS # Don't like using collect here... Anything else to use?
-
-const MPS = Union{GMPS{1}, ConjMPS}
+const MPS = Union{GMPS{1}, ConjGMPS{1}}
 export MPS 
 
 export ismps
@@ -101,10 +92,10 @@ Calculate the inner product of two MPSs `ψ` and `ϕ`.
 """
 function inner(ψ::MPS, ϕ::MPS)
     # Checks 
-    if !issimilar(collect(ψ), collect(ϕ))
+    if !issimilar(ψ, ϕ)
         throw(ArgumentError("Arguments have properties that do not match."))
     end
-    return _mps_mps_product(collect(ψ), collect(ϕ), typeof(ψ)==GMPS{1}, typeof(ϕ)==ConjMPS)
+    return _mps_mps_product(ψ, ϕ)
 end
 
 """
@@ -123,8 +114,13 @@ Calculate the inner product of two MPSs `ψ` and `ϕ`.
 *(ψ::MPS, ϕ::MPS) = inner(ψ, ϕ)
 
 
-function _mps_mps_product(ψ::MPS, ϕ::MPS, conjψ::Bool, conjϕ::Bool)
+function _mps_mps_product(ψ::MPS, ϕ::MPS)
+    # Type info...
     T = Base.promote_op(*, eltype(ψ), eltype(ϕ))
+    conjψ = !isconj(ψ) # Not because inner product has conj on bra by default...
+    conjϕ = isconj(ϕ)
+
+    # Contract the network...
     dims_prev = (size(ψ[begin], 1), size(ϕ[begin], 1))
     block = cache(T, dims_prev, 2, 1)
     block .= 1
