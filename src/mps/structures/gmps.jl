@@ -273,7 +273,7 @@ function replacesites!(ψ::GMPS, A, site::Int, direction::Bool=false, normalize:
             site1 = site+nsites-i
 
             # Apply SVD and determine the tensors
-            U, S, V = svd(U, -1; kwargs...)
+            U, S, V = tsvd(U, ndims(U); kwargs...)
             U = contract(U, S, length(size(U)), 1)
             D = site1 == length(ψ) ? 1 : size(ψ[site1+1])[1]
             dims = (size(S)[2], [dim(ψ) for i=1:rank(ψ)]..., D)
@@ -291,7 +291,7 @@ function replacesites!(ψ::GMPS, A, site::Int, direction::Bool=false, normalize:
             site1 = site + i - 1
 
             # Apply SVD and determine the tensors
-            U, S, V = svd(U, -1; kwargs...)
+            U, S, V = svd(U, ndims(U); kwargs...)
             U = contract(U, S, length(size(U)), 1)
             U = moveidx(U, length(size(U)), 1)
             D = site1 == 1 ? 1 : size(ψ[site1-1])[2+rank(ψ)]
@@ -358,7 +358,7 @@ end
 Increase the bond dimension of a GMPS `ψ` to `bonddim`. 
 Optionally, make the new parameters noisy, with strength `noise`.
 """
-function expand!(ψ::GMPS, bonddim::Int, noise=0.0)
+function expand!(ψ::GMPS, bonddim::Int, noise=0)
     movecenter!(ψ, 1)
     for i = 1:length(ψ)
         D1 = i == 1 ? 1 : bonddim 
