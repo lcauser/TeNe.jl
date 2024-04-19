@@ -224,6 +224,7 @@ end
 
 ### Applying an MPO 
 
+
 # Naive method; do the contraction exactly and then truncate
 function _mpo_mps_naive!(ϕ::MPS, O::MPO, ψ::MPS; kwargs...)
     # Move canonical centre of both to the first site 
@@ -245,6 +246,30 @@ function _mpo_mps_naive!(ϕ::MPS, O::MPO, ψ::MPS; kwargs...)
         movecenter!(ϕ, i; kwargs...)
     end
     movecenter!(ϕ, 1; kwargs...)
+end
+
+function _mpo_mpo_naive!(O::MPO, O1::MPO, O2::MPO; kwargs...)
+    # Move canonical centre of both to the first site 
+    movecenter!(O1, 1)
+    movecenter!(O2, 1)
+    
+    # Type info...
+    conjO1 = isconj(O1)
+    conjO2 = isconj(O2)
+    transO1 = istranspose(O1)
+    transO2 = istranspose(O2)
+
+    # Do the contraction 
+    O.center = 1
+    for i in eachindex(O)
+        tensor = contract(O1[i], O2[i], transO1 ? 2 : 3, transO2 ? 3 : 2, conjO1, conjO2)
+        tensor = _permutedims(tensor, (1, 4, 2, 5, 3, 6))
+        tensor = reshape(tensor, (size(tensor, 1)*size(tensor, 2), size(tensor, 3), size(tensor, 4),
+                                  size(tensor, 5)*size(tensor, 6)))
+        O[i] = copy(tensor)
+        movecenter!(O, i; kwargs...)
+    end
+    movecenter!(O, 1; kwargs...)
 end
 
 # Zip-up method: see ``E.M. Stoudenmire, Steven R. White, New J. Phys. 12, 055026 (2010)``
