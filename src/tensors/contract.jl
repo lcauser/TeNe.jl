@@ -22,8 +22,8 @@ Contract tensors `x` and `y` across dimensions `cix` and `ciy`, and returns it a
 
 # Optional Keyword Arguments
     
-    - `tocache::Bool=false`: store the result in the second level of the cache?
-    - `sublevel::Int=1`: if stored in cache, at which sublevel?
+    - `tocache::Bool=true`: store the result in the second level of the cache?
+    - `sublevel=:auto`: if stored in cache, at which sublevel? :auto finds non-aliased memory
 
 # Examples 
 
@@ -43,7 +43,7 @@ julia> size(z)
 (3, 4, 6, 7)
 ```
 """
-function contract(x, y, cix, ciy, conjx::Bool=false, conjy::Bool=false; tocache::Bool=false, sublevel::Int=1)
+function contract(x, y, cix, ciy, conjx::Bool=false, conjy::Bool=false; tocache::Bool=true, sublevel=:auto)
     # Dimensions of the problem
     _contract_checkdims(x, y, cix, ciy)
     sx, sy, rix, riy, pix, piy = _contract_permuted_dimensions(x, y, cix, ciy)
@@ -52,7 +52,18 @@ function contract(x, y, cix, ciy, conjx::Bool=false, conjy::Bool=false; tocache:
     t = Base.promote_op(*, eltype(x), eltype(y))
     dims = (_contract_dims(sx, rix)...,  _contract_dims(sy, riy)...)
     if tocache
-        z = cache(t, dims, 2, sublevel; backend=typeof(get_backend(x)))
+        if sublevel == :auto 
+            sublevel = 1
+            z = cache(t, dims, 2, sublevel; backend=typeof(get_backend(x)))
+            if prod(dims) == prod(sx) || prod(dims) != prod(sy)
+                while Base.mightalias(x, z) || Base.mightalias(y, z)
+                    sublevel += 1
+                    z = cache(t, dims, 2, sublevel; backend=typeof(get_backend(x)))
+                end
+            end
+        else
+            z = cache(t, dims, 2, sublevel; backend=typeof(get_backend(x)))
+        end
     else
         z = zeros(t, dims...)
     end
@@ -60,8 +71,8 @@ function contract(x, y, cix, ciy, conjx::Bool=false, conjy::Bool=false; tocache:
     return z
 end
 
-function contract(x, y, cix::Int, ciy::Int, conjx::Bool=false, conjy::Bool=false)
-    return contract(x, y, (cix,), (ciy,), conjx, conjy)
+function contract(x, y, cix::Int, ciy::Int, conjx::Bool=false, conjy::Bool=false; kwargs...)
+    return contract(x, y, (cix,), (ciy,), conjx, conjy; kwargs...)
 end
 
 
@@ -158,7 +169,7 @@ end
 function _contract!(z, x, y, sx, sy, cix, ciy, rix, riy, pix, piy, conjx, conjy)
     # Permute tensors
     px = permutedims!(cache(x, _contract_dims(sx, pix)), x, pix)
-    py = permutedims!(cache(y, _contract_dims(sy, piy),
+    py = permutedims!(cache(y, _contract_dims(sy, piy), 1,
                       length(x) == length(y) ? 2 : 1),y, piy)
 
     # Conjugations 

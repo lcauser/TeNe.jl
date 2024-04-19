@@ -11,8 +11,8 @@ Permute dimension with position `i` to position `j` for tensor `x`.
 
 # Optional Keyword Arguments
     
-    - `tocache::Bool=false`: store the result in the second level of the cache?
-    - `sublevel::Int=1`: if stored in cache, at which sublevel?
+    - `tocache::Bool=true`: store the result in the second level of the cache?
+    - `sublevel=:auto`: if stored in cache, at which sublevel? :auto finds non-aliased memory
 
 # Examples 
 
@@ -23,14 +23,25 @@ julia> size(x)
 (2, 4, 5, 3)
 ```
 """
-function permutedim(x, i::Int, j::Int; tocache::Bool=false, sublevel::Int=1)
+function permutedim(x, i::Int, j::Int; tocache::Bool=true, sublevel=:auto)
     i == j && return copy(x)
     if j==-1 j=ndims(x) end
     _permutedim_checkbounds(x, i, j)
     order = _permutedim_ordering(x, i, j)
-    dims = (size(x, k) for k in order)
+    dims = map(k->size(x, k), order)
     if tocache
-        z = cache(eltype(x), dims, 2, sublevel; backend=typeof(get_backend(x)))
+        if sublevel == :auto 
+            sublevel = 1
+            z = cache(eltype(x), dims, 2, sublevel; backend=typeof(get_backend(x)))
+            if prod(dims) == length(x)
+                while Base.mightalias(x, z)
+                    sublevel += 1
+                    z = cache(eltype(x), dims, 2, sublevel; backend=typeof(get_backend(x)))
+                end
+            end
+        else
+            z = cache(eltype(x), dims, 2, sublevel; backend=typeof(get_backend(x)))
+        end
     else
         z = zeros(eltype(x), dims...)
     end
@@ -94,3 +105,21 @@ function _permutedim_checkresult(z, x, dims)
 end
 
 
+### permutedims(...) with automatic allocation
+function _permutedims(x, order; sublevel=:auto)
+    dims = map(k->size(x, k), order)
+    if sublevel == :auto 
+        sublevel = 1
+        z = cache(eltype(x), dims, 2, sublevel; backend=typeof(get_backend(x)))
+        if prod(dims) == length(x)
+            while Base.mightalias(x, z)
+                sublevel += 1
+                z = cache(eltype(x), dims, 2, sublevel; backend=typeof(get_backend(x)))
+            end
+        end
+    else
+        z = cache(eltype(x), dims, 2, sublevel; backend=typeof(get_backend(x)))
+    end
+    permutedims!(z, x, order)
+    return z
+end

@@ -9,13 +9,13 @@ export tsvd
 
 ### Perform a singular value decomposition 
 """
-    svd(x, dims; kwargs...)
-    svd(x, dim::Int; kwargs...)
+    tsvd(x, dims; kwargs...)
+    tsvd(x, dim::Int; kwargs...)
 
 Computer a singular value decomposition of tensor `x`. Seperates the dimensions
 `dims` from the remainder.
 
-# Key arguments
+# Optional Keyword Arguments
 
     - `cutoff::Float64=0.0`: Truncation criteria to reduce the bond dimension.
       Good values range from 1e-8 to 1e-14.

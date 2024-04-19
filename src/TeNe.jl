@@ -5,6 +5,7 @@ using LinearAlgebra
 using LRUCache
 using StaticArrays
 using KernelAbstractions
+using HDF5
 
 # Caching; intermediate contractions memory can be pre-allocated and reused.
 const _CACHE_MEM_LIM = 4294967296
@@ -20,4 +21,9 @@ include("tensors/combinedims.jl")
 include("tensors/exp.jl")
 include("tensors/svd.jl")
 
+# MPS 
+include("mps/structures/abstractmps.jl")
+include("mps/structures/gmps.jl")
+include("mps/structures/mps.jl")
+include("mps/structures/mpo.jl")
 end

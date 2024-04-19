@@ -8,8 +8,8 @@
 =#
 
 # Returning & allocation memory from / to the cache given the data type and size(s)
-function cache(T::DataType, length::Int, level::Int, sublevel::Int, threadid::Int; kwargs...)
-    backend::DataType = get(kwargs, :backend, CPU)
+function cache(T::DataType, length::Int, level::Int, sublevel::Int, threadid::Int;
+               backend::DataType=CPU)
     if !haskey(_CACHE, (T, length, level, sublevel, threadid))
         _CACHE[(T, length, level, sublevel, threadid)] = zeros(T, length)
     end
