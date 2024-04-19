@@ -224,22 +224,42 @@ end
 
 ### Applying an MPO 
 
+# Naive method; do the contraction exactly and then truncate
+function _mpo_mps_naive!(ϕ::MPS, O::MPO, ψ::MPS)
+    # Move canonical centre of both to the first site 
+    movecenter!(O, 1)
+    movecenter!(ψ, 1)
+    
+    # Type info...
+    conjO = isconj(O)
+    conjψ = isconj(ψ)
+    transO = istranspose(O)
+
+    # Do the contraction 
+    ϕ.center = 1
+    for i in eachindex(ϕ)
+        tensor = contract(O[i], ψ[i], transO ? 2 : 3, 2, conjO, conjψ)
+        tensor = permutedims(tensor, (1, 4, 2, 3, 5))
+        tensor = reshape(tensor, )
+    end
+end
+
+# Zip-up method: see ``E.M. Stoudenmire, Steven R. White, New J. Phys. 12, 055026 (2010)``
 function _mpo_mps_zipup!(ϕ::MPS, O::MPO, ψ::MPS; kwargs...)
     # Move canonical centre of both to the first site 
     movecenter!(O, 1)
     movecenter!(ψ, 1)
 
     # Type info...
-    T = Base.promote_op(*, eltype(O), eltype(ψ))
     conjO = isconj(O)
     conjψ = isconj(ψ)
     transO = istranspose(O)
 
     # Do the contraction
-    block = cache(T, (1, size(O[begin], 1), size(ψ[begin], 1)), 2, 1) .= 1
+    block = cache(eltype(ϕ), (1, size(O[begin], 1), size(ψ[begin], 1)), 2, 1) .= 1
     for i = 1:length(O)
         block = contract(block, O[i], 2, 1, false, conjO)
-        block = contract(block, ψ[i], (2, transO ? 3 : 4), (1, 2), false, conjψ)
+        block = contract(block, ψ[i], (2, transO ? 3 : 4), (1, 2), false, conjψ) 
         if i < length(O)
             U, S, block = tsvd(block, (3, 4); kwargs...)
             block = contract(S, block, 2, 1)
@@ -251,4 +271,33 @@ function _mpo_mps_zipup!(ϕ::MPS, O::MPO, ψ::MPS; kwargs...)
     end
     ϕ.center = length(ϕ)
     movecenter!(ϕ, 1; kwargs...)
+end
+
+function _mpo_mpo_zipup!(O::MPO, O1::MPO, O2::MPO; kwargs...)
+    # Move canonical centre of both to the first site 
+    movecenter!(O1, 1)
+    movecenter!(O2, 1)
+
+    # Type info...
+    conjO1 = isconj(O1)
+    conjO2 = isconj(O2)
+    transO1 = istranspose(O1)
+    transO2 = istranspose(O2)
+
+    # Do the contraction
+    block = cache(eltype(O), (1, size(O1[begin], 1), size(O2[begin], 1)), 2, 1) .= 1
+    for i = 1:length(O)
+        block = contract(block, O1[i], 2, 1, false, conjO1)
+        block = contract(block, O2[i], (2, transO1 ? 3 : 4), (1, transO2 ? 3 : 2), false, conjO2)
+        if i < length(O)
+            U, S, block = tsvd(block, (3, 5); kwargs...)
+            block = contract(S, block, 2, 1)
+            O[i] = U
+        else
+            block = reshape(block, (size(block, 1), size(block, 2), size(block, 4), 1))
+            O[i] = copy(block)
+        end
+    end
+    O.center = length(O)
+    movecenter!(O, 1; kwargs...)
 end
