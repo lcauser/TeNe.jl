@@ -122,7 +122,7 @@ end
 
 Calculate the expectation of a string of operators `Os` with respect to MPSs `ψ` and `ϕ`.
 """
-function inner(ψ::MPS, ϕs::GMPS...)
+function inner(ψ::MPS, ϕs::Union{GMPS, GMPSTrait}...)
     # Checks 
     if !issimilar(ψ, ϕs...)
         throw(ArgumentError("Arguments have properties that do not match."))
