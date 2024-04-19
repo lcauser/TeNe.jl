@@ -240,6 +240,8 @@ function applympo(O::MPO, ψ::MPS; alg=:naive, kwargs...)
     return ϕ
 end
 applympo(ψ::MPS, O::MPO; kwargs...) = applympo(transpose(O), ψ; kwargs...)
+*(O::MPO, ψ::MPS) = applympo(O, ψ; cutoff=1e-12)
+*(ψ::MPS, O::MPO) = applympo(ψ, O; cutoff=1e-12)
 
 function applympo(O1::MPO, O2::MPO; alg=:naive, kwargs...)
     if !issimilar(O1, O2)
@@ -255,6 +257,7 @@ function applympo(O1::MPO, O2::MPO; alg=:naive, kwargs...)
     end
     return O
 end
+*(O1::MPO, O2::MPO) = applympo(O1, O2; cutoff=1e-12)
 
 # Naive method; do the contraction exactly and then truncate
 function _mpo_mps_naive!(ϕ::MPS, O::MPO, ψ::MPS; kwargs...)
