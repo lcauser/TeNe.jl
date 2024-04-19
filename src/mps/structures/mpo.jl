@@ -223,7 +223,7 @@ function _mpo_mpo_trace(Os::MPO...)
 end
 
 ### Applying an MPO 
-# TODO: add densitymatrix method...
+# TODO: add densitymatrix method and variational method...
 export applympo
 function applympo(O::MPO, ψ::MPS; alg=:naive, kwargs...)
     if !issimilar(O, ψ)
