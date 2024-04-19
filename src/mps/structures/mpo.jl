@@ -117,29 +117,45 @@ function productmpo(N::Int, A::Q; T::Type=ComplexF64) where {Q<:AbstractArray}
 end
 
 ### Inner products 
-#=
-function _mps_mpo_mps_product(ψ::MPS, Os::MPO..., ϕ::MPS)
+"""
+    inner(ψ::MPS, Os::MPO..., ϕ::MPS)
+
+Calculate the expectation of a string of operators `Os` with respect to MPSs `ψ` and `ϕ`.
+"""
+function inner(ψ::MPS, ϕs::GMPS...)
+    # Checks 
+    if !issimilar(ψ, ϕs...)
+        throw(ArgumentError("Arguments have properties that do not match."))
+    end
+    for i = 1:length(ϕs)-1
+        if !ismpo(ϕs[i])
+            throw(ArgumentError("The inner terms in the braket must be MPOs."))
+        end
+    end
+    if !ismps(ϕs[end])
+        throw(ArgumentError("The last term in the MPS must be an MPO."))
+    end
+    return _mps_mpo_mps_product(ψ, ϕs[end], ϕs[1:end-1]...)
+end
+
+function _mps_mpo_mps_product(ψ::MPS, ϕ::MPS, Os::MPO...)
     # Type info...
     T = Base.promote_op(*, eltype(ψ), eltype(ϕ), eltype.(Os)...)
+    conjψ = !isconj(ψ) # Not because inner product has conj on bra by default...
+    conjϕ = isconj(ϕ)
+    conjOs = map(O->isconj(O), Os)
+    transOs = map(O->istranspose(O), Os)
 
     # Contraction 
-    dims_prev = (size(ψ[begin], 1), map(O->size(O[begin], 1), Os)..., size(ϕ[begin], 1))
-    sub_level_prev = 1
-    block = cache(T, dims_prev, 2, sub_level_prev)
-    block .= 1
+    dims = (size(ψ[begin], 1), map(O->size(O[begin], 1), Os)..., size(ϕ[begin], 1))
+    block = cache(T, dims, 2, 1) .= 1
     for i = 1:length(ψ)
-        # Contract with ψ
-        dims1 = (dims_prev[2:end]..., size(ψ[i], 2), size(ψ[i], 3))
-
-        # Caching...
-        dims1 = (dims_prev[2], size(ψ[i], 2), size(ψ[i], 3))
-        dims2 = (size(ψ[i], 3), size(ϕ[i], 3))
-        sub_level = (prod(dims_prev) == prod(dims1)) || (prod(dims1) == prod(dims2)) ? 2 : 1
-
-        # Contract the new block 
-        block_new = contract(block, ψ[i], 1, 1, false, conjψ; sublevel=sub_level)
-        block = contract(block_new, ϕ[i], (1, 2), (1, 2), false, conjϕ)
-        dims_prev = dims2
+        block = contract(block, ψ[i], 1, 1, false, conjψ)
+        for j = 1:length(Os)
+            block = contract(block, Os[j][i], (1, ndims(block)-1), (1, transOs[j] ? 3 : 2), false, conjOs[j])
+        end
+        block = contract(block, ϕ[i], (1, ndims(block)-1), (1, 2), false, conjϕ)
     end
+
+    return block[]
 end
-=#

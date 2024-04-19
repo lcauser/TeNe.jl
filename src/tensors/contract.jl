@@ -23,7 +23,7 @@ Contract tensors `x` and `y` across dimensions `cix` and `ciy`, and returns it a
 # Optional Keyword Arguments
     
     - `tocache::Bool=true`: store the result in the second level of the cache?
-    - `sublevel::Int=1`: if stored in cache, at which sublevel?
+    - `sublevel=:auto`: if stored in cache, at which sublevel? :auto finds non-aliased memory
 
 # Examples 
 

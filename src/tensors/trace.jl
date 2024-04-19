@@ -43,7 +43,7 @@ Compute the trace of `x` over dimension `cix`.
     
     - `conj::Bool=false`: take the conjugate?
     - `tocache::Bool=true`: store the result in the second level of the cache?
-    - `sublevel::Int=1`: if stored in cache, at which sublevel?
+    - `sublevel=:auto`: if stored in cache, at which sublevel? :auto finds non-aliased memory
 
 # Examples 
 
@@ -54,16 +54,28 @@ julia> size(y)
 (2, 4)
 ```
 """
-function trace(x, cix::Int...; conj::Bool=true, tocache::Bool=false, sublevel::Int=1)
+function trace(x, cix::Int...; conj::Bool=false, tocache::Bool=true, sublevel=:auto)
     # Fetch the dimensions & do checks 
     sx, rix, pos = _trace_dimensions(x, cix)
     _trace_check_args(sx, cix)
     
     # Create the tensor to store the result 
-    if tocache 
-        z = cache(eltype(x), map(x->sx[x], rix), 2, sublevel; backend=typeof(get_backend(x)))
+    dims = map(x->sx[x], rix)
+    if tocache
+        if sublevel == :auto 
+            sublevel = 1
+            z = cache(eltype(x), dims, 2, sublevel; backend=typeof(get_backend(x)))
+            if prod(dims) == length(x)
+                while Base.mightalias(x, z)
+                    sublevel += 1
+                    z = cache(eltype(x), dims, 2, sublevel; backend=typeof(get_backend(x)))
+                end
+            end
+        else
+            z = cache(eltype(x), dims, 2, sublevel; backend=typeof(get_backend(x)))
+        end
     else
-        z = zeros(eltype(x), map(x->sx[x], rix)...)
+        z = zeros(eltype(x), dims...)
     end
 
     # Do the trace 

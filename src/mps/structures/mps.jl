@@ -121,19 +121,11 @@ function _mps_mps_product(ψ::MPS, ϕ::MPS)
     conjϕ = isconj(ϕ)
 
     # Contract the network...
-    dims_prev = (size(ψ[begin], 1), size(ϕ[begin], 1))
-    block = cache(T, dims_prev, 2, 1)
-    block .= 1
+    block = cache(T, (size(ψ[begin], 1), size(ϕ[begin], 1)), 2, 1) .= 1
     for i = 1:length(ψ)
-        # Caching...
-        dims1 = (dims_prev[2], size(ψ[i], 2), size(ψ[i], 3))
-        dims2 = (size(ψ[i], 3), size(ϕ[i], 3))
-        #sub_level = (prod(dims_prev) == prod(dims1)) || (prod(dims1) == prod(dims2)) ? 2 : 1
-
         # Contract the new block 
         block_new = contract(block, ψ[i], 1, 1, false, conjψ)
         block = contract(block_new, ϕ[i], (1, 2), (1, 2), false, conjϕ)
-        dims_prev = dims2
     end
     return block[]
 end

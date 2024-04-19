@@ -54,7 +54,7 @@ the tensors.
 # Optional Keyword Arguments
     
     - `tocache::Bool=true`: store the result in the second level of the cache?
-    - `sublevel::Int=1`: if stored in cache, at which sublevel?
+    - `sublevel=:auto`: if stored in cache, at which sublevel? :auto finds non-aliased memory
 
 # Examples 
 
@@ -67,15 +67,26 @@ julia> size(z)
 ```
 """
 function tensorproduct(x, y, conjx::Bool=false, conjy::Bool=false;
-                       tocache::Bool=true, sublevel::Int=1)
+                       tocache::Bool=true, sublevel=:auto)
     # Checks on arguments 
     _tensorproduct_check_args(x, y)
 
     # Create the tensor to store the result 
     t = Base.promote_op(*, eltype(x), eltype(y))
     dims = (size(x)...,  size(y)...)
-    if tocache 
-        z = cache(t, dims, 2, sublevel; backend=typeof(get_backend(x)))
+    if tocache
+        if sublevel == :auto 
+            sublevel = 1
+            z = cache(t, dims, 2, sublevel; backend=typeof(get_backend(x)))
+            if prod(dims) == length(x) || prod(dims) != length(y)
+                while Base.mightalias(x, z) || Base.mightalias(y, z)
+                    sublevel += 1
+                    z = cache(t, dims, 2, sublevel; backend=typeof(get_backend(x)))
+                end
+            end
+        else
+            z = cache(t, dims, 2, sublevel; backend=typeof(get_backend(x)))
+        end
     else
         z = zeros(t, dims...)
     end
