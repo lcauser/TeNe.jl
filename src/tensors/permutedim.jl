@@ -105,3 +105,21 @@ function _permutedim_checkresult(z, x, dims)
 end
 
 
+### permutedims(...) with automatic allocation
+function _permutedims(x, order; sublevel=:auto)
+    dims = map(k->size(x, k), order)
+    if sublevel == :auto 
+        sublevel = 1
+        z = cache(eltype(x), dims, 2, sublevel; backend=typeof(get_backend(x)))
+        if prod(dims) == length(x)
+            while Base.mightalias(x, z)
+                sublevel += 1
+                z = cache(eltype(x), dims, 2, sublevel; backend=typeof(get_backend(x)))
+            end
+        end
+    else
+        z = cache(eltype(x), dims, 2, sublevel; backend=typeof(get_backend(x)))
+    end
+    permutedims!(z, x, order)
+    return z
+end

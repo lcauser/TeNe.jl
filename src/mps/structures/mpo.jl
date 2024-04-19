@@ -225,7 +225,7 @@ end
 ### Applying an MPO 
 
 # Naive method; do the contraction exactly and then truncate
-function _mpo_mps_naive!(ϕ::MPS, O::MPO, ψ::MPS)
+function _mpo_mps_naive!(ϕ::MPS, O::MPO, ψ::MPS; kwargs...)
     # Move canonical centre of both to the first site 
     movecenter!(O, 1)
     movecenter!(ψ, 1)
@@ -239,9 +239,12 @@ function _mpo_mps_naive!(ϕ::MPS, O::MPO, ψ::MPS)
     ϕ.center = 1
     for i in eachindex(ϕ)
         tensor = contract(O[i], ψ[i], transO ? 2 : 3, 2, conjO, conjψ)
-        tensor = permutedims(tensor, (1, 4, 2, 3, 5))
-        tensor = reshape(tensor, )
+        tensor = _permutedims(tensor, (1, 4, 2, 3, 5))
+        tensor = reshape(tensor, (size(tensor, 1)*size(tensor, 2), size(tensor, 3), size(tensor, 4)*size(tensor, 5)))
+        ϕ[i] = copy(tensor)
+        movecenter!(ϕ, i; kwargs...)
     end
+    movecenter!(ϕ, 1; kwargs...)
 end
 
 # Zip-up method: see ``E.M. Stoudenmire, Steven R. White, New J. Phys. 12, 055026 (2010)``
