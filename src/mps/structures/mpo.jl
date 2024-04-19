@@ -225,6 +225,24 @@ end
 ### Applying an MPO 
 # TODO: add densitymatrix method and variational method...
 export applympo
+
+"""
+    applympo(O::MPO, ψ::MPS; kwargs...)
+
+Apply MPO `O` to MPS `ψ`.
+
+# Optional Keyword Arguments
+
+    - `alg=:naive`: The algorithm to carry out the multiplication. Use :naive 
+      for an exact application, followed by SVD truncation. Use :zipup for quicker
+      but less precise applications of the MPO. Use :densitymatrix for a one-shot method 
+      with high accuracy. Use :variational for the slowest, but must optimal application.
+    - `cutoff::Float64=0.0`: Truncation criteria to reduce the bond dimension.
+      Good values range from 1e-8 to 1e-14.
+    - `mindim::Int=1`: Mininum dimension for truncated.
+    - `maxdim::Int=0`: Maximum bond dimension for truncation. Set to 0 to have
+      no limit.
+"""
 function applympo(O::MPO, ψ::MPS; alg=:naive, kwargs...)
     if !issimilar(O, ψ)
         throw(ArgumentError("Arguments have properties that do not match."))
@@ -243,6 +261,24 @@ applympo(ψ::MPS, O::MPO; kwargs...) = applympo(transpose(O), ψ; kwargs...)
 *(O::MPO, ψ::MPS) = applympo(O, ψ; cutoff=1e-12)
 *(ψ::MPS, O::MPO) = applympo(ψ, O; cutoff=1e-12)
 
+
+"""
+    applympo(O1::MPO, O2::MPO; kwargs...)
+
+Apply MPO `O1` to MPO `O2`.
+
+# Optional Keyword Arguments
+
+    - `alg=:naive`: The algorithm to carry out the multiplication. Use :naive 
+      for an exact application, followed by SVD truncation. Use :zipup for quicker
+      but less precise applications of the MPO. Use :densitymatrix for a one-shot method 
+      with high accuracy. Use :variational for the slowest, but must optimal application.
+    - `cutoff::Float64=0.0`: Truncation criteria to reduce the bond dimension.
+      Good values range from 1e-8 to 1e-14.
+    - `mindim::Int=1`: Mininum dimension for truncated.
+    - `maxdim::Int=0`: Maximum bond dimension for truncation. Set to 0 to have
+      no limit.
+"""
 function applympo(O1::MPO, O2::MPO; alg=:naive, kwargs...)
     if !issimilar(O1, O2)
         throw(ArgumentError("Arguments have properties that do not match."))
