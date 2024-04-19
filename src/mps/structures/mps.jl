@@ -122,7 +122,7 @@ function _mps_mps_product(ψ::MPS, ϕ::MPS)
 
     # Contract the network...
     block = cache(T, (size(ψ[begin], 1), size(ϕ[begin], 1)), 2, 1) .= 1
-    for i = 1:length(ψ)
+    for i in eachindex(ψ)
         # Contract the new block 
         block_new = contract(block, ψ[i], 1, 1, false, conjψ)
         block = contract(block_new, ϕ[i], (1, 2), (1, 2), false, conjϕ)

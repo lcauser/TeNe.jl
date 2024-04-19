@@ -159,3 +159,96 @@ function _mps_mpo_mps_product(ψ::MPS, ϕ::MPS, Os::MPO...)
 
     return block[]
 end
+
+
+### Computing traces of MPO (products)
+export trace
+
+"""
+    trace(Os::MPO...)
+
+Compute the trace of the product of many MPOs.
+"""
+function TeNe.trace(Os::MPO...)
+    # Checks 
+    issimilar(Os...)
+
+    if length(Os) == 1
+        return _mpo_trace(Os...)
+    else
+        return _mpo_mpo_trace(Os...)
+    end
+end
+
+function _mpo_trace(O::MPO)
+     # Type info...
+     T = eltype(O)
+     conjO = isconj(O)
+
+     # Do the contraction 
+    block = cache(T, size(O[begin], 1), 2, 1) .= 1
+    for i in eachindex(O)
+        block = contract(block, trace(O[i], 2, 3), 1, 1, false, conjO)
+    end
+    return block[]
+end
+
+function _mpo_mpo_trace(Os::MPO...)
+    # Type info...
+    T = Base.promote_op(*, eltype.(Os)...)
+    conjOs = map(O->isconj(O), Os)
+    transOs = map(O->istranspose(O), Os)
+
+    # Do the contraction 
+    block = cache(T, map(O->size(O[begin], 1), Os), 2, 1) .= 1
+    for i in eachindex(Os[1])
+        # Contract with the first MPO in the term
+        block = contract(block, Os[1][i], 1, 1, false, conjOs[1])
+        if transOs[1]
+            block = permutedim(block, ndims(block)-1, ndims(block)-2)
+        end
+
+        # Contract with the central MPOs
+        for j = 2:length(Os)-1
+            block = contract(block, Os[j][i], (1, ndims(block)-1),
+                            (1, transOs[j] ? 3 : 2), false, conjOs[j])
+        end
+
+        # Contract with final MPO 
+        block = contract(block, Os[end][i], (1, ndims(block)-1, 2),
+                         (1, transOs[end] ? 3 : 2, transOs[end] ? 2 : 3), false, conjOs[end])
+    end
+
+    return block[]
+end
+
+### Applying an MPO 
+
+function _mpo_mps_zipup!(ϕ::MPS, O::MPO, ψ::MPS; kwargs...)
+    # Move canonical centre of both to the first site 
+    movecenter!(O, 1)
+    movecenter!(ψ, 1)
+
+    # Type info...
+    T = Base.promote_op(*, eltype(O), eltype(ψ))
+    conjO = isconj(O)
+    conjψ = isconj(ψ)
+    transO = istranspose(O)
+
+    # Do the contraction
+    block = cache(T, (1, size(O[begin], 1), size(ψ[begin], 1)), 2, 1) .= 1
+    for i = 1:length(O)
+        block = contract(block, O[i], 2, 1, false, conjO)
+        block = contract(block, ψ[i], (2, transO ? 3 : 4), (1, 2), false, conjψ)
+        if i < length(O)
+            U, S, block = tsvd(block, (3, 4); kwargs...)
+            block = contract(S, block, 2, 1)
+            ϕ[i] = U
+        else
+            block = reshape(block, (size(block, 1), size(block, 2), 1))
+            ϕ[i] = copy(block)
+        end
+    end
+    ϕ.center = length(ϕ)
+    movecenter!(ϕ, 1; kwargs...)
+end

@@ -418,8 +418,8 @@ function Base.show(io::IO, ψ::GMPS)
 end
 
 ### Creating copies
-Base.copy(ψ::GMPS) = typeof(ψ)(TeNe.rank(ψ), dim(ψ), ψ.tensors, center(ψ))
-Base.deepcopy(ψ::GMPS) = typeof(ψ)(Base.copy(TeNe.rank(ψ)), Base.copy(dim(ψ)), Base.copy(ψ.tensors),
+Base.copy(ψ::GMPS) = typeof(ψ)(dim(ψ), ψ.tensors, center(ψ))
+Base.deepcopy(ψ::GMPS) = typeof(ψ)(Base.copy(dim(ψ)), Base.copy(ψ.tensors),
                                         Base.copy(center(ψ)))
 
 
