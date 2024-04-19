@@ -223,7 +223,38 @@ function _mpo_mpo_trace(Os::MPO...)
 end
 
 ### Applying an MPO 
+# TODO: add densitymatrix method...
+export applympo
+function applympo(O::MPO, ψ::MPS; alg=:naive, kwargs...)
+    if !issimilar(O, ψ)
+        throw(ArgumentError("Arguments have properties that do not match."))
+    end
+    ϕ = MPS(dim(ψ), length(ψ); T=Base.promote_op(*, eltype(O), eltype(ψ)))
+    if alg==:naive
+        _mpo_mps_naive!(ϕ, O, ψ; kwargs...)
+    elseif alg==:zipup 
+        _mpo_mps_zipup!(ϕ, O, ψ; kwargs...)
+    else
+        throw(ArgumentError("The algorithm $(alg) is unknown."))
+    end
+    return ϕ
+end
+applympo(ψ::MPS, O::MPO; kwargs...) = applympo(transpose(O), ψ; kwargs...)
 
+function applympo(O1::MPO, O2::MPO; alg=:naive, kwargs...)
+    if !issimilar(O1, O2)
+        throw(ArgumentError("Arguments have properties that do not match."))
+    end
+    O = MPO(dim(O1), length(O2); T=Base.promote_op(*, eltype(O1), eltype(O2)))
+    if alg==:naive
+        _mpo_mpo_naive!(O, O1, O2; kwargs...)
+    elseif alg==:zipup 
+        _mpo_mpo_zipup!(O, O1, O2; kwargs...)
+    else
+        throw(ArgumentError("The algorithm $(alg) is unknown."))
+    end
+    return O
+end
 
 # Naive method; do the contraction exactly and then truncate
 function _mpo_mps_naive!(ϕ::MPS, O::MPO, ψ::MPS; kwargs...)
