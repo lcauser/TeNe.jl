@@ -327,6 +327,58 @@ end
 *(a::Number, ψ::GMPS) = *(ψ, a)
 /(ψ::GMPS, a::Number) = *(ψ, 1/a)
 
+### Addition and subtraction 
+# TODO later: add variational option
+import Base.+, Base.-
+
+function +(ψ::GMPS{r}, ϕ::GMPS{r}) where {r}
+    # Checks 
+    if !issimilar(ψ, ϕ)
+        throw(ArgumentError("GMPS have differing properties."))
+    end
+    movecenter!(ψ, 1)
+    movecenter!(ϕ, 1)
+    return _add_exact(ψ, ϕ, false; cutoff=_TeNe_cutoff)
+end
+
+function -(ψ::GMPS{r}, ϕ::GMPS{r}) where {r}
+    # Checks 
+    if !issimilar(ψ, ϕ)
+        throw(ArgumentError("GMPS have differing properties."))
+    end
+    movecenter!(ψ, 1)
+    movecenter!(ϕ, 1)
+    return _add_exact(ψ, ϕ, true; cutoff=_TeNe_cutoff)
+end
+
+function _add_exact(ψ::GMPS{r}, ϕ::GMPS{r}, subtract::Bool=false; kwargs...) where {r}
+    Ψ = GMPS(r, dim(ψ), length(ψ); T=Base.promote_op(*, eltype(ψ), eltype(ϕ)))
+    Ψ.center = 1
+    for i in eachindex(Ψ)
+        # Create the tensor 
+        dim1 = i == 1 ? 1 : size(ψ[i], 1)+size(ϕ[i], 1)
+        dim2 = i == length(Ψ) ? 1 : size(ψ[i], 2+r)+size(ϕ[i], 2+r)
+        dims_phys = map(j->size(ψ[i], 1+j), Base.OneTo(rank(ψ)))
+        tensor = zeros(eltype(Ψ), dim1, dims_phys..., dim2)
+        
+        # Find the dimensions of the tensors 
+        dims_phys = map(j->1:size(tensor, 1+j), Base.OneTo(rank(ψ)))
+        dims1 = (i == 1 ? (1:1) : 1:size(ψ[i], 1), dims_phys..., 
+                 i == length(ψ) ? (1:1) : 1:size(ψ[i], 2+r))
+        dims2 = (i == 1 ? (1:1) : size(ψ[i], 1)+1:size(tensor, 1), dims_phys..., 
+                 i == length(ψ) ? (1:1) : size(ψ[i], 2+r)+1:size(tensor, 2+r))
+
+        # Create the tensor
+        tensor[dims1...] .= ψ[i]
+        tensor[dims2...] .= (subtract && i == 1) ? -1*ϕ[i] : ϕ[i]
+        Ψ[i] = tensor
+        movecenter!(Ψ, i; kwargs...)
+    end
+    movecenter!(Ψ, 1; kwargs...)
+    return Ψ
+end
+
+
 
 ### Adjusting the bond dimensions 
 export truncate!, expand!

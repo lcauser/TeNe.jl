@@ -12,6 +12,9 @@ const _CACHE_MEM_LIM = 4294967296
 const _CACHE = LRU{Tuple{DataType, Int64, Int64, Int64, Int64}, Any}(maxsize=_CACHE_MEM_LIM, by=Base.summarysize)
 include("cache.jl")
 
+# Default settings 
+const _TeNe_cutoff = 1e-16
+
 # Tensors
 include("tensors/contract.jl")
 include("tensors/tensorproduct.jl")
