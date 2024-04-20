@@ -293,7 +293,7 @@ function applympo(O1::MPO, O2::MPO; alg=:naive, kwargs...)
     end
     return O
 end
-*(O1::MPO, O2::MPO) = applympo(O1, O2; cutoff=1e-12)
+*(O1::MPO, O2::MPO) = applympo(O1, O2; cutoff=_TeNe_cutoff)
 
 # Naive method; do the contraction exactly and then truncate
 function _mpo_mps_naive!(ϕ::MPS, O::MPO, ψ::MPS; kwargs...)
