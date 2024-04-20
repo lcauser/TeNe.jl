@@ -2,4 +2,4 @@
 
 ```@docs
 contract(x, y, cix, ciy)
-'''
+```
