@@ -37,7 +37,7 @@ end
 """
     trace(x, cix::Int...; kwargs)
 
-Compute the trace of `x` over dimension `cix`.
+Compute the trace of `x` over dimensions `cix`.
 
 # Optional Keyword Arguments
     
@@ -49,7 +49,7 @@ Compute the trace of `x` over dimension `cix`.
 
 ```jldoctest
 julia> x = randn(ComplexF64, 2, 3, 4, 3);
-julia> y = trace(x, (2, 4));
+julia> y = trace(x, 2, 4);
 julia> size(y)
 (2, 4)
 ```

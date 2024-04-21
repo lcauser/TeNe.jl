@@ -106,10 +106,10 @@ function productmpo(N::Int, A::Q; T::Type=ComplexF64) where {Q<:AbstractArray}
         end
         O = MPO(size(A, 2), N; T=T)
         O[1] = A[1:1, :, :, :]
-        for i = Base.range(2, N)
+        for i = Base.range(1+firstindex(O), lastindex(O))
             O[i] = copy(A)
         end
-        O[N] = A[:, :, :, end:end]
+        O[lastindex(O)] = A[:, :, :, end:end]
     else
         throw(ArgumentError("You must provide an array with just two or four dimensions."))
     end
@@ -149,9 +149,9 @@ function _mps_mpo_mps_product(ψ::MPS, ϕ::MPS, Os::MPO...)
     # Contraction 
     dims = (size(ψ[begin], 1), map(O->size(O[begin], 1), Os)..., size(ϕ[begin], 1))
     block = cache(T, dims, 2, 1) .= 1
-    for i = 1:length(ψ)
+    for i in eachindex(ψ)
         block = contract(block, ψ[i], 1, 1, false, conjψ)
-        for j = 1:length(Os)
+        for j in eachindex(Os)
             block = contract(block, Os[j][i], (1, ndims(block)-1), (1, transOs[j] ? 3 : 2), false, conjOs[j])
         end
         block = contract(block, ϕ[i], (1, ndims(block)-1), (1, 2), false, conjϕ)
@@ -201,7 +201,7 @@ function _mpo_mpo_trace(Os::MPO...)
 
     # Do the contraction 
     block = cache(T, map(O->size(O[begin], 1), Os), 2, 1) .= 1
-    for i in eachindex(Os[1])
+    for i in eachindex(Os[begin])
         # Contract with the first MPO in the term
         block = contract(block, Os[1][i], 1, 1, false, conjOs[1])
         if transOs[1]
@@ -209,7 +209,7 @@ function _mpo_mpo_trace(Os::MPO...)
         end
 
         # Contract with the central MPOs
-        for j = 2:length(Os)-1
+        for j in range(firstindex(Os)+1, lastindex(Os)-1)
             block = contract(block, Os[j][i], (1, ndims(block)-1),
                             (1, transOs[j] ? 3 : 2), false, conjOs[j])
         end
@@ -239,7 +239,7 @@ Apply MPO `O` to MPS `ψ`.
       with high accuracy. Use :variational for the slowest, but must optimal application.
     - `cutoff::Float64=0.0`: Truncation criteria to reduce the bond dimension.
       Good values range from 1e-8 to 1e-14.
-    - `mindim::Int=1`: Mininum dimension for truncated.
+    - `mindim::Int=1`: Minimum dimension for the truncation.
     - `maxdim::Int=0`: Maximum bond dimension for truncation. Set to 0 to have
       no limit.
 """
@@ -275,7 +275,7 @@ Apply MPO `O1` to MPO `O2`.
       with high accuracy. Use :variational for the slowest, but must optimal application.
     - `cutoff::Float64=0.0`: Truncation criteria to reduce the bond dimension.
       Good values range from 1e-8 to 1e-14.
-    - `mindim::Int=1`: Mininum dimension for truncated.
+    - `mindim::Int=1`: Minimum dimension for the truncation.
     - `maxdim::Int=0`: Maximum bond dimension for truncation. Set to 0 to have
       no limit.
 """
@@ -307,7 +307,7 @@ function _mpo_mps_naive!(ϕ::MPS, O::MPO, ψ::MPS; kwargs...)
     transO = istranspose(O)
 
     # Do the contraction 
-    ϕ.center = 1
+    ϕ.center = firstindex(ϕ)
     for i in eachindex(ϕ)
         tensor = contract(O[i], ψ[i], transO ? 2 : 3, 2, conjO, conjψ)
         tensor = _permutedims(tensor, (1, 4, 2, 3, 5))
@@ -315,7 +315,7 @@ function _mpo_mps_naive!(ϕ::MPS, O::MPO, ψ::MPS; kwargs...)
         ϕ[i] = copy(tensor)
         movecenter!(ϕ, i; kwargs...)
     end
-    movecenter!(ϕ, 1; kwargs...)
+    movecenter!(ϕ, firstindex(ϕ); kwargs...)
 end
 
 function _mpo_mpo_naive!(O::MPO, O1::MPO, O2::MPO; kwargs...)
@@ -330,7 +330,7 @@ function _mpo_mpo_naive!(O::MPO, O1::MPO, O2::MPO; kwargs...)
     transO2 = istranspose(O2)
 
     # Do the contraction 
-    O.center = 1
+    O.center = firstindex(O)
     for i in eachindex(O)
         tensor = contract(O1[i], O2[i], transO1 ? 2 : 3, transO2 ? 3 : 2, conjO1, conjO2)
         tensor = _permutedims(tensor, (1, 4, 2, 5, 3, 6))
@@ -339,14 +339,14 @@ function _mpo_mpo_naive!(O::MPO, O1::MPO, O2::MPO; kwargs...)
         O[i] = copy(tensor)
         movecenter!(O, i; kwargs...)
     end
-    movecenter!(O, 1; kwargs...)
+    movecenter!(O, firstindex(O); kwargs...)
 end
 
 # Zip-up method: see ``E.M. Stoudenmire, Steven R. White, New J. Phys. 12, 055026 (2010)``
 function _mpo_mps_zipup!(ϕ::MPS, O::MPO, ψ::MPS; kwargs...)
     # Move canonical centre of both to the first site 
-    movecenter!(O, 1)
-    movecenter!(ψ, 1)
+    movecenter!(O, firstindex(O))
+    movecenter!(ψ, firstindex(ψ))
 
     # Type info...
     conjO = isconj(O)
@@ -355,7 +355,7 @@ function _mpo_mps_zipup!(ϕ::MPS, O::MPO, ψ::MPS; kwargs...)
 
     # Do the contraction
     block = cache(eltype(ϕ), (1, size(O[begin], 1), size(ψ[begin], 1)), 2, 1) .= 1
-    for i = 1:length(O)
+    for i in eachindex(O)
         block = contract(block, O[i], 2, 1, false, conjO)
         block = contract(block, ψ[i], (2, transO ? 3 : 4), (1, 2), false, conjψ) 
         if i < length(O)
@@ -368,13 +368,13 @@ function _mpo_mps_zipup!(ϕ::MPS, O::MPO, ψ::MPS; kwargs...)
         end
     end
     ϕ.center = length(ϕ)
-    movecenter!(ϕ, 1; kwargs...)
+    movecenter!(ϕ, firstindex(ϕ); kwargs...)
 end
 
 function _mpo_mpo_zipup!(O::MPO, O1::MPO, O2::MPO; kwargs...)
     # Move canonical centre of both to the first site 
-    movecenter!(O1, 1)
-    movecenter!(O2, 1)
+    movecenter!(O1, firstindex(O1))
+    movecenter!(O2, firstindex(O2))
 
     # Type info...
     conjO1 = isconj(O1)
@@ -384,7 +384,7 @@ function _mpo_mpo_zipup!(O::MPO, O1::MPO, O2::MPO; kwargs...)
 
     # Do the contraction
     block = cache(eltype(O), (1, size(O1[begin], 1), size(O2[begin], 1)), 2, 1) .= 1
-    for i = 1:length(O)
+    for i in eachindex(O)
         block = contract(block, O1[i], 2, 1, false, conjO1)
         block = contract(block, O2[i], (2, transO1 ? 3 : 4), (1, transO2 ? 3 : 2), false, conjO2)
         if i < length(O)
@@ -397,5 +397,5 @@ function _mpo_mpo_zipup!(O::MPO, O1::MPO, O2::MPO; kwargs...)
         end
     end
     O.center = length(O)
-    movecenter!(O, 1; kwargs...)
+    movecenter!(O, firstindex(O); kwargs...)
 end
