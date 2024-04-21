@@ -67,7 +67,7 @@ function productmps(N::Int, A::Q; T::Type=ComplexF64, normalize::Bool=false) whe
     elseif ndims(A) == 3
         ψ = MPS(size(A, 2), N; T=T)
         ψ[1] = A[1:1, :, :]
-        for i = Base.range(2, N)
+        for i = Base.range(1+firstindex(ψ), lastindex(ψ))
             ψ[i] = copy(A)
         end
         ψ[N] = A[:, :, end:end]
@@ -75,7 +75,7 @@ function productmps(N::Int, A::Q; T::Type=ComplexF64, normalize::Bool=false) whe
         throw(ArgumentError("You must provide an array with just one or three dimensions."))
     end
     if normalize 
-        movecenter!(ψ, 1)
+        movecenter!(ψ, firstindex(ψ))
         normalize!(ψ)
     end
     return ψ
@@ -87,6 +87,8 @@ export inner, dot
 
 """
     inner(ψ::MPS, ϕ::MPS)
+    dot(ψ::MPS, ϕ::MPS)
+    *(ψ::MPS, ϕ::MPS)
 
 Calculate the inner product of two MPSs `ψ` and `ϕ`.
 """

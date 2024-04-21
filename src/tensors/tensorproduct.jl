@@ -38,7 +38,7 @@ end
 
 
 """
-    tensorproduct(z, x, y, [conjx=false, conjy=false])
+    tensorproduct(x, y, [conjx=false, conjy=false])
 
 Compute the tensor product of the two tensors `x` and `y`, and store the 
 result in `z`. Optionally, do the tensor product using the conjugate of

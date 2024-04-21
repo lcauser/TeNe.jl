@@ -5,7 +5,7 @@
 export permutedim, permutedim!
 
 """
-    permutedim(x, i, j; kwargs...)
+    permutedim(x, i::Int, j::Int; kwargs...)
 
 Permute dimension with position `i` to position `j` for tensor `x`.
 

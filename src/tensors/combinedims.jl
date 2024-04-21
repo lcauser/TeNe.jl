@@ -217,7 +217,7 @@ function _uncombinedims_check_result(y, sxs, pixs)
     if ndims(y) != length(sxs)
         throw(ArgumentError("Desination tensor has incorrect number of dimensions."))
     end
-    if !all(i -> sxs[pixs[i]] == size(y, i), Base.OneTo(length(sxs)))
+    if !all(i -> sxs[pixs[i]] == size(y, i), eachindex(sxs))
         throw(ArgumentError("Desination tensor has wrong dimensions: $(size(y)) != $(sxs[pixs])"))
     end
 end

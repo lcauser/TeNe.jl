@@ -112,8 +112,8 @@ Return the bond dimension size between idx and idx + 1. Returns nothing if
 out of range.
 """
 function bonddim(ψ::GMPS, site::Int)
-    (site < 1 || site > Base.length(ψ)) && return nothing
-    return size(ψ[site+1])[1]
+    (site < firstindex(ψ) || site > lastindex(ψ)) && return nothing
+    return size(ψ[site])[2+rank(ψ)]
 end
 
 
@@ -140,7 +140,7 @@ Calculate the norm of an GMPS.
 """
 function TeNe.norm(ψ::GMPS)
     if center(ψ) == 0
-        movecenter!(ψ, 1)
+        movecenter!(ψ, firstindex(ψ))
     end
     return LinearAlgebra.norm(ψ[center(ψ)])
 end
@@ -152,7 +152,7 @@ Normalize a GMPS.
 """
 function TeNe.normalize!(ψ::GMPS)
     if center(ψ) == 0
-        movecenter!(ψ, 1)
+        movecenter!(ψ, firstindex(ψ))
     end
     ψ[center(ψ)] .*= TeNe.norm(ψ)^-1
 end
@@ -184,13 +184,13 @@ end
 """
     movecenter!(ψ::GMPS, idx::Int; kwargs...)
 
-Move the orthogonal center of an GMPS `ψ` to center `idx`.
+Move the orthogonal center of an GMPS `ψ` to `idx`.
 
 # Optional Keyword Arguments
 
     - `cutoff::Float64=0.0`: Truncation criteria to reduce the bond dimension.
       Good values range from 1e-8 to 1e-14.
-    - `mindim::Int=1`: Mininum dimension for truncated.
+    - `mindim::Int=1`: Minimum dimension for the truncation.
     - `maxdim::Int=0`: Maximum bond dimension for truncation. Set to 0 to have
       no limit.
 """
@@ -202,19 +202,19 @@ function movecenter!(ψ::GMPS, idx::Int; kwargs...)
     
     # Move center
     if center(ψ) == 0
-        for i = Base.OneTo(idx-1)
+        for i = Base.range(firstindex(ψ), idx-1)
             _moveright!(ψ, i; kwargs...)
         end
-        for i = length(ψ):-1:idx+1
+        for i = Base.range(lastindex(ψ), idx+1, step=-1)
             _moveleft!(ψ, i; kwargs...)
         end
     else
         if idx > center(ψ)
-            for i = center(ψ):idx-1
+            for i = Base.range(center(ψ), idx-1)
                 _moveright!(ψ, i; kwargs...)
             end
         elseif idx < center(ψ)
-            for i = center(ψ):-1:idx+1
+            for i = Base.range(center(ψ), idx+1, step=-1)
                 _moveleft!(ψ, i; kwargs...)
             end
         end
@@ -336,8 +336,8 @@ function +(ψ::GMPS{r}, ϕ::GMPS{r}) where {r}
     if !issimilar(ψ, ϕ)
         throw(ArgumentError("GMPS have differing properties."))
     end
-    movecenter!(ψ, 1)
-    movecenter!(ϕ, 1)
+    movecenter!(ψ, firstindex(ψ))
+    movecenter!(ϕ, firstindex(ϕ))
     return _add_exact(ψ, ϕ, false; cutoff=_TeNe_cutoff)
 end
 
@@ -346,14 +346,14 @@ function -(ψ::GMPS{r}, ϕ::GMPS{r}) where {r}
     if !issimilar(ψ, ϕ)
         throw(ArgumentError("GMPS have differing properties."))
     end
-    movecenter!(ψ, 1)
-    movecenter!(ϕ, 1)
+    movecenter!(ψ, firstindex(ψ))
+    movecenter!(ϕ, firstindex(ϕ))
     return _add_exact(ψ, ϕ, true; cutoff=_TeNe_cutoff)
 end
 
 function _add_exact(ψ::GMPS{r}, ϕ::GMPS{r}, subtract::Bool=false; kwargs...) where {r}
     Ψ = GMPS(r, dim(ψ), length(ψ); T=Base.promote_op(*, eltype(ψ), eltype(ϕ)))
-    Ψ.center = 1
+    Ψ.center = firstindex(Ψ)
     for i in eachindex(Ψ)
         # Create the tensor 
         dim1 = i == 1 ? 1 : size(ψ[i], 1)+size(ϕ[i], 1)
@@ -363,10 +363,10 @@ function _add_exact(ψ::GMPS{r}, ϕ::GMPS{r}, subtract::Bool=false; kwargs...) w
         
         # Find the dimensions of the tensors 
         dims_phys = map(j->1:size(tensor, 1+j), Base.OneTo(rank(ψ)))
-        dims1 = (i == 1 ? (1:1) : 1:size(ψ[i], 1), dims_phys..., 
-                 i == length(ψ) ? (1:1) : 1:size(ψ[i], 2+r))
-        dims2 = (i == 1 ? (1:1) : size(ψ[i], 1)+1:size(tensor, 1), dims_phys..., 
-                 i == length(ψ) ? (1:1) : size(ψ[i], 2+r)+1:size(tensor, 2+r))
+        dims1 = (i == 1 ? Base.OneTo(1) : axes(ψ[i], 1), dims_phys..., 
+                 i == length(ψ) ? Base.OneTo(1) : axes(ψ[i], 2+r))
+        dims2 = (i == 1 ? Base.OneTo(1) : range(size(ψ[i], 1)+1, size(tensor, 1)), dims_phys..., 
+                 i == length(ψ) ? Base.OneTo(1) :  range(size(ψ[i], 2+r)+1, size(tensor, 2+r)))
 
         # Create the tensor
         tensor[dims1...] .= ψ[i]
@@ -374,10 +374,9 @@ function _add_exact(ψ::GMPS{r}, ϕ::GMPS{r}, subtract::Bool=false; kwargs...) w
         Ψ[i] = tensor
         movecenter!(Ψ, i; kwargs...)
     end
-    movecenter!(Ψ, 1; kwargs...)
+    movecenter!(Ψ, firstindex(Ψ); kwargs...)
     return Ψ
 end
-
 
 
 ### Adjusting the bond dimensions 
@@ -392,15 +391,15 @@ Truncate the bond dimension of a GMPS `ψ`.
     
     - `cutoff::Float64=0.0`: Truncation criteria to reduce the bond dimension.
     Good values range from 1e-8 to 1e-14.
-    - `mindim::Int=1`: Mininum dimension for truncated.
+    - `mindim::Int=1`: Minimum dimension for the truncation.
     - `maxdim::Int=0`: Maximum bond dimension for truncation. Set to 0 to have
     no limit.
 """
 function truncate!(ψ::GMPS; kwargs...)
-    if ψ.center != 1 && ψ.center != length(ψ)
-        movecenter!(ψ, 1)
+    if ψ.center != firstindex(ψ) && ψ.center != lastindex(ψ)
+        movecenter!(ψ, firstindex(ψ))
     end
-    ctr = center(ψ) == 1 ? length(ψ) : 1
+    ctr = center(ψ) == firstindex(ψ) ? lastindex(ψ) : firstindex(ψ)
     movecenter!(ψ, ctr; kwargs...)
 end
 
@@ -411,19 +410,19 @@ Increase the bond dimension of a GMPS `ψ` to `bonddim`.
 Optionally, make the new parameters noisy, with strength `noise`.
 """
 function expand!(ψ::GMPS, bonddim::Int, noise=0)
-    movecenter!(ψ, 1)
-    for i = 1:length(ψ)
-        D1 = i == 1 ? 1 : bonddim 
-        D2 = i == length(ψ) ? 1 : bonddim
+    movecenter!(ψ, firstindex(ψ))
+    for i in eachindex(ψ)
+        D1 = i == firstindex(ψ) ? 1 : bonddim 
+        D2 = i == lastindex(ψ) ? 1 : bonddim
         tensor = noise .* randn(eltype(ψ[i]), D1, map(j -> size(ψ[i], j), 2:ndims(ψ[i])-1)..., D2)
         tensor[map(j->Base.OneTo(size(ψ[i], j)), Base.OneTo(ndims(ψ[i])))...] .= ψ[i]
         ψ[i] = tensor
-        if i > 1
+        if i > firstindex(ψ)
             _moveright!(ψ, i-1)
         end
     end
-    ψ.center = length(ψ)
-    movecenter!(ψ, 1)
+    ψ.center = lastindex(ψ)
+    movecenter!(ψ, firstindex(ψ))
 end
 
 
@@ -446,18 +445,18 @@ Create a GMPS with random entries.
 function randomgmps(rank::Int, dim::Int, length::Int, bonddim::Int; T::Type=ComplexF64)
     # Create the GMPS
     ψ = GMPS(rank, dim, length)
-    for i = 1:length
-        D1 = i == 1 ? 1 : bonddim
-        D2 = i == length ? 1 : bonddim
+    for i = Base.OneTo(length)
+        D1 = i == firstindex(ψ) ? 1 : bonddim
+        D2 = i == lastindex(ψ) ? 1 : bonddim
         idxs = (D1, ntuple(i->dim, rank)..., D2)
         ψ[i] = randn(T, idxs)
-        if i > 1
+        if i > firstindex(ψ)
             _moveright!(ψ, i-1)
             ψ.tensors[i] ./= norm(ψ[i])
         end
     end
     ψ.center = length
-    movecenter!(ψ, 1)
+    movecenter!(ψ, firstindex(ψ))
     return ψ
 end
 

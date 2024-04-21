@@ -14,7 +14,7 @@
 
     @test begin
         ψ = randomgmps(3, 2, 30, 16)
-        expand!(ψ, 32, 0.0)
+        expand!(ψ, 32, 0.01)
         maxbonddim(ψ) == 32
     end
 
