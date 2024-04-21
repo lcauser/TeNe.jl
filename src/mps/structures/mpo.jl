@@ -118,7 +118,8 @@ end
 
 ### Inner products 
 """
-    inner(ψ::MPS, Os::MPO..., ϕ::MPS)
+    inner(ψ::MPS, O::MPO, ϕ::MPS)
+    inner(ψ::MPS, O1::MPO, O2::MPO, ϕ::MPS)
 
 Calculate the expectation of a string of operators `Os` with respect to MPSs `ψ` and `ϕ`.
 """

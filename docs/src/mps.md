@@ -30,7 +30,7 @@ productmps(N::Int, A::Q) where {Q<:AbstractArray}
 
 ### Properties of an MPS
 ```@docs
-rank(::GMPS)
+TeNe.rank(::GMPS)
 dim(::GMPS)
 center(::GMPS)
 bonddim(::GMPS, ::Int)
@@ -71,12 +71,22 @@ inner(ψ::MPS, ϕ::MPS)
 Just as a wavefunction, or state vector, can be represented as an MPS, an operator can be represented by a matrix product operator.
 
 ### Initiating an MPO 
-
+Like the MPS, an MPO can be initiated randomly or as a product operator.
+```@docs
+randommpo
+productmpo
+```
 
 ### Construct an MPO from an operator list
 
-### Manipulate an MPO
+### Products
+The expectation value of a string of MPOs with respect to some MPSs can be calculated exactly. The below can be done with many MPOs.
+```@docs
+inner(ψ::MPS, O::MPO, ϕ::MPS)
+```
 
-### Inner products
-
+Similarly, the trace of a string of MPOs can be calculated.
+```@docs
+trace(Os::MPO...)
+```
 ## Advanced usage: Generalised matrix product states (GMPS)
