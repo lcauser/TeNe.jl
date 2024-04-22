@@ -55,3 +55,39 @@ end
 function deletecache!(T::DataType, length::Int, level::Int=1, sublevel::Int=1) 
     deletecache!(T, length, level, sublevel, Threads.threadid())
 end
+
+
+# Non-alaising memory 
+function cache_non_alias(dims, args...; level::Int=1)
+    # Type and checks 
+    T = _promote_tensor_type(args...)
+    checks = map(tensor -> prod(dims) == prod(size(tensor)), args)
+
+    # Find non-aliased tensors 
+    sublevel = 0
+    aliased = true 
+    while aliased 
+        sublevel += 1
+        z = cache(T, dims, level, sublevel)
+        aliased = false 
+        for i in eachindex(args)
+            if checks[i] && base.mightalias(args[i], z)
+                aliased = true
+            end
+        end
+    end
+    return cache(T, dims, level, sublevel)
+end
+
+function _promote_tensor_type(args...)
+    return Base.promote_type(args...)
+end
+
+function cache(dims, args...; level::Int=1, sublevel=:auto)
+    if sublevel==:auto
+        return cache_non_alias(dims, args...; level=level)
+    else
+        T  = _promote_tensor_type(args...)
+        return cache(T, dims, level, sublevel)
+    end
+end
