@@ -91,3 +91,10 @@ function cache(dims, args...; level::Int=2, sublevel=:auto)
         return cache(T, dims, level, sublevel)
     end
 end
+
+function cache_zeros(dims, args...; kwargs...)
+    return cache(dims, args...; kwargs...) .= 0.0
+end
+function cache_ones(dims, args...; kwargs...)
+    return cache(dims, args...; kwargs...) .= 1.0
+end
