@@ -36,6 +36,7 @@ center(::GMPS)
 bonddim(::GMPS, ::Int)
 maxbonddim(::GMPS)
 norm(::GMPS)
+entropy(::MPS, ::Int)
 ```
 
 ### Manipulations of an MPS
@@ -66,6 +67,12 @@ Some linear algebra operations such as the inner product are easy to calculate f
 ```@docs
 inner(ψ::MPS, ϕ::MPS)
 ```
+
+### Sampling an MPS
+By considering an MPS to be a wavefunction from quantum mechanics (we sometimes call this a *Born machine* in a classical context), we are able to sample it exactly.
+```@docs
+sample(::MPS)
+``` 
 
 ## Matrix product operators (MPO)
 Just as a wavefunction, or state vector, can be represented as an MPS, an operator can be represented by a matrix product operator.

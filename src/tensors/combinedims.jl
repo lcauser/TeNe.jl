@@ -16,8 +16,10 @@ Returns the reshaped tensor, along with a `key` to restore the original permutat
 
 # Optional Keyword Arguments
 
-    - `return_copy=false`: Return the result in newly allocated memory? Only
-       necessary if the combined dimensions are the last dimensions of `x`.
+    - `tocache::Bool=true`: store the result in the second level of the cache?
+    - `sublevel=:auto`: which sublevel to store in the cache?
+    - `return_copy=false`: Return the result in newly allocated memory from the cache?
+      Only necessary if the combined dimensions are the last dimensions of `x`.
 
 # Examples 
 
@@ -28,7 +30,7 @@ julia> size(y)
 (4, 7, 30)
 ```
 """
-function combinedims(x, cixs; return_copy=false)
+function combinedims(x, cixs; to_cache::Bool=true, return_copy::Bool=false, sublevel=:auto)
     # Checks and permutations 
     _combinedims_check_dims(x, cixs)
     pixs, sr, sc = _combinedims_permuted_dims(x, cixs)
@@ -37,11 +39,24 @@ function combinedims(x, cixs; return_copy=false)
     # Combine the dimensions
     if !_combinedims_check_perm(pixs)
         y = reshape(x, shape)
-        return (return_copy ? copy(y) : y, (cixs, sc))
+        if return_copy
+            if to_cache
+                z = cache(shape, x; level=2, sublevel=sublevel) .= y
+            else
+                z = zeros(eltype(x), shape) .= y
+            end
+            return (z, (cixs, sc))
+        else
+            return (y, (cixs, sc))
+        end
     else
-        y = similar(x, shape)
-        _combinedims!(y, x, pixs, sr, sc)
-        return (y, (cixs, sc))
+        if to_cache
+            z = cache(shape, x; level=2, sublevel=sublevel)
+        else
+            z = zeros(eltype(x), shape...)
+        end
+        _combinedims!(z, x, pixs, sr, sc)
+        return (z, (cixs, sc))
     end
 end
 
@@ -119,8 +134,10 @@ Uncombine the end dimension in tensor `x` according to the `key`.
 
 # Key arguments
 
-    - `return_copy=false`: Return the result in newly allocated memory? Only
-       necessary if the combined dimensions are the last dimensions of `x`.
+    - `tocache::Bool=true`: store the result in the second level of the cache?
+    - `sublevel=:auto`: which sublevel to store in the cache?
+    - `return_copy=false`: Return the result in newly allocated memory from the cache?
+      Only necessary if the combined dimensions are the last dimensions of `x`.
 
 # Examples 
 
@@ -132,16 +149,29 @@ julia> size(z)
 (4, 5, 6, 7)
 ```
 """
-function uncombinedims(x, key; return_copy=false)
+function uncombinedims(x, key; to_cache::Bool=true, return_copy::Bool=false, sublevel=:auto)
     _uncombinedims_check_dims(x, key[1], key[2])
     sxs, pixs = _uncombinedims_perms(x, key[1], key[2])
     if !_combinedims_check_perm(pixs)
-        # Just reshape 
         y = reshape(x, sxs)
-        return return_copy ? copy(y) : y
+        if !return_copy
+            return y
+        end
+        if to_cache
+            z = cache(shape, y; level=2, sublevel=sublevel) .= y
+        else
+            z = zeros(eltype(y), shape) .= y
+        end
+        return z
     else
-        y = similar(x, map(i -> sxs[i], pixs))
-        _uncombinedims!(y, x, sxs, pixs)
+        dims = map(i -> sxs[i], pixs)
+        if to_cache
+            z = cache(dims, x; level=2, sublevel=sublevel)
+        else
+            z = zeros(eltype(x), dims...)
+        end
+        _uncombinedims!(z, x, sxs, pixs)
+        return z
     end
 end
 

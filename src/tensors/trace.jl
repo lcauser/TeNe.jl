@@ -62,18 +62,7 @@ function trace(x, cix::Int...; conj::Bool=false, tocache::Bool=true, sublevel=:a
     # Create the tensor to store the result 
     dims = map(x->sx[x], rix)
     if tocache
-        if sublevel == :auto 
-            sublevel = 1
-            z = cache(eltype(x), dims, 2, sublevel; backend=typeof(get_backend(x)))
-            if prod(dims) == length(x)
-                while Base.mightalias(x, z)
-                    sublevel += 1
-                    z = cache(eltype(x), dims, 2, sublevel; backend=typeof(get_backend(x)))
-                end
-            end
-        else
-            z = cache(eltype(x), dims, 2, sublevel; backend=typeof(get_backend(x)))
-        end
+        z = cache(dims, x; level=2, sublevel=sublevel)
     else
         z = zeros(eltype(x), dims...)
     end

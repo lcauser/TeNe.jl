@@ -49,23 +49,11 @@ function contract(x, y, cix, ciy, conjx::Bool=false, conjy::Bool=false; tocache:
     sx, sy, rix, riy, pix, piy = _contract_permuted_dimensions(x, y, cix, ciy)
 
     # Create new matrix to store result 
-    t = Base.promote_op(*, eltype(x), eltype(y))
     dims = (_contract_dims(sx, rix)...,  _contract_dims(sy, riy)...)
     if tocache
-        if sublevel == :auto 
-            sublevel = 1
-            z = cache(t, dims, 2, sublevel; backend=typeof(get_backend(x)))
-            if prod(dims) == prod(sx) || prod(dims) != prod(sy)
-                while Base.mightalias(x, z) || Base.mightalias(y, z)
-                    sublevel += 1
-                    z = cache(t, dims, 2, sublevel; backend=typeof(get_backend(x)))
-                end
-            end
-        else
-            z = cache(t, dims, 2, sublevel; backend=typeof(get_backend(x)))
-        end
+        z = cache(dims, x, y; level=2, sublevel=sublevel)
     else
-        z = zeros(t, dims...)
+        z = zeros(_promote_tensor_eltype(x, y), dims...)
     end
     _contract!(z, x, y, sx, sy, cix, ciy, rix, riy, pix, piy, conjx, conjy)  
     return z

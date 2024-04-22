@@ -75,18 +75,7 @@ function tensorproduct(x, y, conjx::Bool=false, conjy::Bool=false;
     t = Base.promote_op(*, eltype(x), eltype(y))
     dims = (size(x)...,  size(y)...)
     if tocache
-        if sublevel == :auto 
-            sublevel = 1
-            z = cache(t, dims, 2, sublevel; backend=typeof(get_backend(x)))
-            if prod(dims) == length(x) || prod(dims) != length(y)
-                while Base.mightalias(x, z) || Base.mightalias(y, z)
-                    sublevel += 1
-                    z = cache(t, dims, 2, sublevel; backend=typeof(get_backend(x)))
-                end
-            end
-        else
-            z = cache(t, dims, 2, sublevel; backend=typeof(get_backend(x)))
-        end
+        z = cache(dims, x, y; level=2, sublevel=sublevel)
     else
         z = zeros(t, dims...)
     end
