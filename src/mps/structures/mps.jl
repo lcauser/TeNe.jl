@@ -150,11 +150,18 @@ end
 
 
 ### Sampling a configuration from an MPS 
-#=
-function TeNe.sample(ψ::MPS)
+export sample
+"""
+    sample(ψ::MPS)
+
+Sample the MPS `ψ` with the interpretation that it is a wavefunction (or Born ansatz).
+"""
+function sample(ψ::MPS)
     movecenter!(ψ, firstindex(ψ)) # move centre to begin for reduced sampling cost
     config = zeros(Int, length(ψ))
     block = cache(eltype(ψ), (size(ψ[begin], 1)), 2, 1) .= 1
+    block = cache_ones((size(ψ[begin], 1)))
+    P = 1.0
     for i in eachindex(ψ)
         block = contract(block, ψ[i], 1, 1)
         probs = contract(block, block, 2, 2, true, false)
@@ -165,7 +172,8 @@ function TeNe.sample(ψ::MPS)
             cum_probs[j] = cum_prob
         end
         config[i] = findfirst(cum_probs .> cum_prob*rand())
-        block = 
+        block = cache(size(block, 2), block, probs) .= (@view block[config[i], :])
+        P *= real(probs[config[i], config[i]] / cum_prob)
     end
+    return config, P
 end
-=#
