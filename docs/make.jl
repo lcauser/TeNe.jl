@@ -7,6 +7,7 @@ makedocs(
         "Introduction" => "index.md",
         "Examples" => "examples.md",
         "Tensors" => "tensors.md",
+        "State tensors" => "statetensors.md",
         "Matrix product states" => "mps.md"
     ]
 )

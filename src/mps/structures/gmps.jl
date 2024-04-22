@@ -483,6 +483,7 @@ function HDF5.write(parent::Union{HDF5.File, HDF5.Group}, name::AbstractString,
     write(g, "length", length(M))
     write(g, "center", center(M))
     write(g, "rank", r)
+    write(g, "dim", dim(M))
     for i = 1:length(M)
         write(g, "MPS[$(i)]", M[i])
     end
@@ -497,9 +498,10 @@ function HDF5.read(parent::Union{HDF5.File, HDF5.Group}, name::AbstractString,
     end
     N = read(g, "length")
     center = read(g, "center")
+    dim = read(g, "dim")
     tensors = [read(g, "MPS[$(i)]") for i=Base.OneTo(N)]
     rank = read(g, "rank")
-    return GMPS{rank}(size(tensors[1])[2], tensors, center)
+    return GMPS{rank}(dim, tensors, center)
 end
 
 ### Conjugation of GMPS 
