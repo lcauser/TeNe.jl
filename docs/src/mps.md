@@ -36,6 +36,7 @@ center(::GMPS)
 bonddim(::GMPS, ::Int)
 maxbonddim(::GMPS)
 norm(::GMPS)
+entropy(::GMPS, ::Int)
 ```
 
 ### Manipulations of an MPS

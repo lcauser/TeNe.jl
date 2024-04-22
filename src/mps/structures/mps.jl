@@ -131,3 +131,39 @@ function _mps_mps_product(ψ::MPS, ϕ::MPS)
     end
     return block[]
 end
+
+
+### Entanglement entropy 
+export entropy
+"""
+    entropy(ψ::MPS, site::Int)
+
+Calculate the entanglement entropy of an MPS `ψ` between sites `i` and `i+1`.
+"""
+function entropy(ψ::MPS, site::Int)
+    movecenter!(ψ, site) # Move center to the site where entropy is calculated
+    _, S, _ = tsvd(ψ[site], 3)
+    S ./= norm(ψ)
+    S2 = diag(S) .^ 2
+    return -1 * sum(S2 .* log.(S2))
+end
+
+
+### Sampling a configuration from an MPS 
+function TeNe.sample(ψ::MPS)
+    movecenter!(ψ, firstindex(ψ)) # move centre to begin for reduced sampling cost
+    config = zeros(Int, length(ψ))
+    block = cache(eltype(ψ), (size(ψ[begin], 1)), 2, 1) .= 1
+    for i in eachindex(ψ)
+        block = contract(block, ψ[i], 1, 1)
+        probs = contract(block, block, 2, 2, true, false)
+        cum_prob = 0.0
+        cum_probs = zeros(Float64, size(ψ[i], 2))
+        for j in axes(ψ[i], 2)
+            cum_prob += real(probs[j, j])
+            cum_probs[j] = cum_prob
+        end
+        config[i] = findfirst(cum_probs .> cum_prob*rand())
+        block = 
+    end
+end
