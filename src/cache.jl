@@ -58,9 +58,9 @@ end
 
 
 # Non-alaising memory 
-function cache_non_alias(dims, args...; level::Int=1)
+function cache_non_alias(dims, args...; level::Int=2)
     # Type and checks 
-    T = _promote_tensor_type(args...)
+    T = _promote_tensor_eltype(args...)
     checks = map(tensor -> prod(dims) == prod(size(tensor)), args)
 
     # Find non-aliased tensors 
@@ -71,7 +71,7 @@ function cache_non_alias(dims, args...; level::Int=1)
         z = cache(T, dims, level, sublevel)
         aliased = false 
         for i in eachindex(args)
-            if checks[i] && base.mightalias(args[i], z)
+            if checks[i] && Base.mightalias(args[i], z)
                 aliased = true
             end
         end
@@ -79,15 +79,15 @@ function cache_non_alias(dims, args...; level::Int=1)
     return cache(T, dims, level, sublevel)
 end
 
-function _promote_tensor_type(args...)
-    return Base.promote_type(args...)
+function _promote_tensor_eltype(args...)
+    return Base.promote_type(eltype.(args)...)
 end
 
-function cache(dims, args...; level::Int=1, sublevel=:auto)
+function cache(dims, args...; level::Int=2, sublevel=:auto)
     if sublevel==:auto
         return cache_non_alias(dims, args...; level=level)
     else
-        T  = _promote_tensor_type(args...)
+        T  = _promote_tensor_eltype(args...)
         return cache(T, dims, level, sublevel)
     end
 end

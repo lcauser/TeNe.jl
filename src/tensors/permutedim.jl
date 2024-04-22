@@ -30,18 +30,7 @@ function permutedim(x, i::Int, j::Int; tocache::Bool=true, sublevel=:auto)
     order = _permutedim_ordering(x, i, j)
     dims = map(k->size(x, k), order)
     if tocache
-        if sublevel == :auto 
-            sublevel = 1
-            z = cache(eltype(x), dims, 2, sublevel; backend=typeof(get_backend(x)))
-            if prod(dims) == length(x)
-                while Base.mightalias(x, z)
-                    sublevel += 1
-                    z = cache(eltype(x), dims, 2, sublevel; backend=typeof(get_backend(x)))
-                end
-            end
-        else
-            z = cache(eltype(x), dims, 2, sublevel; backend=typeof(get_backend(x)))
-        end
+        z = cache(dims, x; level=2, sublevel=sublevel)
     else
         z = zeros(eltype(x), dims...)
     end
@@ -108,18 +97,7 @@ end
 ### permutedims(...) with automatic allocation
 function _permutedims(x, order; sublevel=:auto)
     dims = map(k->size(x, k), order)
-    if sublevel == :auto 
-        sublevel = 1
-        z = cache(eltype(x), dims, 2, sublevel; backend=typeof(get_backend(x)))
-        if prod(dims) == length(x)
-            while Base.mightalias(x, z)
-                sublevel += 1
-                z = cache(eltype(x), dims, 2, sublevel; backend=typeof(get_backend(x)))
-            end
-        end
-    else
-        z = cache(eltype(x), dims, 2, sublevel; backend=typeof(get_backend(x)))
-    end
+    z = cache(dims, x; level=2, sublevel=sublevel)
     permutedims!(z, x, order)
     return z
 end

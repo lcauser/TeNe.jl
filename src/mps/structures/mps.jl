@@ -150,6 +150,7 @@ end
 
 
 ### Sampling a configuration from an MPS 
+#=
 function TeNe.sample(ψ::MPS)
     movecenter!(ψ, firstindex(ψ)) # move centre to begin for reduced sampling cost
     config = zeros(Int, length(ψ))
@@ -167,3 +168,4 @@ function TeNe.sample(ψ::MPS)
         block = 
     end
 end
+=#
