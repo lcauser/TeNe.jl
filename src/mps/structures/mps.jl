@@ -21,7 +21,7 @@ end
 export randommps, productmps
 
 """
-    MPS(dim::Int, length::Int)
+    MPS(dim::Int, length::Int; kwargs...)
 
 Create an MPS with physical dimension `dim` and `length` sites.
 
@@ -99,20 +99,8 @@ function inner(ψ::MPS, ϕ::MPS)
     end
     return _mps_mps_product(ψ, ϕ)
 end
-
-"""
-    dot(ψ::MPS, ϕ::MPS)
-
-Calculate the inner product of two MPSs `ψ` and `ϕ`.
-"""
 dot(ψ::MPS, ϕ::MPS) = inner(ψ, ϕ)
-
 import Base.*
-"""
-    *(ψ::MPS, ϕ::MPS)
-
-Calculate the inner product of two MPSs `ψ` and `ϕ`.
-"""
 *(ψ::MPS, ϕ::MPS) = inner(ψ, ϕ)
 
 

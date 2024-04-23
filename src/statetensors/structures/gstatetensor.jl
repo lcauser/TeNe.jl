@@ -12,6 +12,11 @@ mutable struct GStateTensor{r, T<:AbstractArray} <: AbstractStateTensor
 end
 export GStateTensor
 
+### Indexing 
+Base.getindex(ψ::GStateTensor, i...) = Base.getindex(ψ.tensor, i...)
+Base.firstindex(ψ::GStateTensor) = Base.firstindex(ψ.tensor)
+Base.lastindex(ψ::GStateTensor) = Base.lastindex(ψ.tensor)
+Base.eachindex(ψ::GStateTensor) = Base.eachindex(ψ.tensor)
 
 ### State tensor properties
 export rank 
@@ -27,7 +32,7 @@ Base.eltype(ψ::GStateTensor) = Base.eltype(ψ.tensor)
 
 Returns the rank of a state tensor.
 """
-TeNe.rank(::GStateTensor{r, T}) where {r, T} = r
+TeNe.rank(::GStateTensor{r}) where {r} = r
 
 """
     dim(::GStateTensor)
@@ -43,6 +48,8 @@ TeNe.dim(ψ::GStateTensor) = ψ.dim
 The length of a state tensor.
 """
 Base.length(ψ::GStateTensor) = fld(ndims(ψ.tensor), rank(ψ))
+
+tensor(ψ::GStateTensor) = ψ.tensor
 
 ### Norms 
 export norm, normalize!
@@ -104,13 +111,13 @@ function GStateTensor(rank::Int, dim::Int, length::Int; T::Type=ComplexF64)
     return GStateTensor{rank, typeof(tensor)}(dim, tensor)
 end
 
-function GStateTensor(rank::Int, dim::Int, tensor)
+function GStateTensor(rank::Int, dim::Int, tensor::Q) where {Q<:AbstractArray}
     return GStateTensor{rank, typeof(tensor)}(dim, tensor)
 end
 
 export randomgst
 function randomgst(rank::Int, d::Int, N::Int; T::Type=ComplexF64)
-    ψ = GStateTensor(rank, d, rand(T, map(j->d, Base.OneTo(rank*N))...))
+    ψ = GStateTensor(rank, d, randn(T, map(j->d, Base.OneTo(rank*N))...))
     normalize!(ψ)
     return ψ
 end
@@ -118,7 +125,7 @@ end
 
 ### Save and write 
 function HDF5.write(parent::Union{HDF5.File, HDF5.Group}, name::AbstractString,
-                    M::GStateTensor{r, T}) where {r, T}
+                    M::GStateTensor{r}) where {r}
     g = create_group(parent, name)
     attributes(g)["type"] = "StateTensor"
     attributes(g)["version"] = 1
@@ -146,6 +153,6 @@ export conj, isconj
 struct ConjGStateTensor{r, T} <: GStateTensorTrait where {r, T}
     StateTensor::GStateTensor{r, T}
 end
-TeNe.conj(ψ::GStateTensor) = ConjGMPS(ψ)
+TeNe.conj(ψ::GStateTensor) = ConjGStateTensor(ψ)
 TeNe.conj(ψ::ConjGStateTensor) = ψ.StateTensor
 isconj(ψ::ConjGStateTensor) = true

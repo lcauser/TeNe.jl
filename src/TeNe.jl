@@ -27,6 +27,7 @@ include("tensors/svd.jl")
 # State vectors 
 include("statetensors/structures/abstractstatetensor.jl")
 include("statetensors/structures/gstatetensor.jl")
+include("statetensors/structures/statevector.jl")
 
 # MPS 
 include("mps/structures/abstractmps.jl")
