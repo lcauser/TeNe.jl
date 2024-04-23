@@ -17,7 +17,7 @@ export issimilar
 
 # Traits for State tensors 
 abstract type GStateTensorTrait <: AbstractStateTensor end
-ase.eltype(ψ::GStateTensorTrait) = Base.eltype(ψ.StateTensor)
+Base.eltype(ψ::GStateTensorTrait) = Base.eltype(ψ.StateTensor)
 Base.length(ψ::GStateTensorTrait) = length(ψ.StateTensor)
 dim(ψ::GStateTensorTrait) = dim(ψ.StateTensor)
 TeNe.rank(ψ::GStateTensorTrait) = rank(ψ.StateTensor)

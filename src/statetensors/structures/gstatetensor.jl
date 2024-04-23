@@ -142,3 +142,10 @@ end
 
 
 ### Conjugation 
+export conj, isconj 
+struct ConjGStateTensor{r, T} <: GStateTensorTrait where {r, T}
+    StateTensor::GStateTensor{r, T}
+end
+TeNe.conj(ψ::GStateTensor) = ConjGMPS(ψ)
+TeNe.conj(ψ::ConjGStateTensor) = ψ.StateTensor
+isconj(ψ::ConjGStateTensor) = true
