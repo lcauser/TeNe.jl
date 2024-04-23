@@ -8,15 +8,7 @@ Check to see if MPSs share the same properties.
 function issimilar(ψs::AbstractMPS...)
     for i = Base.range(2, length(ψs))
         length(ψs[i]) != length(ψs[1]) && return false 
-        if dim(ψs[1]) == 0 || dim(ψs[i]) == 0
-            for j = 1:length(ψ)
-                ψ_dims = map(k -> size(ψs[1][j], k), Base.range(2, 1+rank(ψs[1])))
-                ϕ_dims = map(k -> size(ψs[i][j], k), Base.range(2, 1+rank(ψs[i])))
-                ψ_dims != ϕ_dims && return false
-            end
-        elseif dim(ψs[1]) != dim(ψs[i])
-            return false 
-        end
+        dim(ψs[1]) != dim(ψs[i]) && return false
     end
     return true
 end

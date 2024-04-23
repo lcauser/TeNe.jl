@@ -15,6 +15,7 @@ Depth = 3
 
 ```@docs
 rank(::GStateTensor)
+dim(::GStateTensor)
 length(::GStateTensor)
 norm(::GStateTensor)
 ```
