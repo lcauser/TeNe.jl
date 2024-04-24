@@ -40,7 +40,7 @@ export isstateoperator
 Check to see if an object is a state operator.
 """
 function isstateoperator(O)
-    return typoeof(O) <: StateOperator
+    return typeof(O) <: StateOperator
 end
 
 ### Initialising StateOperators 
@@ -115,8 +115,8 @@ Multiply the StateOperator `O` to the StateVector `ψ`.
 # Examples 
 
 ```julia-repl
-julia> O = productso(10, [0 1; 1 0])
-julia> ψ = productsv(10, [1, 0])
+julia> O = productso(10, [0 1; 1 0]);
+julia> ψ = productsv(10, [1, 0]);
 julia> ϕ = O * ψ;
 ```
 """
@@ -138,9 +138,9 @@ Multiply the StateOperator `O` to the StateVector `ψ`, and store the result in 
 # Examples 
 
 ```julia-repl
-julia> O = productso(10, [0 1; 1 0])
-julia> ψ = productsv(10, [1, 0])
-julia> ϕ = StateVector(2, 10)
+julia> O = productso(10, [0 1; 1 0]);
+julia> ψ = productsv(10, [1, 0]);
+julia> ϕ = StateVector(2, 10);
 julia> applyso!(ϕ, O, ψ);
 ```
 """
@@ -152,7 +152,7 @@ function applyso!(ϕ::StateVector, O::StateOperator, ψ::StateVector)
     iψ = collect(1:ndims(tensor(ψ))) # Remove allocations?...
     conjO = isconj(ϕ) ? !isconj(O) : isconj(O)
     conjψ = isconj(ϕ) ? !isconj(ψ) : isconj(ψ) 
-    contract!(tensor(ψ), tensor(O), tensor(ψ), iO, iψ, conjO, conjψ)
+    contract!(tensor(ϕ), tensor(O), tensor(ψ), iO, iψ, conjO, conjψ)
 end
 applyso!(ϕ::StateVector, ψ::StateVector, O::StateOperator) = applyso!(ϕ, transpose(O), ψ)
 
@@ -165,8 +165,8 @@ Multiply the StateOperator `O` to the StateVector `ψ`. In-place version of `app
 # Examples 
 
 ```julia-repl
-julia> O = productso(10, [0 1; 1 0])
-julia> ψ = productsv(10, [1, 0])
+julia> O = productso(10, [0 1; 1 0]);
+julia> ψ = productsv(10, [1, 0]);
 julia> applyso!(O, ψ);
 ```
 """
@@ -182,7 +182,6 @@ function applyso!(O::StateOperator, ψ::StateVector)
 end
 
 ### Applying a StateOperator to a StateOperator
-
 """
     applyso(O1::StateOperator, O2::StateOperator)
 
@@ -191,8 +190,8 @@ Calculate the product of two StateOperators, `O1` and `O2`.
 # Examples 
 
 ```julia-repl
-julia> O1 = productso(10, [0 1; 1 0])
-julia> O2 = productso(10, [0 1im; -1im 0])
+julia> O1 = productso(10, [0 1; 1 0]);
+julia> O2 = productso(10, [0 1im; -1im 0]);
 julia> O = O1 * O2;
 ```
 """
@@ -212,9 +211,9 @@ in StateOperator `O`.
 # Examples 
 
 ```julia-repl
-julia> O1 = productso(10, [0 1; 1 0])
-julia> O2 = productso(10, [0 1im; -1im 0])
-julia> O = StateOperator(2, 10)
+julia> O1 = productso(10, [0 1; 1 0]);
+julia> O2 = productso(10, [0 1im; -1im 0]);
+julia> O = StateOperator(2, 10);
 julia> applyso!(O, O1, O2);
 ```
 """
@@ -240,5 +239,112 @@ end
 
 function _applyso_perm_dims(N::Int)
     ### Remove allocations??
-    return map(j->isodd(j) ? cld(j, 2) : N + cld(j, 2), Base.OneTo(2*N))
+    return tuple(map(j->isodd(j) ? cld(j, 2) : N + cld(j, 2), Base.OneTo(2*N))...)
+end
+
+
+### Inner products 
+export inner
+"""
+    inner(ψ::StateVector, O::StateOperator, ϕ::StateVector)
+    inner(ψ::StateVector, O1::StateOperator, O2::MPO, ϕ::StateVector)
+
+Calculate the expectation of a string of StateOperators `Os` with respect to StateVectors `ψ` and `ϕ`.
+
+# Examples 
+
+```jldoctest
+julia> ψ = randomsv(2, 10);
+julia> O = productso(10, [0 1; 1 0]);
+julia> inner(ψ, O, O, ψ)
+1.0 + 0.0im
+```
+"""
+function inner(ψ::StateVector, ϕs::Union{StateVector, StateOperator}...)
+    # Checks 
+    if !issimilar(ψ, ϕs...)
+        throw(ArgumentError("Arguments have properties that do not match."))
+    end
+    for i = Base.OneTo(length(ϕs)-1)
+        if !isstateoperator(ϕs[i])
+            throw(ArgumentError("The inner terms in the braket must be MPOs."))
+        end
+    end
+    if !isstatevector(ϕs[end])
+        throw(ArgumentError("The last term in the MPS must be an MPO."))
+    end
+
+    # Create a StateVector from the cache 
+    ϕ = GStateTensor(1, dim(ψ), cache(size(tensor(ϕs[end])), tensor(ϕs[end])))
+
+    # Contraction
+    applyso!(ϕ, ϕs[end-1], ϕs[end])
+    for i = Base.range(length(ϕs)-2, 1, step=-1)
+        println(i)
+        applyso!(ϕs[i], ϕ)
+    end
+    return inner(ψ, ϕ)
+end
+
+
+### Trace of StateOperators 
+export trace
+"""
+    trace(Os::StateOperator...)
+
+Compute the trace of a string of StateOperators.
+
+# Examples 
+
+```jldoctest
+julia> O = productso(10, [0 1; 1 0]);
+julia> trace(O, O)
+1024.0 + 0.0im
+```
+"""
+function trace(Os::StateOperator...)
+    # Checks 
+    if !issimilar(Os...)
+        throw(ArgumentError("Arguments have properties that do not match."))
+    end
+
+    if length(Os) == 1
+        ten = tensor(Os[1])
+        for _ = 1:length(Os[1])
+            ten = trace(ten, 1, 2)
+        end
+        return ten[]
+    end
+
+    # Create a tensor from the cache
+    T = _promote_tensor_eltype(Os...) 
+    perms = tuple(map(j->isodd(j) ? j + 1 : j - 1, Base.OneTo(ndims(tensor(Os[1]))))...)
+    if istranspose(Os[1])
+        dims = map(j->size(tensor(Os[1]), j), perms)
+        ten = cache(T, dims, 2, 1)
+        permutedims!(ten, tensor(Os[1]), perms)
+    else
+        dims = size(tensor(Os[1]))
+        ten = cache(T, dims, 2, 1) .= tensor(Os[1])
+    end
+    if isconj(Os[1])
+        ten .= conj.(ten)
+    end
+    
+    # Contract with center operators 
+    perms2 = _applyso_perm_dims(length(Os[1]))
+    for i in range(2, length(Os)-1)
+        ten = contract(ten, tensor(Os[i]), collect(2:2:ndims(ten)),
+            collect((istranspose(Os[i]) ? 2 : 1):2:ndims(tensor(Os[i]))),
+            false, isconj(Os[i]))
+        ten = permutedims(ten, perms2)
+    end
+
+    # Contract with the last 
+    dims = Tuple(Base.OneTo(ndims(ten)))
+    if istranspose(Os[end])
+        return contract(ten, tensor(Os[end]), dims, dims, false, isconj(Os[end]))[]
+    else
+        return contract(ten, tensor(Os[end]), dims, perms, false, isconj(Os[end]))[]
+    end
 end

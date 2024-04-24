@@ -73,3 +73,13 @@ This can be done in-place, either so store the result in an existing StateVector
 ```@docs
 applyso!
 ```
+
+The expectation value of operators (or a string of operators) can be calculated in the following way.
+```@docs 
+inner(::StateVector, ::StateOperator, ::StateVector)
+```
+
+The trace of an operator (or a string of operators) can be computed in the following way.
+```@docs 
+trace(::StateOperator...)
+```
