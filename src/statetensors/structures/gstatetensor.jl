@@ -115,11 +115,18 @@ function GStateTensor(rank::Int, dim::Int, tensor::Q) where {Q<:AbstractArray}
     return GStateTensor{rank, typeof(tensor)}(dim, tensor)
 end
 
-export randomgst
 function randomgst(rank::Int, d::Int, N::Int; T::Type=ComplexF64)
     ψ = GStateTensor(rank, d, randn(T, map(j->d, Base.OneTo(rank*N))...))
     normalize!(ψ)
     return ψ
+end
+
+function productgst(N::Int, A::AbstractArray; T::Type=ComplexF64)
+    tensor = ones(T, )
+    for i = Base.OneTo(N)
+        tensor = tensorproduct(tensor, A; tocache = i!=N)
+    end
+    return GStateTensor(ndims(A), length(A), tensor)
 end
 
 

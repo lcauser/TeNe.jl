@@ -49,8 +49,14 @@ sample(::StateVector)
 ```
 
 ## Operators
+Operators, such as the Hamiltonian of a quantum many-body system, or more generally a matrix can be represented by a `StateOperator`.
 
 ### Initiating an operator
+Luke a `StateVector`, we can initalise a `StateOperator` randomly or as a product state.
+```@docs
+randomso
+productso
+```
 
 ### Construct an operator from a list
 

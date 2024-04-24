@@ -64,7 +64,7 @@ end
 
 
 """
-    randommpo(dim::Int, length::Int, bonddim::Int)
+    randommpo(dim::Int, length::Int, bonddim::Int; kwargs...)
 
 Create an MPO with dimensions `dim`, size `length` and bond dimension `bonddim`,
 with random tensors.
@@ -79,7 +79,7 @@ end
 
 
 """
-    productmpo(N::Int, A<:AbstractArray; kwargs...)
+    productmpo(N::Int, A::AbstractArray; kwargs...)
 
 Create a product MPO of size `N`, composed of array `A`. 
 `A` can be a matrix or rank-4 tensor.
@@ -88,7 +88,7 @@ Create a product MPO of size `N`, composed of array `A`.
 
     - `T::Type=ComplexF64`: The element type for the tensors.
 """
-function productmpo(N::Int, A::Q; T::Type=ComplexF64) where {Q<:AbstractArray}
+function productmpo(N::Int, A::AbstractArray; T::Type=ComplexF64)
     if ndims(A) == 2
         if size(A, 1) != size(A, 2) 
             throw(ArgumentError("A must be a square matrix!"))
@@ -123,7 +123,7 @@ end
 
 Calculate the expectation of a string of operators `Os` with respect to MPSs `ψ` and `ϕ`.
 """
-function inner(ψ::MPS, ϕs::Union{GMPS, GMPSTrait}...)
+function inner(ψ::MPS, ϕs::Union{MPS, MPO}...)
     # Checks 
     if !issimilar(ψ, ϕs...)
         throw(ArgumentError("Arguments have properties that do not match."))

@@ -56,12 +56,8 @@ Create a product state vector with length `length` and local state `A`.
 
     - `T::Type=ComplexF64`: The element type for the tensors.
 """
-function productsv(N::Int, A::AbstractVector; T::Type=ComplexF64)
-    tensor = ones(T, )
-    for i = Base.OneTo(N)
-        tensor = tensorproduct(tensor, A; tocache = i!=N)
-    end
-    return GStateTensor(1, length(A), tensor)
+function productsv(N::Int, A::AbstractVector; kwargs...)
+    return productgst(N, A; kwargs...)
 end
 productstatevector(N::Int, A::AbstractVector; kwargs...) = productsv(N, A; kwargs...)
 

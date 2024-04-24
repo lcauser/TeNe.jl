@@ -1,3 +1,4 @@
 /Manifest.toml
 .VSCodeCounter/
 docs/build/
+.vscode/settings.json
