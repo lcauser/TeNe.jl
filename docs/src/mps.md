@@ -1,3 +1,6 @@
+```@meta 
+CollapsedDocStrings = true
+```
 # Matrix product states
 
 Matrix product states are an ansatz for describing and estimating states of one-dimensional systems.

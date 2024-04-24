@@ -1,3 +1,6 @@
+```@meta 
+CollapsedDocStrings = true
+```
 # State tensors
 
 State tensors are full-rank tensorial objects for describing tensors of a
@@ -49,10 +52,10 @@ sample(::StateVector)
 ```
 
 ## Operators
-Operators, such as the Hamiltonian of a quantum many-body system, or more generally a matrix can be represented by a `StateOperator`.
+Operators, such as the Hamiltonian of a quantum many-body system, or more generally a matrix can be represented by a StateOperator.
 
 ### Initiating an operator
-Luke a `StateVector`, we can initalise a `StateOperator` randomly or as a product state.
+Like a StateVector, we can initalise a StateOperator randomly or as a product state.
 ```@docs
 randomso
 productso
@@ -61,3 +64,12 @@ productso
 ### Construct an operator from a list
 
 ### Products
+A StateVector or a StateOperator can be multiplied by a StateOperator.
+```@docs
+applyso
+```
+
+This can be done in-place, either so store the result in an existing StateVector `ϕ`, or to replace `ψ`. In the case of a StateOperator-StateOperator multiplication, the StateOperator for the result must be specified.
+```@docs
+applyso!
+```

@@ -126,7 +126,9 @@ function productgst(N::Int, A::AbstractArray; T::Type=ComplexF64)
     for i = Base.OneTo(N)
         tensor = tensorproduct(tensor, A; tocache = i!=N)
     end
-    return GStateTensor(ndims(A), length(A), tensor)
+    sA = size(A)
+    dim = all(j->sA[j]==sA[1], Base.OneTo(ndims(A))) ? sA[1] : 0
+    return GStateTensor(ndims(A), dim, tensor)
 end
 
 
