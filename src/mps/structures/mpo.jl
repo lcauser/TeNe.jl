@@ -339,9 +339,11 @@ julia> ϕ = StateVector(2, 10);
 julia> applympo!(ϕ, O, ψ);
 """
 function applympo!(ϕ::StateVector, O::MPO, ψ::StateVector)
+    # Checks 
     if !issimilar(ϕ, O, ψ)
         throw(ArgumentError("Arguments have properties that do not match."))
     end
+
     # Apply the first tensor 
     ten = reshape(tensor(ψ), (size(tensor(ψ))..., 1))
     ten = contract(ten, O[1], (ndims(ten), 1), (1, istranspose(O) ? 2 : 3), isconj(ψ), isconj(O))
@@ -355,6 +357,76 @@ function applympo!(ϕ::StateVector, O::MPO, ψ::StateVector)
 end
 applympo!(ϕ::StateVector, ψ::StateVector, O::MPO) = applyMPO(ϕ, O, ψ)
 
+
+"""
+    applympo(O1::MPO, O2::StateOperator)
+    applympo(O1::StateOperator, O2::MPO)
+
+Multiply a StateOperator by an MPO.
+"""
+function applympo(O1::MPO, O2::StateOperator)
+    if !issimilar(O1, O2)
+        throw(ArgumentError("Arguments have properties that do not match."))
+    end
+    O = StateOperator(dim(O2), length(O2))
+    _mpo_so_product!(O, O1, O2)
+    return O
+end
+function applympo(O1::StateOperator, O2::MPO)
+    if !issimilar(O1, O2)
+        throw(ArgumentError("Arguments have properties that do not match."))
+    end
+    O = StateOperator(dim(O2), length(O2))
+    _mpo_so_product!(O, O2, O1; tp=true)
+    return O
+end
+*(O1::MPO, O2::StateOperator) = applympo(O1, O2)
+*(O1::StateOperator, O2::MPO) = applympo(O1, O2)
+
+"""
+    applympo!(O::StateOperator, O1::MPO, O2::StateOperator)
+    applympo!(O::StateOperator, O1::StateOperator, O2::MPO)
+
+Multiply a StateOperator by an MPO, and store the result in `O`.
+"""
+function applympo!(O::StateOperator, O1::MPO, O2::StateOperator)
+    if !issimilar(O, O1, O2)
+        throw(ArgumentError("Arguments have properties that do not match."))
+    end
+    _mpo_so_product!(O, O1, O2)
+end
+
+function applympo!(O::StateOperator, O1::StateOperator, O2::MPO)
+    if !issimilar(O, O1, O2)
+        throw(ArgumentError("Arguments have properties that do not match."))
+    end
+    _mpo_so_product!(O, transpose(O2), transpose(O1); tp=true)
+end
+
+function _mpo_so_product!(O::StateOperator, O1::MPO, O2::StateOperator; tp::Bool=false)
+    # Apply the first tensor 
+    ten = reshape(tensor(O2), (size(tensor(O2))..., 1))
+    ten = contract(ten, O1[1], (ndims(ten), istranspose(O2) ? 2 : 1),
+        (1, istranspose(O1) ? 2 : 3), isconj(O2), isconj(O1))
+
+    # Apply intermediate tensors
+    # Loop through the remaining tensors 
+    for i in range(firstindex(O1)+1, lastindex(O1))
+        ten = contract(ten, O1[i], (ndims(ten), istranspose(O2) ? i+1 : i),
+            (1, istranspose(O1) ? 2 : 3), false, isconj(O1))
+    end
+
+    # Manipulate to fit O
+    ten = reshape(ten, size(ten)[begin:end-1])
+    perms = _applyso_perm_dims(length(O))
+    if istranspose(O) != tp 
+        perms = Tuple(map(j->isodd(j) ? perms[j+1] : perms[j-1], Base.eachindex(perms)))
+    end
+    permutedims!(tensor(O), ten, perms)
+    if isconj(O)
+        tensor(O) .= conj.(tensor(O))
+    end
+end
 
 ### Inner products 
 """
