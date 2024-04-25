@@ -73,7 +73,7 @@ Calculate the inner product of two StateVectors `ψ` and `ϕ`.
 """
 function inner(ψ::StateVector, ϕ::StateVector)
     # Checks 
-    if !issimilar(ψ, ϕ)
+    if length(ψ) != length(ϕ) || !_sv_sv_product_checkdims(ψ, ϕ)
         throw(ArgumentError("Arguments have properties that do not match."))
     end
     return _sv_sv_product(ψ, ϕ)
@@ -88,6 +88,15 @@ function _sv_sv_product(ψ::StateVector, ϕ::StateVector)
              1, 1, !isconj(ψ), isconj(ϕ))[]
 end
 
+function _sv_sv_product_checkdims(ψ::StateVector, ϕ::StateVector)
+    for i = Base.OneTo(length(ψ))
+        if size(tensor(ψ), i) != size(tensor(ϕ), i)
+            return false
+        end
+    end
+    return true
+end
+
 ### Entanglement entropy 
 export entropy
 """
@@ -97,8 +106,16 @@ Calcualte the bipartition entanglement entropy between sites `site` and `site+1`
 for a StateVector `ψ`.
 """
 function entropy(ψ::StateVector, site::Int)
-    inner_dims = map(j->size(tensor(ψ), j), Base.OneTo(site))
-    outer_dims = map(j->size(tensor(ψ), j), Base.range(site+1, length(ψ)))
+    # Checks 
+    if site < 0 || site >= length(ψ)
+        throw(ArgumentError("site=$(site) is out of range."))
+    end
+
+    # Dimensions 
+    inner_dims = Tuple(map(j->size(tensor(ψ), j), Base.OneTo(site))) # Allocations?
+    outer_dims = Tuple(map(j->size(tensor(ψ), j), Base.range(site+1, length(ψ)))) # Allocations?
+
+    # SVD
     _, S, _ = tsvd(reshape(tensor(ψ), prod(inner_dims), prod(outer_dims)), 2)
     S ./= norm(ψ)
     S2 = diag(S) .^ 2
@@ -112,6 +129,14 @@ Calcualte the bipartition entanglement entropy between two partitions, one with 
 and the other with the remaining sites for StateVector `ψ`.
 """
 function entropy(ψ::StateVector, sites)
+    # Checks 
+    for site in sites 
+        if site < 0 || site >= length(ψ)
+            throw(ArgumentError("site=$(site) is out of range."))
+        end
+    end
+
+    # SVD 
     _, S, _ = tsvd(tensor(ψ), sites)
     S ./= norm(ψ)
     S2 = diag(S) .^ 2

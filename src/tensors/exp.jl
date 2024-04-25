@@ -39,16 +39,16 @@ function TeNe.exp(x, outerdims; prefactor=1)
     _exp_check_dims(sinners, souters)
     return _exp(x, pxs, pxs_return, souters, sinners, prefactor)
 end
-TeNe.exp(x, outerdim::Int; kwargs...) = exp(x, (outerdim); kwargs...)
+TeNe.exp(x, outerdim::Int; kwargs...) = TeNe.exp(x, (outerdim); kwargs...)
 
 
-function texp(x, innerdims, outerdims; prefactor=1)
+function TeNe.exp(x, innerdims, outerdims; prefactor=1)
     _exp_check_inds(x, innerdims, outerdims)
     pxs, pxs_return, sinners, souters = _exp_permuted_dimensions(x, innerdims, outerdims)
     _exp_check_dims(sinners, souters)
     return _exp(x, pxs, pxs_return, souters, sinners, prefactor)
 end
-TeNe.exp(x, innerdim::Int, outerdim::Int; kwargs...) = exp(x, (innerdim), (outerdim); kwargs...)
+TeNe.exp(x, innerdim::Int, outerdim::Int; kwargs...) = TeNe.exp(x, (innerdim), (outerdim); kwargs...)
 
 ### Unsafe exponential 
 function _exp(x, pxs, pxs_return, souters, sinners, prefactor)

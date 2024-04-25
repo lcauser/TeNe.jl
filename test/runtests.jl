@@ -11,6 +11,10 @@ include("tensors/combinedims.jl")
 include("tensors/exp.jl")
 include("tensors/svd.jl")
 
+# State vectors 
+include("statetensors/statevector.jl")
+include("statetensors/stateoperator.jl")
+
 # MPS 
 include("mps/gmps.jl")
 include("mps/mps.jl")

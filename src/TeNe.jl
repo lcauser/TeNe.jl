@@ -26,6 +26,7 @@ end
 export issimilar
 
 # Tensors
+include("tensors/promotetensor.jl")
 include("tensors/contract.jl")
 include("tensors/tensorproduct.jl")
 include("tensors/trace.jl")
