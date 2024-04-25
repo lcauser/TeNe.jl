@@ -1,4 +1,4 @@
-abstract type AbstractStateTensor end 
+abstract type AbstractStateTensor <: AbstractTensorNetworkState  end 
 
 # Maybe for later: genalise to more general tensor network states?
 """

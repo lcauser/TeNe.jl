@@ -15,6 +15,16 @@ include("cache.jl")
 # Default settings 
 const _TeNe_cutoff = 1e-16
 
+abstract type AbstractTensorNetworkState end
+function issimilar(ψs::AbstractTensorNetworkState...)
+    for i = Base.range(2, length(ψs))
+        length(ψs[i]) != length(ψs[1]) && return false 
+        dim(ψs[1]) != dim(ψs[i]) && return false
+    end
+    return true
+end
+export issimilar
+
 # Tensors
 include("tensors/contract.jl")
 include("tensors/tensorproduct.jl")

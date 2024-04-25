@@ -116,112 +116,6 @@ function productmpo(N::Int, A::AbstractArray; T::Type=ComplexF64)
     return O
 end
 
-### Inner products 
-"""
-    inner(ψ::MPS, O::MPO, ϕ::MPS)
-    inner(ψ::MPS, O1::MPO, O2::MPO, ϕ::MPS)
-
-Calculate the expectation of a string of operators `Os` with respect to MPSs `ψ` and `ϕ`.
-"""
-function inner(ψ::MPS, ϕs::Union{MPS, MPO}...)
-    # Checks 
-    if !issimilar(ψ, ϕs...)
-        throw(ArgumentError("Arguments have properties that do not match."))
-    end
-    for i = 1:length(ϕs)-1
-        if !ismpo(ϕs[i])
-            throw(ArgumentError("The inner terms in the braket must be MPOs."))
-        end
-    end
-    if !ismps(ϕs[end])
-        throw(ArgumentError("The last term in the MPS must be an MPO."))
-    end
-    return _mps_mpo_mps_product(ψ, ϕs[end], ϕs[1:end-1]...)
-end
-
-function _mps_mpo_mps_product(ψ::MPS, ϕ::MPS, Os::MPO...)
-    # Type info...
-    T = Base.promote_op(*, eltype(ψ), eltype(ϕ), eltype.(Os)...)
-    conjψ = !isconj(ψ) # Not because inner product has conj on bra by default...
-    conjϕ = isconj(ϕ)
-    conjOs = map(O->isconj(O), Os)
-    transOs = map(O->istranspose(O), Os)
-
-    # Contraction 
-    dims = (size(ψ[begin], 1), map(O->size(O[begin], 1), Os)..., size(ϕ[begin], 1))
-    block = cache(T, dims, 2, 1) .= 1
-    for i in eachindex(ψ)
-        block = contract(block, ψ[i], 1, 1, false, conjψ)
-        for j in eachindex(Os)
-            block = contract(block, Os[j][i], (1, ndims(block)-1), (1, transOs[j] ? 3 : 2), false, conjOs[j])
-        end
-        block = contract(block, ϕ[i], (1, ndims(block)-1), (1, 2), false, conjϕ)
-    end
-
-    return block[]
-end
-
-
-### Computing traces of MPO (products)
-export trace
-
-"""
-    trace(Os::MPO...)
-
-Compute the trace of the product of many MPOs.
-"""
-function TeNe.trace(Os::MPO...)
-    # Checks 
-    issimilar(Os...)
-
-    if length(Os) == 1
-        return _mpo_trace(Os...)
-    else
-        return _mpo_mpo_trace(Os...)
-    end
-end
-
-function _mpo_trace(O::MPO)
-     # Type info...
-     T = eltype(O)
-     conjO = isconj(O)
-
-     # Do the contraction 
-    block = cache(T, size(O[begin], 1), 2, 1) .= 1
-    for i in eachindex(O)
-        block = contract(block, trace(O[i], 2, 3), 1, 1, false, conjO)
-    end
-    return block[]
-end
-
-function _mpo_mpo_trace(Os::MPO...)
-    # Type info...
-    T = Base.promote_op(*, eltype.(Os)...)
-    conjOs = map(O->isconj(O), Os)
-    transOs = map(O->istranspose(O), Os)
-
-    # Do the contraction 
-    block = cache(T, map(O->size(O[begin], 1), Os), 2, 1) .= 1
-    for i in eachindex(Os[begin])
-        # Contract with the first MPO in the term
-        block = contract(block, Os[1][i], 1, 1, false, conjOs[1])
-        if transOs[1]
-            block = permutedim(block, ndims(block)-1, ndims(block)-2)
-        end
-
-        # Contract with the central MPOs
-        for j in range(firstindex(Os)+1, lastindex(Os)-1)
-            block = contract(block, Os[j][i], (1, ndims(block)-1),
-                            (1, transOs[j] ? 3 : 2), false, conjOs[j])
-        end
-
-        # Contract with final MPO 
-        block = contract(block, Os[end][i], (1, ndims(block)-1, 2),
-                         (1, transOs[end] ? 3 : 2, transOs[end] ? 2 : 3), false, conjOs[end])
-    end
-
-    return block[]
-end
 
 ### Applying an MPO 
 # TODO: add densitymatrix method and variational method...
@@ -445,6 +339,9 @@ julia> ϕ = StateVector(2, 10);
 julia> applympo!(ϕ, O, ψ);
 """
 function applympo!(ϕ::StateVector, O::MPO, ψ::StateVector)
+    if !issimilar(ϕ, O, ψ)
+        throw(ArgumentError("Arguments have properties that do not match."))
+    end
     # Apply the first tensor 
     ten = reshape(tensor(ψ), (size(tensor(ψ))..., 1))
     ten = contract(ten, O[1], (ndims(ten), 1), (1, istranspose(O) ? 2 : 3), isconj(ψ), isconj(O))
@@ -457,3 +354,111 @@ function applympo!(ϕ::StateVector, O::MPO, ψ::StateVector)
     tensor(ϕ) .= isconj(ϕ) ? conj.(ten) : ten
 end
 applympo!(ϕ::StateVector, ψ::StateVector, O::MPO) = applyMPO(ϕ, O, ψ)
+
+
+### Inner products 
+"""
+    inner(ψ::MPS, O::MPO, ϕ::MPS)
+    inner(ψ::MPS, O1::MPO, O2::MPO, ϕ::MPS)
+
+Calculate the expectation of a string of operators `Os` with respect to MPSs `ψ` and `ϕ`.
+"""
+function inner(ψ::MPS, ϕs::Union{MPS, MPO}...)
+    # Checks 
+    if !issimilar(ψ, ϕs...)
+        throw(ArgumentError("Arguments have properties that do not match."))
+    end
+    for i = 1:length(ϕs)-1
+        if !ismpo(ϕs[i])
+            throw(ArgumentError("The inner terms in the braket must be MPOs."))
+        end
+    end
+    if !ismps(ϕs[end])
+        throw(ArgumentError("The last term in the MPS must be an MPO."))
+    end
+    return _mps_mpo_mps_product(ψ, ϕs[end], ϕs[1:end-1]...)
+end
+
+function _mps_mpo_mps_product(ψ::MPS, ϕ::MPS, Os::MPO...)
+    # Type info...
+    T = Base.promote_op(*, eltype(ψ), eltype(ϕ), eltype.(Os)...)
+    conjψ = !isconj(ψ) # Not because inner product has conj on bra by default...
+    conjϕ = isconj(ϕ)
+    conjOs = map(O->isconj(O), Os)
+    transOs = map(O->istranspose(O), Os)
+
+    # Contraction 
+    dims = (size(ψ[begin], 1), map(O->size(O[begin], 1), Os)..., size(ϕ[begin], 1))
+    block = cache(T, dims, 2, 1) .= 1
+    for i in eachindex(ψ)
+        block = contract(block, ψ[i], 1, 1, false, conjψ)
+        for j in eachindex(Os)
+            block = contract(block, Os[j][i], (1, ndims(block)-1), (1, transOs[j] ? 3 : 2), false, conjOs[j])
+        end
+        block = contract(block, ϕ[i], (1, ndims(block)-1), (1, 2), false, conjϕ)
+    end
+
+    return block[]
+end
+
+
+### Computing traces of MPO (products)
+export trace
+
+"""
+    trace(Os::MPO...)
+
+Compute the trace of the product of many MPOs.
+"""
+function TeNe.trace(Os::MPO...)
+    # Checks 
+    issimilar(Os...)
+
+    if length(Os) == 1
+        return _mpo_trace(Os...)
+    else
+        return _mpo_mpo_trace(Os...)
+    end
+end
+
+function _mpo_trace(O::MPO)
+     # Type info...
+     T = eltype(O)
+     conjO = isconj(O)
+
+     # Do the contraction 
+    block = cache(T, size(O[begin], 1), 2, 1) .= 1
+    for i in eachindex(O)
+        block = contract(block, trace(O[i], 2, 3), 1, 1, false, conjO)
+    end
+    return block[]
+end
+
+function _mpo_mpo_trace(Os::MPO...)
+    # Type info...
+    T = Base.promote_op(*, eltype.(Os)...)
+    conjOs = map(O->isconj(O), Os)
+    transOs = map(O->istranspose(O), Os)
+
+    # Do the contraction 
+    block = cache(T, map(O->size(O[begin], 1), Os), 2, 1) .= 1
+    for i in eachindex(Os[begin])
+        # Contract with the first MPO in the term
+        block = contract(block, Os[1][i], 1, 1, false, conjOs[1])
+        if transOs[1]
+            block = permutedim(block, ndims(block)-1, ndims(block)-2)
+        end
+
+        # Contract with the central MPOs
+        for j in range(firstindex(Os)+1, lastindex(Os)-1)
+            block = contract(block, Os[j][i], (1, ndims(block)-1),
+                            (1, transOs[j] ? 3 : 2), false, conjOs[j])
+        end
+
+        # Contract with final MPO 
+        block = contract(block, Os[end][i], (1, ndims(block)-1, 2),
+                         (1, transOs[end] ? 3 : 2, transOs[end] ? 2 : 3), false, conjOs[end])
+    end
+
+    return block[]
+end

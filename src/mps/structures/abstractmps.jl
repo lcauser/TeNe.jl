@@ -1,5 +1,5 @@
 # Abstract MPS
-abstract type AbstractMPS end
+abstract type AbstractMPS <: AbstractTensorNetworkState end
 """
     issimilar(::AbstractMPS...)
 
