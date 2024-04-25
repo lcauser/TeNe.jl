@@ -28,4 +28,12 @@
         ψ′ = applympo(O, ψ; alg=:zipup)
         isapprox(inner(ψ′, ϕ), 1)
     end
+
+    @test begin 
+        ψ = productsv(8, [0, 1])
+        ϕ = productsv(8, [1, 0])
+        O = productmpo(8, [0 1; 0 0])
+        ψ′ = applympo(O, ψ)
+        isapprox(inner(ψ′, ϕ), 1)
+    end
 end

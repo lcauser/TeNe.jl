@@ -204,7 +204,10 @@ julia> O = productmpo(10, [0 1; 1 0]);
 julia> ϕ = O * ψ;
 """
 function applympo(O::MPO, ψ::StateVector)
-    ϕ = GStateTensor(1, dim(ψ), promote_tensor(size(tensor(ψ)), tensor(ψ), O[begin]))
+    ϕ = GStateTensor(1, dim(ψ), promote_tensor(_mpo_sv_product_dims(O), tensor(ψ), O[begin]))
+    if !(length(ϕ) == length(O) == length(ψ)) || !_mpo_sv_product_checkdims(ϕ, O, ψ)
+        throw(ArgumentError("Arguments have properties that do not match."))
+    end
     _mpo_sv_product!(ϕ, O, ψ)
     return ϕ
 end
@@ -228,7 +231,7 @@ julia> ϕ = StateVector(2, 10);
 julia> applympo!(ϕ, O, ψ);
 """
 function applympo!(ϕ::StateVector, O::MPO, ψ::StateVector)
-    if !issimilar(ϕ, O, ψ)
+    if !(length(ϕ) == length(O) == length(ψ)) || !_mpo_sv_product_checkdims(ϕ, O, ψ)
         throw(ArgumentError("Arguments have properties that do not match."))
     end
     _mpo_sv_product!(ϕ, O, ψ)
@@ -246,6 +249,22 @@ function _mpo_sv_product!(ϕ::StateVector, O::MPO, ψ::StateVector)
     end
     ten = reshape(ten, size(ten)[begin:end-1])
     tensor(ϕ) .= isconj(ϕ) ? conj.(ten) : ten
+end
+
+function _mpo_sv_product_checkdims(ϕ::StateVector, O::MPO, ψ::StateVector)
+    for i in eachindex(O)
+        if size(ψ, i) != size(O[i], istranspose(O) ? 3 : 2)
+            return false
+        end
+        if size(ϕ, i) != size(O[i], istranspose(O) ? 2 : 3)
+            return false
+        end
+    end
+    return true 
+end
+
+function _mpo_sv_product_dims(O::MPO)
+    return tuple(map(j->size(O[j], istranpose(O) ? 3 : 2), eachindex(O)))
 end
 
 

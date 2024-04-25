@@ -104,7 +104,7 @@ julia> O = O1 * O2;
 """
 function applyso(O1::StateOperator, O2::StateOperator)
     O = GStateTensor(2, dim(O1), promote_tensor(_so_so_product_dims(O1, O2), O1, O2))
-    if !(length(O) == length(O1) == length(O2)) && _so_so_product_checkdims(O, O1, O2)
+    if !(length(O) == length(O1) == length(O2)) || !_so_so_product_checkdims(O, O1, O2)
         throw(ArgumentError("Arguments have properties that do not match."))
     end
     _so_so_product!(O, O1, O2)
@@ -128,7 +128,7 @@ julia> applyso!(O, O1, O2);
 ```
 """
 function applyso!(O::StateOperator, O1::StateOperator, O2::StateOperator)
-    if !(length(O) == length(O1) == length(O2)) && _so_so_product_checkdims(O, O1, O2)
+    if !(length(O) == length(O1) == length(O2)) || !_so_so_product_checkdims(O, O1, O2)
         throw(ArgumentError("Arguments have properties that do not match."))
     end
     _so_so_product!(O, O1, O2)
