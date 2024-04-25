@@ -229,6 +229,10 @@ export applympo
 
 """
     applympo(O::MPO, ψ::MPS; kwargs...)
+    applympo(ψ::MPS, O::MPO; kwargs...)
+    *(O::MPO, ψ::MPS)
+    *(ψ::MPS, O::MPO)
+    
 
 Apply MPO `O` to MPS `ψ`.
 
@@ -400,3 +404,28 @@ function _mpo_mpo_zipup!(O::MPO, O1::MPO, O2::MPO; kwargs...)
     O.center = length(O)
     movecenter!(O, firstindex(O); kwargs...)
 end
+
+"""
+    applympo(O::MPO, ψ::StateVector)
+    applympo(ψ::StateVector, O::MPO)
+    *(O::MPO, ψ::StateVector)
+    *(ψ::StateVector, O::MPO)
+
+Apply MPO `O` to StateVector `ψ`.
+"""
+function applympo(O::MPO, ψ::StateVector)
+    # Apply the first tensor 
+    ten = reshape(tensor(ψ), (size(tensor(ψ))..., 1))
+    ten = contract(ten, O[1], (ndims(ten), 1), (1, istranspose(O) ? 2 : 3), isconj(ψ), isconj(O))
+
+    # Loop through the remaining tensors 
+    for i in range(firstindex(O)+1, lastindex(O))
+        ten = contract(ten, O[i], (ndims(ten), 1), (1, istranspose(O) ? 2 : 3), false, isconj(O))
+    end
+    ten = reshape(ten, size(ten)[begin:end-1])
+    return GStateTensor(1, dim(ψ), copy(ten))
+end
+applympo(ψ::StateVector, O::MPO) = applympo(transpose(O), ψ)
+*(O::MPO, ψ::StateVector) = applympo(O, ψ)
+*(ψ::StateVector, O::MPO) = applympo(ψ, O)
+
