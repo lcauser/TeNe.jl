@@ -25,7 +25,7 @@ function issimilar(ψs::AbstractTensorNetworkState...)
 end
 export issimilar
 
-# Tensors
+### Tensors
 include("tensors/promotetensor.jl")
 include("tensors/contract.jl")
 include("tensors/tensorproduct.jl")
@@ -35,15 +35,27 @@ include("tensors/combinedims.jl")
 include("tensors/exp.jl")
 include("tensors/svd.jl")
 
-# State vectors 
+### State vectors 
+# Structures
 include("statetensors/structures/abstractstatetensor.jl")
 include("statetensors/structures/gstatetensor.jl")
 include("statetensors/structures/statevector.jl")
 include("statetensors/structures/stateoperator.jl")
 
-# MPS 
+# Operations
+include("statetensors/operations/applyso.jl")
+include("statetensors/operations/inner.jl")
+include("statetensors/operations/trace.jl")
+
+### MPS 
+# Structures
 include("mps/structures/abstractmps.jl")
 include("mps/structures/gmps.jl")
 include("mps/structures/mps.jl")
 include("mps/structures/mpo.jl")
+
+# Operations 
+include("mps/operations/applympo.jl")
+include("mps/operations/inner.jl")
+include("mps/operations/trace.jl")
 end

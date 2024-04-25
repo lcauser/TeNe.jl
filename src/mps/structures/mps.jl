@@ -82,45 +82,6 @@ function productmps(N::Int, A::Q; T::Type=ComplexF64, normalize::Bool=false) whe
 end
 
 
-### Inner products 
-export inner, dot
-
-"""
-    inner(ψ::MPS, ϕ::MPS)
-    dot(ψ::MPS, ϕ::MPS)
-    *(ψ::MPS, ϕ::MPS)
-
-Calculate the inner product of two MPSs `ψ` and `ϕ`.
-"""
-function inner(ψ::MPS, ϕ::MPS)
-    # Checks 
-    if !issimilar(ψ, ϕ)
-        throw(ArgumentError("Arguments have properties that do not match."))
-    end
-    return _mps_mps_product(ψ, ϕ)
-end
-dot(ψ::MPS, ϕ::MPS) = inner(ψ, ϕ)
-import Base.*
-*(ψ::MPS, ϕ::MPS) = inner(ψ, ϕ)
-
-
-function _mps_mps_product(ψ::MPS, ϕ::MPS)
-    # Type info...
-    T = Base.promote_op(*, eltype(ψ), eltype(ϕ))
-    conjψ = !isconj(ψ) # Not because inner product has conj on bra by default...
-    conjϕ = isconj(ϕ)
-
-    # Contract the network...
-    block = cache(T, (size(ψ[begin], 1), size(ϕ[begin], 1)), 2, 1) .= 1
-    for i in eachindex(ψ)
-        # Contract the new block 
-        block_new = contract(block, ψ[i], 1, 1, false, conjψ)
-        block = contract(block_new, ϕ[i], (1, 2), (1, 2), false, conjϕ)
-    end
-    return block[]
-end
-
-
 ### Entanglement entropy 
 export entropy
 """

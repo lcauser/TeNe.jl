@@ -12,10 +12,12 @@ include("tensors/exp.jl")
 include("tensors/svd.jl")
 
 # State vectors 
-include("statetensors/statevector.jl")
-include("statetensors/stateoperator.jl")
+include("statetensors/applyso.jl")
+include("statetensors/inner.jl")
+include("statetensors/trace.jl")
 
 # MPS 
 include("mps/gmps.jl")
-include("mps/mps.jl")
-include("mps/mpo.jl")
+include("mps/applympo.jl")
+include("mps/inner.jl")
+include("mps/trace.jl")
