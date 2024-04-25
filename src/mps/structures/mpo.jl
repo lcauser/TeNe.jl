@@ -225,7 +225,7 @@ end
 
 ### Applying an MPO 
 # TODO: add densitymatrix method and variational method...
-export applympo
+export applympo, applympo!
 
 """
     applympo(O::MPO, ψ::MPS; kwargs...)
@@ -412,8 +412,39 @@ end
     *(ψ::StateVector, O::MPO)
 
 Apply MPO `O` to StateVector `ψ`.
+
+# Examples 
+
+```julia-repl
+julia> ψ = randomsv(2, 10);
+julia> O = productmpo(10, [0 1; 1 0]);
+julia> ϕ = O * ψ;
 """
 function applympo(O::MPO, ψ::StateVector)
+    ϕ = GStateTensor(1, dim(ψ), length(ψ))
+    applympo!(ϕ, O, ψ)
+    return ϕ
+end
+applympo(ψ::StateVector, O::MPO) = applympo(transpose(O), ψ)
+*(O::MPO, ψ::StateVector) = applympo(O, ψ)
+*(ψ::StateVector, O::MPO) = applympo(ψ, O)
+
+
+"""
+    applympo!(ϕ::StateVector, O::MPO, ψ::StateVector)
+    applympo!(ϕ::StateVector, ψ::StateVector, O::MPO)
+
+Apply MPO `O` to StateVector `ψ`, and store the result in `ϕ`.
+
+# Examples 
+
+```julia-repl
+julia> ψ = randomsv(2, 10);
+julia> O = productmpo(10, [0 1; 1 0]);
+julia> ϕ = StateVector(2, 10);
+julia> applympo!(ϕ, O, ψ);
+"""
+function applympo!(ϕ::StateVector, O::MPO, ψ::StateVector)
     # Apply the first tensor 
     ten = reshape(tensor(ψ), (size(tensor(ψ))..., 1))
     ten = contract(ten, O[1], (ndims(ten), 1), (1, istranspose(O) ? 2 : 3), isconj(ψ), isconj(O))
@@ -423,9 +454,6 @@ function applympo(O::MPO, ψ::StateVector)
         ten = contract(ten, O[i], (ndims(ten), 1), (1, istranspose(O) ? 2 : 3), false, isconj(O))
     end
     ten = reshape(ten, size(ten)[begin:end-1])
-    return GStateTensor(1, dim(ψ), copy(ten))
+    tensor(ϕ) .= isconj(ϕ) ? conj.(ten) : ten
 end
-applympo(ψ::StateVector, O::MPO) = applympo(transpose(O), ψ)
-*(O::MPO, ψ::StateVector) = applympo(O, ψ)
-*(ψ::StateVector, O::MPO) = applympo(ψ, O)
-
+applympo!(ϕ::StateVector, ψ::StateVector, O::MPO) = applyMPO(ϕ, O, ψ)
