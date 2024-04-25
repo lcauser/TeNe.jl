@@ -348,3 +348,31 @@ function trace(Os::StateOperator...)
         return contract(ten, tensor(Os[end]), dims, perms, false, isconj(Os[end]))[]
     end
 end
+
+
+### Exponential of a state tensor 
+export exp
+"""
+    exp(O::StateOperator; kwargs...)
+
+Exponentiate a StateOperator.
+
+# Optional Keyword Arguments
+
+    - `prefactor=1.0`: Multiply the StateOperator by some value before the exponetiation.
+"""
+function TeNe.exp(O::StateOperator; prefactor=1.0)
+    if istranspose(O)
+        ten = cache(size(tensor(O)), tensor(O))
+        dims = Tuple(map(j->isodd(j) ? j+1 : j-1, Base.OneTo(ndims(ten))))
+        permutedims!(ten, tensor(O), dims)
+    else
+        ten = tensor(O)
+    end
+    if isconj(O)
+        ten = cache(size(ten), ten) .= conj.(ten)
+    end
+    ten *= prefactor
+    ten = TeNe.exp(ten, Base.range(2, 2*length(O), step=2))
+    return GStateTensor(2, dim(O), ten)
+end

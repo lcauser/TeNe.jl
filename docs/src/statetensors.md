@@ -41,6 +41,11 @@ entropy(::StateVector, ::Any)
 normalize!(::GStateTensor)
 ```
 
+#### Exponentiation 
+```@docs
+exp(O::StateOperator)
+```
+
 ### Inner products
 ```@docs
 inner(::StateVector, ::StateVector)

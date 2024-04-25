@@ -7,8 +7,8 @@ export exp
 
 ### Functions to exponentiate 
 """
-    exp(x, innerdims, outerdims; kwargs...)
-    exp(x, outerdims; kwargs...)
+    texp(x, innerdims, outerdims; kwargs...)
+    texp(x, outerdims; kwargs...)
 
 Calculate the exponential over a set of outer dimensions. 
 If unspecified, the innerdims will be assumed to be the remaining dimensions in order.
@@ -21,34 +21,34 @@ If unspecified, the innerdims will be assumed to be the remaining dimensions in 
 
 ```jldoctest
 julia> x = randn(ComplexF64, 2, 3, 2, 3);
-julia> y = exp(x, (3, 4));
+julia> y = texp(x, (3, 4));
 julia> size(y)
 (2, 3, 2, 3)
 ```
 
 ```jldoctest
 julia> x = randn(ComplexF64, 2, 3, 2, 3);
-julia> y = exp(x, (1, 2), (3, 4));
+julia> y = texp(x, (1, 2), (3, 4));
 julia> size(y)
 (2, 3, 2, 3)
 ```
 """
-function exp(x, outerdims; prefactor=1)
+function TeNe.exp(x, outerdims; prefactor=1)
     innerdims = setdiff(Base.OneTo(ndims(x)), outerdims)
     pxs, pxs_return, sinners, souters = _exp_permuted_dimensions(x, innerdims, outerdims)
     _exp_check_dims(sinners, souters)
     return _exp(x, pxs, pxs_return, souters, sinners, prefactor)
 end
-exp(x, outerdim::Int; kwargs...) = exp(x, (outerdim); kwargs...)
+TeNe.exp(x, outerdim::Int; kwargs...) = exp(x, (outerdim); kwargs...)
 
 
-function exp(x, innerdims, outerdims; prefactor=1)
+function texp(x, innerdims, outerdims; prefactor=1)
     _exp_check_inds(x, innerdims, outerdims)
     pxs, pxs_return, sinners, souters = _exp_permuted_dimensions(x, innerdims, outerdims)
     _exp_check_dims(sinners, souters)
     return _exp(x, pxs, pxs_return, souters, sinners, prefactor)
 end
-exp(x, innerdim::Int, outerdim::Int; kwargs...) = exp(x, (innerdim), (outerdim); kwargs...)
+TeNe.exp(x, innerdim::Int, outerdim::Int; kwargs...) = exp(x, (innerdim), (outerdim); kwargs...)
 
 ### Unsafe exponential 
 function _exp(x, pxs, pxs_return, souters, sinners, prefactor)
