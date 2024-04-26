@@ -84,6 +84,29 @@ function productmps(N::Int, A::Q; T::Type=ComplexF64, normalize::Bool=false) whe
     return ψ
 end
 
+"""
+    MPS(ψ::StateVector; kwargs...)
+
+Write a StateVector as a MPS.
+
+# Optional Keyword Arguments
+    
+    - `cutoff::Float64=0.0`: Truncation criteria to reduce the bond dimension.
+    Good values range from 1e-8 to 1e-14.
+    - `mindim::Int=1`: Minimum dimension for the truncation.
+    - `maxdim::Int=0`: Maximum bond dimension for truncation. Set to 0 to have
+    no limit.
+
+# Examples
+```julia-repl
+julia> ψ = randomsv(2, 10);
+julia> ψ = MPS(ψ; cutoff=1e-12);
+```
+"""
+function MPS(ψ::GStateTensor{1}; kwargs...)
+    return GMPS(ψ; kwargs...)
+end
+MPS(ψ::ConjGStateTensor{1}; kwargs...) = conj(GMPS(ψ.StateTensor; kwargs...))
 
 ### Entanglement entropy 
 export entropy

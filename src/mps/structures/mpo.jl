@@ -131,3 +131,29 @@ function productmpo(N::Int, A::AbstractArray; T::Type=ComplexF64)
     end
     return O
 end
+
+"""
+    MPO(O::StateOperator; kwargs...)
+
+Write a StateOperator as a MPO.
+
+# Optional Keyword Arguments
+    
+    - `cutoff::Float64=0.0`: Truncation criteria to reduce the bond dimension.
+    Good values range from 1e-8 to 1e-14.
+    - `mindim::Int=1`: Minimum dimension for the truncation.
+    - `maxdim::Int=0`: Maximum bond dimension for truncation. Set to 0 to have
+    no limit.
+
+# Examples
+```julia-repl
+julia> ψ = randomsv(2, 10);
+julia> ψ = MPS(ψ; cutoff=1e-12);
+```
+"""
+function MPO(O::GStateTensor{2}; kwargs...)
+    return GMPS(O; kwargs...)
+end
+MPO(O::ConjGStateTensor{2}; kwargs...) = conj(GMPS(O.StateTensor; kwargs...))
+MPO(O::TransposeStateOperator; kwargs...) = transpose(GMPS(O.StateTensor; kwargs...))
+MPO(O::AdjointStateOperator; kwargs...) = adjoint(GMPS(O.StateTensor; kwargs...))
