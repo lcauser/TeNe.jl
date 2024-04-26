@@ -1,3 +1,6 @@
+```@meta 
+CollapsedDocStrings = true
+```
 # Tensors
 ```@contents
 Pages = ["tensors.md"]

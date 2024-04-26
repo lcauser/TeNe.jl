@@ -1,3 +1,6 @@
+```@meta 
+CollapsedDocStrings = true
+```
 # Matrix product states
 
 Matrix product states are an ansatz for describing and estimating states of one-dimensional systems.
@@ -26,6 +29,12 @@ The simplest way is to just provide a translationally invariant tensor `A` for t
 
 ```@docs
 productmps(N::Int, A::Q) where {Q<:AbstractArray}
+```
+
+#### From StateVectors
+If you need to write an MPS using some known StateVector, you can call `MPS(ψ::StateVector)`.
+```@docs
+MPS(::GStateTensor{1})
 ```
 
 ### Properties of an MPS
@@ -79,9 +88,11 @@ Just as a wavefunction, or state vector, can be represented as an MPS, an operat
 
 ### Initiating an MPO 
 Like the MPS, an MPO can be initiated randomly or as a product operator.
+It can also be initiated from some StateOperator.
 ```@docs
 randommpo
 productmpo
+MPO(::GStateTensor{2})
 ```
 
 ### Construct an MPO from an operator list

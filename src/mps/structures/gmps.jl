@@ -460,6 +460,38 @@ function randomgmps(rank::Int, dim::Int, length::Int, bonddim::Int; T::Type=Comp
     return ψ
 end
 
+"""
+    GMPS(ψ::Union{GStateTensor, GStateTensorTrait}; kwargs...)
+
+Write a GStateTensor as a GMPS.
+
+# Optional Keyword Arguments
+    
+    - `cutoff::Float64=0.0`: Truncation criteria to reduce the bond dimension.
+    Good values range from 1e-8 to 1e-14.
+    - `mindim::Int=1`: Minimum dimension for the truncation.
+    - `maxdim::Int=0`: Maximum bond dimension for truncation. Set to 0 to have
+    no limit.
+
+# Examples
+```julia-repl
+julia> ψ = randomsv(2, 10);
+julia> ψ = GMPS(ψ; cutoff=1e-12);
+```
+"""
+function GMPS(ψ::GStateTensor; kwargs...)
+    ψmps = GMPS(rank(ψ), dim(ψ), length(ψ); T=eltype(ψ))
+    ten = reshape(tensor(ψ), 1, size(tensor(ψ))..., 1)
+    for i = Base.OneTo(length(ψ)-1)
+        U, S, ten = tsvd(ten, Tuple(2+rank(ψ):ndims(ten)); kwargs...)
+        ψmps[i] = U 
+        ten = contract(S, ten, 2, 1)
+    end
+    ψmps[end] = ten
+    ψmps.center = length(ψmps)
+    return ψmps
+end
+
 ### Information
 function Base.show(io::IO, ψ::GMPS)
     println(io, "$(typeof(ψ))")
@@ -483,6 +515,7 @@ function HDF5.write(parent::Union{HDF5.File, HDF5.Group}, name::AbstractString,
     write(g, "length", length(M))
     write(g, "center", center(M))
     write(g, "rank", r)
+    write(g, "dim", dim(M))
     for i = 1:length(M)
         write(g, "MPS[$(i)]", M[i])
     end
@@ -497,9 +530,10 @@ function HDF5.read(parent::Union{HDF5.File, HDF5.Group}, name::AbstractString,
     end
     N = read(g, "length")
     center = read(g, "center")
+    dim = read(g, "dim")
     tensors = [read(g, "MPS[$(i)]") for i=Base.OneTo(N)]
     rank = read(g, "rank")
-    return GMPS{rank}(size(tensors[1])[2], tensors, center)
+    return GMPS{rank}(dim, tensors, center)
 end
 
 ### Conjugation of GMPS 

@@ -77,7 +77,7 @@ function tensorproduct(x, y, conjx::Bool=false, conjy::Bool=false;
     if tocache
         z = cache(dims, x, y; level=2, sublevel=sublevel)
     else
-        z = zeros(t, dims...)
+        z = promote_tensor(dims, x, y)
     end
     _tensorproduct!(z, x, y, conjx, conjy)
     return z

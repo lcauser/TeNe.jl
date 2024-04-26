@@ -64,7 +64,7 @@ function trace(x, cix::Int...; conj::Bool=false, tocache::Bool=true, sublevel=:a
     if tocache
         z = cache(dims, x; level=2, sublevel=sublevel)
     else
-        z = zeros(eltype(x), dims...)
+        z = promote_tensor(dims, x)
     end
 
     # Do the trace 

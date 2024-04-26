@@ -53,7 +53,7 @@ function contract(x, y, cix, ciy, conjx::Bool=false, conjy::Bool=false; tocache:
     if tocache
         z = cache(dims, x, y; level=2, sublevel=sublevel)
     else
-        z = zeros(_promote_tensor_eltype(x, y), dims...)
+        z = promote_tensor(dims, x, y)
     end
     _contract!(z, x, y, sx, sy, cix, ciy, rix, riy, pix, piy, conjx, conjy)  
     return z

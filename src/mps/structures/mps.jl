@@ -17,11 +17,14 @@ function ismps(ψ)
     return typeof(ψ) <: MPS
 end
 
+export dim 
+dim(ψ::MPS, site::Int) = size(ψ[site], 2)
+
 ### Initalising MPSs 
 export randommps, productmps
 
 """
-    MPS(dim::Int, length::Int)
+    MPS(dim::Int, length::Int; kwargs...)
 
 Create an MPS with physical dimension `dim` and `length` sites.
 
@@ -81,57 +84,29 @@ function productmps(N::Int, A::Q; T::Type=ComplexF64, normalize::Bool=false) whe
     return ψ
 end
 
-
-### Inner products 
-export inner, dot
-
 """
-    inner(ψ::MPS, ϕ::MPS)
-    dot(ψ::MPS, ϕ::MPS)
-    *(ψ::MPS, ϕ::MPS)
+    MPS(ψ::StateVector; kwargs...)
 
-Calculate the inner product of two MPSs `ψ` and `ϕ`.
+Write a StateVector as a MPS.
+
+# Optional Keyword Arguments
+    
+    - `cutoff::Float64=0.0`: Truncation criteria to reduce the bond dimension.
+    Good values range from 1e-8 to 1e-14.
+    - `mindim::Int=1`: Minimum dimension for the truncation.
+    - `maxdim::Int=0`: Maximum bond dimension for truncation. Set to 0 to have
+    no limit.
+
+# Examples
+```julia-repl
+julia> ψ = randomsv(2, 10);
+julia> ψ = MPS(ψ; cutoff=1e-12);
+```
 """
-function inner(ψ::MPS, ϕ::MPS)
-    # Checks 
-    if !issimilar(ψ, ϕ)
-        throw(ArgumentError("Arguments have properties that do not match."))
-    end
-    return _mps_mps_product(ψ, ϕ)
+function MPS(ψ::GStateTensor{1}; kwargs...)
+    return GMPS(ψ; kwargs...)
 end
-
-"""
-    dot(ψ::MPS, ϕ::MPS)
-
-Calculate the inner product of two MPSs `ψ` and `ϕ`.
-"""
-dot(ψ::MPS, ϕ::MPS) = inner(ψ, ϕ)
-
-import Base.*
-"""
-    *(ψ::MPS, ϕ::MPS)
-
-Calculate the inner product of two MPSs `ψ` and `ϕ`.
-"""
-*(ψ::MPS, ϕ::MPS) = inner(ψ, ϕ)
-
-
-function _mps_mps_product(ψ::MPS, ϕ::MPS)
-    # Type info...
-    T = Base.promote_op(*, eltype(ψ), eltype(ϕ))
-    conjψ = !isconj(ψ) # Not because inner product has conj on bra by default...
-    conjϕ = isconj(ϕ)
-
-    # Contract the network...
-    block = cache(T, (size(ψ[begin], 1), size(ϕ[begin], 1)), 2, 1) .= 1
-    for i in eachindex(ψ)
-        # Contract the new block 
-        block_new = contract(block, ψ[i], 1, 1, false, conjψ)
-        block = contract(block_new, ϕ[i], (1, 2), (1, 2), false, conjϕ)
-    end
-    return block[]
-end
-
+MPS(ψ::ConjGStateTensor{1}; kwargs...) = conj(GMPS(ψ.StateTensor; kwargs...))
 
 ### Entanglement entropy 
 export entropy

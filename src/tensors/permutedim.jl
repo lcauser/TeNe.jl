@@ -32,7 +32,7 @@ function permutedim(x, i::Int, j::Int; tocache::Bool=true, sublevel=:auto)
     if tocache
         z = cache(dims, x; level=2, sublevel=sublevel)
     else
-        z = zeros(eltype(x), dims...)
+        z = promote_tensor(dims, x)
     end
     permutedims!(z, x, order)
     return z
