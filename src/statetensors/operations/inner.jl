@@ -15,7 +15,7 @@ Calculate the inner product of two StateVectors `ψ` and `ϕ`.
 """
 function inner(ψ::StateVector, ϕ::StateVector)
     # Checks 
-    if length(ψ) != length(ϕ) || !_sv_sv_product_checkdims(ψ, ϕ)
+    if !_sv_sv_product_check(ψ, ϕ)
         throw(ArgumentError("Arguments have properties that do not match."))
     end
     return _sv_sv_product(ψ, ϕ)
@@ -29,7 +29,10 @@ function _sv_sv_product(ψ::StateVector, ϕ::StateVector)
              1, 1, !isconj(ψ), isconj(ϕ))[]
 end
 
-function _sv_sv_product_checkdims(ψ::StateVector, ϕ::StateVector)
+function _sv_sv_product_check(ψ::StateVector, ϕ::StateVector)
+    if length(ψ) != length(ϕ)
+        return false 
+    end
     for i = Base.OneTo(length(ψ))
         if size(tensor(ψ), i) != size(tensor(ϕ), i)
             return false

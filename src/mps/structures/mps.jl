@@ -17,6 +17,9 @@ function ismps(ψ)
     return typeof(ψ) <: MPS
 end
 
+export dim 
+dim(ψ::MPS, site::Int) = size(ψ[site], 2)
+
 ### Initalising MPSs 
 export randommps, productmps
 

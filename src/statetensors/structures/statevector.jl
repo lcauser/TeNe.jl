@@ -15,6 +15,10 @@ function isstatevector(ψ)
     return typeof(ψ) <: StateVector
 end
 
+export dim 
+dim(ψ::StateVector, site::Int) = size(tensor(ψ), site)
+
+
 ### Initialising state vectors 
 export randomsv, randomstatevector, productsv, productstatevector
 """

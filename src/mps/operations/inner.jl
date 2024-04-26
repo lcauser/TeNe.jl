@@ -24,7 +24,7 @@ julia> ϕ * ψ
 """
 function inner(ψ::MPS, ϕ::MPS)
     # Checks 
-    if !issimilar(ψ, ϕ)
+    if !_mps_mps_product_check(ψ::MPS, ϕ::MPS)
         throw(ArgumentError("Arguments have properties that do not match."))
     end
     return _mps_mps_product(ψ, ϕ)
@@ -36,18 +36,28 @@ import Base.*
 
 function _mps_mps_product(ψ::MPS, ϕ::MPS)
     # Type info...
-    T = Base.promote_op(*, eltype(ψ), eltype(ϕ))
-    conjψ = !isconj(ψ) # Not because inner product has conj on bra by default...
-    conjϕ = isconj(ϕ)
+    T= _promote_tensor_eltype(ψ, ϕ)
 
     # Contract the network...
     block = cache(T, (size(ψ[begin], 1), size(ϕ[begin], 1)), 2, 1) .= 1
     for i in eachindex(ψ)
         # Contract the new block 
-        block_new = contract(block, ψ[i], 1, 1, false, conjψ)
-        block = contract(block_new, ϕ[i], (1, 2), (1, 2), false, conjϕ)
+        block_new = contract(block, ψ[i], 1, 1, false, !isconj(ψ))
+        block = contract(block_new, ϕ[i], (1, 2), (1, 2), false, isconj(ϕ))
     end
     return block[]
+end
+
+function _mps_mps_product_check(ψ::MPS, ϕ::MPS)
+    if length(ψ) != length(ϕ)
+        return false
+    end
+    for i in eachindex(ψ)
+        if dim(ψ, i) != dim(ϕ, i)
+            return false
+        end
+    end
+    return true
 end
 
 ### Inner product of MPS with MPOs
@@ -59,9 +69,6 @@ Calculate the expectation of a string of operators `Os` with respect to MPSs `ψ
 """
 function inner(ψ::MPS, ϕs::Union{MPS, MPO}...)
     # Checks 
-    if !issimilar(ψ, ϕs...)
-        throw(ArgumentError("Arguments have properties that do not match."))
-    end
     for i = 1:length(ϕs)-1
         if !ismpo(ϕs[i])
             throw(ArgumentError("The inner terms in the braket must be MPOs."))
@@ -70,29 +77,53 @@ function inner(ψ::MPS, ϕs::Union{MPS, MPO}...)
     if !ismps(ϕs[end])
         throw(ArgumentError("The last term in the MPS must be an MPO."))
     end
-    return _mps_mpo_mps_product(ψ, ϕs[end], ϕs[1:end-1]...)
+    if !_mps_mpo_mps_product_check(ψ, ϕs[end], ϕs[begin:end-1]...)
+        throw(ArgumentError("Arguments have properties that do not match."))
+    end
+    return _mps_mpo_mps_product(ψ, ϕs[end], ϕs[begin:end-1]...)
 end
 
 function _mps_mpo_mps_product(ψ::MPS, ϕ::MPS, Os::MPO...)
     # Type info...
     T = Base.promote_op(*, eltype(ψ), eltype(ϕ), eltype.(Os)...)
-    conjψ = !isconj(ψ) # Not because inner product has conj on bra by default...
-    conjϕ = isconj(ϕ)
-    conjOs = map(O->isconj(O), Os)
-    transOs = map(O->istranspose(O), Os)
 
     # Contraction 
     dims = (size(ψ[begin], 1), map(O->size(O[begin], 1), Os)..., size(ϕ[begin], 1))
     block = cache(T, dims, 2, 1) .= 1
     for i in eachindex(ψ)
-        block = contract(block, ψ[i], 1, 1, false, conjψ)
+        block = contract(block, ψ[i], 1, 1, false, !isconj(ψ))
         for j in eachindex(Os)
-            block = contract(block, Os[j][i], (1, ndims(block)-1), (1, transOs[j] ? 3 : 2), false, conjOs[j])
+            block = contract(block, Os[j][i], (1, ndims(block)-1), (1, innerind(Os[j])), false, isconj(Os[j]))
         end
-        block = contract(block, ϕ[i], (1, ndims(block)-1), (1, 2), false, conjϕ)
+        block = contract(block, ϕ[i], (1, ndims(block)-1), (1, 2), false, isconj(ϕ))
     end
 
     return block[]
+end
+
+function _mps_mpo_mps_product_check(ψ::MPS, ϕ::MPS, Os::MPO...)
+    if length(ψ) != length(ϕ)
+        return false 
+    end
+    for i in eachindex(Os)
+        if length(Os[i]) != length(ψ)
+            return false 
+        end
+    end
+    for i in eachindex(ψ)
+        if dim(ψ, i) != innerdim(Os[1], i)
+            return false 
+        end
+        if dim(ϕ, i) != outerdim(Os[end], i)
+            return false
+        end
+        for j in Base.OneTo(length(Os)-1)
+            if outerdim(Os, j) != innerdim(Os, i)
+                return false
+            end
+        end
+    end
+    return true
 end
 
 ### Inner products MPOs with StateVectors

@@ -46,6 +46,18 @@ function ismpo(O)
     return typeof(O) <: MPO
 end
 
+# Get the size of physical dimensions
+export innerdim, outerdim 
+innerdim(O::Union{GMPS{2}, ConjGMPS{2}}, site::Int) = size(O[site], 2)
+innerdim(O::Union{AdjointMPO, TransposeMPO}, site::Int) = size(O[site], 3)
+outerdim(O::Union{GMPS{2}, ConjGMPS{2}}, site::Int) = size(O[site], 3)
+outerdim(O::Union{AdjointMPO, TransposeMPO}, site::Int) = size(O[site], 2)
+
+# Return the correct indices
+innerind(::Union{GMPS{2}, ConjGMPS{2}}) = 2
+innerind(::Union{AdjointMPO, TransposeMPO}) = 3
+outerind(::Union{GMPS{2}, ConjGMPS{2}}) = 3
+outerind(::Union{AdjointMPO, TransposeMPO}) = 2
 
 ### Initalising MPOs 
 export randommpo, productmpo

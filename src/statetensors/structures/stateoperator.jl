@@ -43,6 +43,23 @@ function isstateoperator(O)
     return typeof(O) <: StateOperator
 end
 
+# Physical dimensions 
+export innerdim, outerdim
+innerdim(O::Union{GStateTensor{2}, ConjGStateTensor{2}}, site::Int) = size(tensor(O), 2*site-1)
+innerdim(O::Union{AdjointStateOperator, TransposeStateOperator}, site::Int) = size(tensor(O), 2*site)
+outerdim(O::Union{GStateTensor{2}, ConjGStateTensor{2}}, site::Int) = size(tensor(O), 2*site)
+outerdim(O::Union{AdjointStateOperator, TransposeStateOperator}, site::Int) = size(tensor(O), 2*site-1)
+
+# Indices
+innerind(::Union{GStateTensor{2}, ConjGStateTensor{2}}, site::Int) = 2*site-1
+innerind(::Union{AdjointStateOperator, TransposeStateOperator}, site::Int) = 2*site
+outerind(::Union{GStateTensor{2}, ConjGStateTensor{2}}, site::Int) = 2*sie
+outerind(::Union{AdjointStateOperator, TransposeStateOperator}, site::Int) = s*site-1
+innerinds(O::Union{GStateTensor{2}, ConjGStateTensor{2}}) = Tuple(1:2:2*length(O))
+innerinds(O::Union{AdjointStateOperator, TransposeStateOperator}) = Tuple(2:2:2*length(O))
+outerinds(O::Union{GStateTensor{2}, ConjGStateTensor{2}}) = Tuple(2:2:2*length(O))
+outerinds(O::Union{AdjointStateOperator, TransposeStateOperator}) = Tuple(1:2:2*length(O))
+
 ### Initialising StateOperators 
 export randomso, randomstateoperator, productso, productstateoperator
 """

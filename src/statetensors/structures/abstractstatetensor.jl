@@ -19,6 +19,11 @@ export issimilar
 abstract type GStateTensorTrait <: AbstractStateTensor end
 Base.eltype(ψ::GStateTensorTrait) = Base.eltype(ψ.StateTensor)
 Base.length(ψ::GStateTensorTrait) = length(ψ.StateTensor)
+Base.getindex(ψ::GStateTensorTrait, is...) = ψ.StateTensor[i...]
+Base.firstindex(ψ::GStateTensorTrait) = Base.firstindex(ψ.StateTensor)
+Base.lastindex(ψ::GStateTensorTrait) = Base.lastindex(ψ.StateTensor)
+Base.eachindex(ψ::GStateTensorTrait) = Base.eachindex(ψ.StateTensor)
+Base.setindex!(ψ::GStateTensorTrait, x, is...) = Base.setindex!(ψ.StateTensor, x, is...)
 dim(ψ::GStateTensorTrait) = dim(ψ.StateTensor)
 TeNe.rank(ψ::GStateTensorTrait) = rank(ψ.StateTensor)
 TeNe.norm(ψ::GStateTensorTrait) = TeNe.norm(ψ.StateTensor)

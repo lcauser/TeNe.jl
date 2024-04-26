@@ -23,7 +23,7 @@ julia> ϕ = O * ψ;
 """
 function applyso(O::StateOperator, ψ::StateVector)
     ϕ = GStateTensor(1, dim(ψ), promote_tensor(_so_sv_product_dims(O), tensor(O), tensor(ψ)))
-    if !(length(O) == length(ψ)) || !_so_sv_product_checkdims(ϕ, O, ψ)
+    if !_so_sv_product_check(ϕ, O, ψ)
         throw(ArgumentError("Arguments have properties that do not match."))
     end
     _so_sv_product!(ϕ, O ,ψ)
@@ -49,7 +49,7 @@ julia> applyso!(ϕ, O, ψ);
 ```
 """
 function applyso!(ϕ::StateVector, O::StateOperator, ψ::StateVector)
-    if !(length(ϕ) == length(O) == length(ψ)) || !_so_sv_product_checkdims(ϕ, O, ψ)
+    if !_so_sv_product_check(ϕ, O, ψ)
         throw(ArgumentError("Arguments have properties that do not match."))
     end
     _so_sv_product!(ϕ, O, ψ)
@@ -58,30 +58,20 @@ applyso!(ϕ::StateVector, ψ::StateVector, O::StateOperator) = applyso!(ϕ, tran
 
 
 function _so_sv_product!(ϕ::StateVector, O::StateOperator, ψ::StateVector)
-    # Properties
-    iO = !istranspose(O) ? collect(2:2:ndims(tensor(O))) : collect(1:2:ndims(tensor(O))) # Remove allocations?...
-    iψ = collect(1:ndims(tensor(ψ))) # Remove allocations?...
-    conjO = isconj(ϕ) ? !isconj(O) : isconj(O)
-    conjψ = isconj(ϕ) ? !isconj(ψ) : isconj(ψ) 
-
-    # Contraction
-    contract!(tensor(ϕ), tensor(O), tensor(ψ), iO, iψ, conjO, conjψ)
+    contract!(tensor(ϕ), tensor(O), tensor(ψ), outerinds(O), Tuple(1:ndims(tensor(ψ))),
+        isconj(ϕ) ? !isconj(O) : isconj(O), isconj(ϕ) ? !isconj(ψ) : isconj(ψ) )
 end
 
 function _so_sv_product_dims(O::StateOperator)
-    if !istranspose(O)
-        return Tuple(map(j->size(tensor(O), 2*j-1), Base.OneTo(length(O))))
-    else
-        return Tuple(map(j->size(tensor(O), 2*j), Base.OneTo(length(O))))
-    end
+    return Tuple(map(j->innerdim(O, j), Base.OneTo(length(O))))
 end
 
-function _so_sv_product_checkdims(ϕ::StateVector, O::StateOperator, ψ::StateVector)
+function _so_sv_product_check(ϕ::StateVector, O::StateOperator, ψ::StateVector)
+    if length(ψ) != length(O) != length(ϕ)
+        return false
+    end
     for i in Base.OneTo(length(ψ))
-        if size(tensor(ψ), i) != size(tensor(O), istranspose(O) ? 2*i : 2*i-1)
-            return false
-        end
-        if size(tensor(ϕ), i) != size(tensor(O), istranspose(O) ? 2*i-1 : 2*i)
+        if dim(ψ, i) != outerdim(O, i) || dim(ϕ, i) != innerdim(O, i)
             return false
         end
     end
@@ -104,7 +94,7 @@ julia> O = O1 * O2;
 """
 function applyso(O1::StateOperator, O2::StateOperator)
     O = GStateTensor(2, dim(O1), promote_tensor(_so_so_product_dims(O1, O2), O1, O2))
-    if !(length(O) == length(O1) == length(O2)) || !_so_so_product_checkdims(O, O1, O2)
+    if !_so_so_product_check(O, O1, O2)
         throw(ArgumentError("Arguments have properties that do not match."))
     end
     _so_so_product!(O, O1, O2)
@@ -128,21 +118,18 @@ julia> applyso!(O, O1, O2);
 ```
 """
 function applyso!(O::StateOperator, O1::StateOperator, O2::StateOperator)
-    if !(length(O) == length(O1) == length(O2)) || !_so_so_product_checkdims(O, O1, O2)
+    if !_so_so_product_check(O, O1, O2)
         throw(ArgumentError("Arguments have properties that do not match."))
     end
     _so_so_product!(O, O1, O2)
 end
 
-function _so_so_product_checkdims(O::StateOperator, O1::StateOperator, O2::StateOperator)
+function _so_so_product_check(O::StateOperator, O1::StateOperator, O2::StateOperator)
+    if length(O) != length(O1) != length(O2)
+        return false
+    end
     for i = Base.OneTo(length(O))
-        if size(tensor(O), istranspose(O) ? 2*i : 2*i-1) != size(tensor(O1), istranspose(O1) ? 2*i : 2*i-1)
-            return false
-        end
-        if size(tensor(O), istranspose(O) ? 2*i-1 : 2*i) != size(tensor(O2), istranspose(O2) ? 2*i-1 : 2*i)
-            return false
-        end
-        if size(tensor(O1), istranspose(O1) ? 2*i-1 : 2*i) != size(tensor(O2), istranspose(O2) ? 2*i : 2*i-1)
+        if innerdim(O, i) != innerdim(O1, i) || outerdim(O, i) != outerdim(O2, i) || outerdim(O1, i) != innerdim(O2, i)
             return false
         end
     end
@@ -150,9 +137,8 @@ function _so_so_product_checkdims(O::StateOperator, O1::StateOperator, O2::State
 end
 
 function _so_so_product_dims(O1::StateOperator, O2::StateOperator)
-    dims = map(j->isodd(j) ? size(tensor(O1), istranspose(O1) ? j+1 : j) :
-        size(tensor(O2), istranspose(O2) ? j-1 : j), Base.OneTo(2*length(O1)))
-    return Tuple(dims)
+    ### Remove allocations??
+    return Tuple(map(j->isodd(j) ? innerdim(O1, cld(j, 2)) : outerdim(O2, fld(j, 2)), Base.OneTo(2*length(O1))))
 end
 
 function _so_so_product_perms(N::Int)
@@ -164,13 +150,9 @@ function _so_so_product!(O::StateOperator, O1::StateOperator, O2::StateOperator)
     conjO1 = isconj(O) ? !isconj(O1) : isconj(O1)
     conjO2 = isconj(O) ? !isconj(O2) : isconj(O2)
     if istranspose(O)
-        ten = contract(tensor(O2), tensor(O1),
-            Tuple((istranspose(O2) ? 1 : 2):2:ndims(tensor(O2))),
-            Tuple((istranspose(O1) ? 2 : 1):2:ndims(tensor(O1))), conjO2, conjO1)
+        ten = contract(tensor(O2), tensor(O1), outerinds(O2), innerinds(O1), conjO2, conjO1)
     else
-        ten = contract(tensor(O1), tensor(O2),
-            Tuple((istranspose(O1) ? 1 : 2):2:ndims(tensor(O1))),
-            Tuple((istranspose(O2) ? 2 : 1):2:ndims(tensor(O2))), conjO1, conjO2)
+        ten = contract(tensor(O1), tensor(O2), outerinds(O1), innerinds(O2), conjO1, conjO2)
     end
     permutedims!(tensor(O), ten, _so_so_product_perms(length(O)))
 end
