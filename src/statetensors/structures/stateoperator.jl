@@ -44,11 +44,15 @@ function isstateoperator(O)
 end
 
 # Physical dimensions 
-export innerdim, outerdim
+export innerdim, outerdim, innerdims, outerdims
 innerdim(O::Union{GStateTensor{2}, ConjGStateTensor{2}}, site::Int) = size(tensor(O), 2*site-1)
 innerdim(O::Union{AdjointStateOperator, TransposeStateOperator}, site::Int) = size(tensor(O), 2*site)
 outerdim(O::Union{GStateTensor{2}, ConjGStateTensor{2}}, site::Int) = size(tensor(O), 2*site)
 outerdim(O::Union{AdjointStateOperator, TransposeStateOperator}, site::Int) = size(tensor(O), 2*site-1)
+innerdims(O::Union{GStateTensor{2}, ConjGStateTensor{2}}) = tuple(map(j->size(tensor(O), 2*j-1)), Base.OneTo(length(O)))
+innerdims(O::Union{AdjointStateOperator, TransposeStateOperator}) = tuple(map(j->size(tensor(O), 2*j)), Base.OneTo(length(O)))
+outerdims(O::Union{GStateTensor{2}, ConjGStateTensor{2}}) = tuple(map(j->size(tensor(O), 2*j)), Base.OneTo(length(O)))
+outerdims(O::Union{AdjointStateOperator, TransposeStateOperator}) = tuple(map(j->size(tensor(O), 2*j-1)), Base.OneTo(length(O)))
 
 # Indices
 innerind(::Union{GStateTensor{2}, ConjGStateTensor{2}}, site::Int) = 2*site-1

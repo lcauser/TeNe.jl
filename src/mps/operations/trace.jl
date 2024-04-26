@@ -1,5 +1,7 @@
 #=
-    Traces of MPOs
+    Traces of MPOs.
+
+    Need to add contraction checks.
 =#
 
 export trace

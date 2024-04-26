@@ -52,6 +52,10 @@ innerdim(O::Union{GMPS{2}, ConjGMPS{2}}, site::Int) = size(O[site], 2)
 innerdim(O::Union{AdjointMPO, TransposeMPO}, site::Int) = size(O[site], 3)
 outerdim(O::Union{GMPS{2}, ConjGMPS{2}}, site::Int) = size(O[site], 3)
 outerdim(O::Union{AdjointMPO, TransposeMPO}, site::Int) = size(O[site], 2)
+innerdims(O::Union{GMPS{2}, ConjGMPS{2}}) = Tuple(map(j->size(O[j], 2), eachindex(O)))
+innerdims(O::Union{AdjointMPO, TransposeMPO}) = Tuple(map(j->size(O[j], 3), eachindex(O)))
+outerdims(O::Union{GMPS{2}, ConjGMPS{2}}) = Tuple(map(j->size(O[j], 3), eachindex(O)))
+outerdims(O::Union{AdjointMPO, TransposeMPO}) = Tuple(map(j->size(O[j], 2), eachindex(O)))
 
 # Return the correct indices
 innerind(::Union{GMPS{2}, ConjGMPS{2}}) = 2

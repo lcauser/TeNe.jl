@@ -118,7 +118,7 @@ function _mps_mpo_mps_product_check(ψ::MPS, ϕ::MPS, Os::MPO...)
             return false
         end
         for j in Base.OneTo(length(Os)-1)
-            if outerdim(Os, j) != innerdim(Os, i)
+            if outerdim(Os[j], i) != innerdim(Os[j+1], i)
                 return false
             end
         end
@@ -127,3 +127,58 @@ function _mps_mpo_mps_product_check(ψ::MPS, ϕ::MPS, Os::MPO...)
 end
 
 ### Inner products MPOs with StateVectors
+"""
+    inner(ψ::StateVector, O::MPO, ϕ::StateVector)
+    inner(ψ::StateVector, O1::MPO, O2::MPO, ϕ::StateVector)
+
+Calculate the expectation of a string of operators `Os` with respect to StateVectors `ψ` and `ϕ`.
+"""
+function inner(ψ::StateVector, ϕs::Union{StateVector, MPO}...)
+    # Checks 
+    for i = 1:length(ϕs)-1
+        if !ismpo(ϕs[i])
+            throw(ArgumentError("The inner terms in the braket must be MPOs."))
+        end
+    end
+    if !isstatevector(ϕs[end])
+        throw(ArgumentError("The last term in the MPS must be an StateVector."))
+    end
+    if !_sv_mpo_sv_product_check(ψ, ϕs[end], ϕs[begin:end-1]...)
+        throw(ArgumentError("Arguments have properties that do not match."))
+    end
+    return _sv_mpo_sv_product(ψ, ϕs[end], ϕs[begin:end-1]...)
+end
+
+function _sv_mpo_sv_product(ψ::StateVector, ϕ::StateVector, Os::MPO...)
+    for i in reverse(eachindex(Os))
+        ϕ′ = GStateTensor(1, dim(ψ), cache(innerdims(Os[i]), tensor(ψ), tensor(ϕ), Os[i][begin]))
+        _mpo_sv_product!(ϕ′, Os[i], ϕ)
+        ϕ = ϕ′
+    end
+    return _sv_sv_product(ψ, ϕ)
+end
+
+function _sv_mpo_sv_product_check(ψ::StateVector, ϕ::StateVector, Os::MPO...)
+    if length(ψ) != length(ϕ)
+        return false 
+    end
+    for i in eachindex(Os)
+        if length(Os[i]) != length(ψ)
+            return false 
+        end
+    end
+    for i in Base.OneTo(length(ψ))
+        if dim(ψ, i) != innerdim(Os[1], i)
+            return false 
+        end
+        if dim(ϕ, i) != outerdim(Os[end], i)
+            return false
+        end
+        for j in Base.OneTo(length(Os)-1)
+            if outerdim(Os[j], i) != innerdim(Os[j+1], i)
+                return false
+            end
+        end
+    end
+    return true
+end
