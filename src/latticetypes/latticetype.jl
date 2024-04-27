@@ -12,7 +12,7 @@ end
 
 export dim
 dim(::LatticeTypes{d, T}) where {d, T} = d
-eltype(::LatticeTypes{d, T}) where {d, T} = T
+Base.eltype(::LatticeTypes{d, T}) where {d, T} = T
 
 """
     LatticeTypes(dim::Int)
@@ -110,4 +110,13 @@ function opprod(lt::LatticeTypes, names::AbstractArray{String})
     else
         return lt.opnames[idx]
     end
+end
+
+
+# Show info 
+function Base.show(io::IO, lt::LatticeTypes)
+    println(io, "Lattice Type")
+    println(io, "Dimension: $(dim(lt))")
+    println(io, "States: $(lt.statenames)")
+    println(io, "Operators: $(lt.opnames)")
 end

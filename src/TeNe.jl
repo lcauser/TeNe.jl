@@ -36,9 +36,9 @@ include("tensors/exp.jl")
 include("tensors/svd.jl")
 
 ### LatticeTypes 
-#include("latticetypes/latticetype.jl")
-#include("latticetypes/qubits.jl")
-#include("latticetypes/oplist.jl")
+include("latticetypes/latticetype.jl")
+include("latticetypes/qubits.jl")
+include("latticetypes/oplist.jl")
 
 ### Tensor network states
 # State Tensors
