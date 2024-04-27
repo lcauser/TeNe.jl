@@ -94,6 +94,27 @@ function productmps(N::Int, A::Q; T::Type=ComplexF64, normalize::Bool=false) whe
 end
 
 """
+    productmps(lt::LatticeTypes, states::AbstractVector{String})
+
+Create an MPS from a string of states.
+
+# Example 
+
+```julia-repl
+julia> lt = Qubits();
+julia> ψ = productmps(lt, ["up" for _ = 1:20]);
+```
+"""
+function productmps(lt::LatticeTypes, states::AbstractVector{String})
+    ψ = MPS(dim(lt), length(states); T=eltype(lt))
+    for i in eachindex(states)
+        ψ[i][1, :, 1] .= state(lt, states[i])
+    end
+    movecenter!(ψ, firstindex(ψ))
+    return ψ
+end
+
+"""
     MPS(ψ::StateVector; kwargs...)
 
 Write a StateVector as a MPS.

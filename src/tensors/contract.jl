@@ -199,9 +199,9 @@ end
 ### Checks 
 # Check to see if contraction tensors are the right size
 function _contract_checkdims(x, y, cix, ciy)
-    if typeof(get_backend(x)) != typeof(get_backend(y))
-        throw(ArgumentError("Tensors are stored on different backends."))
-    end
+    #if typeof(get_backend(x)) != typeof(get_backend(y))
+    #    throw(ArgumentError("Tensors are stored on different backends."))
+    #end
     if length(cix) != length(ciy)
         throw(ArgumentError("Contraction indices have different lengths."))
     end

@@ -133,6 +133,27 @@ function productmpo(N::Int, A::AbstractArray; T::Type=ComplexF64)
 end
 
 """
+    productmpo(lt::LatticeTypes, ops::AbstractVector{String})
+
+Create an MPO from a string of operators.
+
+# Example 
+
+```julia-repl
+julia> lt = Qubits();
+julia> O = productmpo(lt, ["x" for _ = 1:20]);
+```
+"""
+function productmpo(lt::LatticeTypes, ops::AbstractVector{String})
+    O = MPO(dim(lt), length(ops); T=eltype(lt))
+    for i in eachindex(ops)
+        O[i][1, :, :, 1] .= op(lt, ops[i])
+    end
+    movecenter!(O, firstindex(O))
+    return O
+end
+
+"""
     MPO(O::StateOperator; kwargs...)
 
 Write a StateOperator as a MPO.

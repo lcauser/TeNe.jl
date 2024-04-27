@@ -9,6 +9,7 @@ mutable struct LatticeTypes{dim, T}
     ops::Vector{SMatrix{dim, dim, T}}
     temp::Int
 end
+export LatticeTypes
 
 export dim
 dim(::LatticeTypes{d, T}) where {d, T} = d

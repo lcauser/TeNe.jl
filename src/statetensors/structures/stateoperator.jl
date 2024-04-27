@@ -124,6 +124,28 @@ end
 productstateoperator(N::Int, A::AbstractMatrix; kwargs...) = productso(N, A; kwargs...)
 
 
+"""
+    productso(lt::LatticeTypes, states::AbstractVector{String})
+    productstateoperator(lt::LatticeTypes, states::AbstractVector{String})
+
+Create a product operator from a string of operator names.
+
+# Example 
+
+```julia-repl
+julia> lt = Qubits();
+julia> ψ = productso(lt, ["x" for _ = 1:6]);
+```
+"""
+function productso(lt::LatticeTypes, ops::AbstractVector{String})
+    tensor = ones(eltype(lt), )
+    for i in eachindex(ops)
+        tensor = tensorproduct(tensor, op(lt, ops[i]); tocache = i!=lastindex(ops))
+    end
+    return GStateTensor(2, tensor)
+end
+productstateoperator(lt::LatticeTypes, states::AbstractVector{String}) = productso(lt, states)
+
 ### Exponential of a state tensor 
 export exp
 """

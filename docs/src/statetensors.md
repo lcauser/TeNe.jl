@@ -18,16 +18,21 @@ There are many ways to initialise a state. For variational methods, a popular ch
 randomsv(::Int, ::Int)
 ```
 
-Alternatively, you can initalise it by a product state.
+Alternatively, you can initalise it as a mean field state.
 ```@docs
-productsv
+productsv(::Int, ::AbstractVector)
+```
+
+Similarly, you can do this using the LatticeTypes feature. For example, initalise a lattice for Qubits, `lt = Qubits()` and then use `ψ = productsv(lt, ["up" for _ = 1:6])`.
+```@docs
+productsv(::LatticeTypes, ::AbstractVector{String})
 ```
 
 ### Properties of state vectors
 
 ```@docs
 rank(::GStateTensor)
-dim(::GStateTensor)
+dim(::GStateTensor, ::Int, ::Int)
 length(::GStateTensor)
 norm(::GStateTensor)
 entropy(::StateVector, ::Int)
@@ -63,7 +68,12 @@ Operators, such as the Hamiltonian of a quantum many-body system, or more genera
 Like a StateVector, we can initalise a StateOperator randomly or as a product state.
 ```@docs
 randomso
-productso
+productso(::Int, ::AbstractMatrix)
+```
+
+We can also use the LatticeTypes interface to initalise as a product of a string of operators...
+```@docs
+productso(::LatticeTypes, ::AbstractVector{String})
 ```
 
 ### Construct an operator from a list
