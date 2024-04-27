@@ -83,13 +83,6 @@ Returns the rank of an MPS object.
 """
 TeNe.rank(::GMPS{r}) where {r} = r
 
-"""
-    dim(::GMPS)
-
-The size of the physical dimensions in a GMPS. Returns `0` for heterogeneous 
-systems (i.e. an invariant physical dimension).
-"""
-dim(ψ::GMPS) = ψ.dim
 
 """
     Base.length(::GMPS)
@@ -105,6 +98,43 @@ The orthogonal center of an MPS. Returns `0` if nothing is set.
 """
 center(ψ::GMPS) = ψ.center
 
+### Physical dimenons
+
+"""
+    dim(ψ::GMPS, [which::Int, site::Int])
+
+The size of the physical dimensions in a GMPS. Returns `0` for heterogeneous 
+systems (i.e. an invariant physical dimension). The axis and the lattice site
+can also be specified.
+"""
+function dim(ψ::GMPS)
+    ds = Tuple(map(j->dim(ψ, j), Base.OneTo(rank(ψ))))
+    if all(map(j->j==ds[1], ds))
+        return ds[1]
+    else
+        return 0
+    end
+end
+function dim(ψ::GMPS, which::Int)
+    ds = dims(ψ, which)
+    if all(map(j->j==ds[1], ds))
+        return ds[1]
+    else
+        return 0
+    end
+end
+dim(ψ::GMPS, which::Int, site::Int) = size(ψ[site], 1+which)
+
+"""
+    dim(ψ::GMPS, which::Int)
+
+The size of the physical dimensions across an axis in a GMPS.
+"""
+function dims(ψ::GMPS, which::Int)
+    return Tuple(map(j->dim(ψ, which, j), eachindex(ψ)))
+end
+
+### Bond dimensions
 """
     bonddim(::GMPS, idx::Int)
 

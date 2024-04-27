@@ -16,7 +16,8 @@ function isstatevector(ψ)
 end
 
 export dim 
-dim(ψ::StateVector, site::Int) = size(tensor(ψ), site)
+dim(ψ::StateVector, site::Int) = dim(ψ, 1, site)
+dims(ψ::StateVector) = dims(ψ, 1)
 
 
 ### Initialising state vectors 

@@ -30,7 +30,8 @@ TeNe.transpose(O::AdjointStateOperator) = ConjGStateTensor(O.StateTensor)
 TeNe.adjoint(O::ConjGStateTensor{2}) = TransposeStateOperator(O.StateTensor)
 TeNe.adjoint(O::TransposeStateOperator) = ConjGStateTensor(O.StateTensor)
 
-const StateOperator = Union{GStateTensor{2}, ConjGStateTensor{2}, TransposeStateOperator, AdjointStateOperator}
+const StateOperator = Union{GStateTensor{2}, ConjGStateTensor{2},
+    TransposeStateOperator, AdjointStateOperator}
 export StateOperator
 
 export isstateoperator 
@@ -43,17 +44,6 @@ function isstateoperator(O)
     return typeof(O) <: StateOperator
 end
 
-# Physical dimensions 
-export innerdim, outerdim, innerdims, outerdims
-innerdim(O::Union{GStateTensor{2}, ConjGStateTensor{2}}, site::Int) = size(tensor(O), 2*site-1)
-innerdim(O::Union{AdjointStateOperator, TransposeStateOperator}, site::Int) = size(tensor(O), 2*site)
-outerdim(O::Union{GStateTensor{2}, ConjGStateTensor{2}}, site::Int) = size(tensor(O), 2*site)
-outerdim(O::Union{AdjointStateOperator, TransposeStateOperator}, site::Int) = size(tensor(O), 2*site-1)
-innerdims(O::Union{GStateTensor{2}, ConjGStateTensor{2}}) = tuple(map(j->size(tensor(O), 2*j-1)), Base.OneTo(length(O)))
-innerdims(O::Union{AdjointStateOperator, TransposeStateOperator}) = tuple(map(j->size(tensor(O), 2*j)), Base.OneTo(length(O)))
-outerdims(O::Union{GStateTensor{2}, ConjGStateTensor{2}}) = tuple(map(j->size(tensor(O), 2*j)), Base.OneTo(length(O)))
-outerdims(O::Union{AdjointStateOperator, TransposeStateOperator}) = tuple(map(j->size(tensor(O), 2*j-1)), Base.OneTo(length(O)))
-
 # Indices
 innerind(::Union{GStateTensor{2}, ConjGStateTensor{2}}, site::Int) = 2*site-1
 innerind(::Union{AdjointStateOperator, TransposeStateOperator}, site::Int) = 2*site
@@ -63,6 +53,17 @@ innerinds(O::Union{GStateTensor{2}, ConjGStateTensor{2}}) = Tuple(1:2:2*length(O
 innerinds(O::Union{AdjointStateOperator, TransposeStateOperator}) = Tuple(2:2:2*length(O))
 outerinds(O::Union{GStateTensor{2}, ConjGStateTensor{2}}) = Tuple(2:2:2*length(O))
 outerinds(O::Union{AdjointStateOperator, TransposeStateOperator}) = Tuple(1:2:2*length(O))
+
+# Physical dimensions 
+export innerdim, outerdim, innerdims, outerdims
+innerdim(O::Union{GStateTensor{2}, ConjGStateTensor{2}}, site::Int) = size(tensor(O), 2*site-1)
+innerdim(O::Union{AdjointStateOperator, TransposeStateOperator}, site::Int) = size(tensor(O), 2*site)
+outerdim(O::Union{GStateTensor{2}, ConjGStateTensor{2}}, site::Int) = size(tensor(O), 2*site)
+outerdim(O::Union{AdjointStateOperator, TransposeStateOperator}, site::Int) = size(tensor(O), 2*site-1)
+innerdims(O::Union{GStateTensor{2}, ConjGStateTensor{2}}) = Tuple(map(j->size(tensor(O), 2*j-1), Base.OneTo(length(O))))
+innerdims(O::Union{AdjointStateOperator, TransposeStateOperator}) = Tuple(map(j->size(tensor(O), 2*j), Base.OneTo(length(O))))
+outerdims(O::Union{GStateTensor{2}, ConjGStateTensor{2}}) = Tuple(map(j->size(tensor(O), 2*j), Base.OneTo(length(O))))
+outerdims(O::Union{AdjointStateOperator, TransposeStateOperator}) = Tuple(map(j->size(tensor(O), 2*j-1), Base.OneTo(length(O))))
 
 ### Initialising StateOperators 
 export randomso, randomstateoperator, productso, productstateoperator

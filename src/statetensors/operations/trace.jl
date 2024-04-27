@@ -18,11 +18,9 @@ julia> trace(O, O)
 ```
 """
 function trace(Os::StateOperator...)
-    # Checks 
-    if !issimilar(Os...)
-        throw(ArgumentError("Arguments have properties that do not match."))
-    end
+    _op_trace_validation(Os...)
 
+    # Deal with length one seperately; this needs work later...
     if length(Os) == 1
         ten = tensor(Os[1])
         for _ = 1:length(Os[1])

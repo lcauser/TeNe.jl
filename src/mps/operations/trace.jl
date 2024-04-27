@@ -13,11 +13,7 @@ export trace
 Compute the trace of the product of many MPOs.
 """
 function TeNe.trace(Os::MPO...)
-    # Checks 
-    if !_mpo_trace_check(Os...)
-        throw(ArgumentError("Arguments have properties that do not match."))
-    end
-
+    _op_trace_validation(Os...)
     if length(Os) == 1
         return _mpo_trace(Os...)
     else
@@ -65,18 +61,4 @@ function _mpo_mpo_trace(Os::MPO...)
     end
 
     return block[]
-end
-
-function _mpo_trace_check(Os::MPO...)
-    for i in eachindex(Os[begin])
-        if innerdim(Os[begin], i) != outerdim(Os[end], i)
-            return false
-        end
-        for j in Base.OneTo(length(Os)-1)
-            if outerdim(Os[j], i) != innerdim(Os[j+1], i)
-                return false
-            end
-        end
-    end
-    return true
 end

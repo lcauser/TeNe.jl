@@ -15,8 +15,8 @@ include("cache.jl")
 # Default settings 
 const _TeNe_cutoff = 1e-16
 
-abstract type AbstractTensorNetworkState end
-function issimilar(ψs::AbstractTensorNetworkState...)
+abstract type TensorNetworkState end
+function issimilar(ψs::TensorNetworkState...)
     for i = Base.range(2, length(ψs))
         length(ψs[i]) != length(ψs[1]) && return false 
         dim(ψs[1]) != dim(ψs[i]) && return false
@@ -36,30 +36,41 @@ include("tensors/exp.jl")
 include("tensors/svd.jl")
 
 ### LatticeTypes 
-include("latticetypes/latticetype.jl")
-include("latticetypes/qubits.jl")
-include("latticetypes/oplist.jl")
+#include("latticetypes/latticetype.jl")
+#include("latticetypes/qubits.jl")
+#include("latticetypes/oplist.jl")
 
-### State vectors 
-# Structures
+### Tensor network states
+# State Tensors
 include("statetensors/structures/abstractstatetensor.jl")
 include("statetensors/structures/gstatetensor.jl")
 include("statetensors/structures/statevector.jl")
 include("statetensors/structures/stateoperator.jl")
 
-# Operations
-include("statetensors/operations/applyso.jl")
-include("statetensors/operations/inner.jl")
-include("statetensors/operations/trace.jl")
-
-### MPS 
-# Structures
+# MPS 
 include("mps/structures/abstractmps.jl")
 include("mps/structures/gmps.jl")
 include("mps/structures/mps.jl")
 include("mps/structures/mpo.jl")
 
-# Operations 
+# Type abstraction 
+const TensorNetworkVector = Union{StateVector, MPS}
+const TensorNetworkOperator = Union{StateOperator, MPO}
+
+# Type validation 
+include("validation/vec_vec.jl")
+include("validation/op_vec.jl")
+include("validation/vec_op_vec.jl")
+include("validation/op_op.jl")
+include("validation/op_trace.jl")
+
+### Tensor Network Operations 
+# State Tensors 
+include("statetensors/operations/applyso.jl")
+include("statetensors/operations/inner.jl")
+include("statetensors/operations/trace.jl")
+
+# MPS
 include("mps/operations/applympo.jl")
 include("mps/operations/inner.jl")
 include("mps/operations/trace.jl")

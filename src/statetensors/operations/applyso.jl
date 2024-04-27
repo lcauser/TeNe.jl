@@ -22,10 +22,8 @@ julia> ϕ = O * ψ;
 ```
 """
 function applyso(O::StateOperator, ψ::StateVector)
-    ϕ = GStateTensor(1, dim(ψ), promote_tensor(_so_sv_product_dims(O), tensor(O), tensor(ψ)))
-    if !_so_sv_product_check(ϕ, O, ψ)
-        throw(ArgumentError("Arguments have properties that do not match."))
-    end
+    _op_vec_validation(O, ψ)
+    ϕ = GStateTensor(1, promote_tensor(innerdims(O), tensor(O), tensor(ψ)))
     _so_sv_product!(ϕ, O ,ψ)
     return ϕ
 end
@@ -49,16 +47,15 @@ julia> applyso!(ϕ, O, ψ);
 ```
 """
 function applyso!(ϕ::StateVector, O::StateOperator, ψ::StateVector)
-    if !_so_sv_product_check(ϕ, O, ψ)
-        throw(ArgumentError("Arguments have properties that do not match."))
-    end
+    _op_vec_validation(ϕ, O, ψ)
     _so_sv_product!(ϕ, O, ψ)
 end
 applyso!(ϕ::StateVector, ψ::StateVector, O::StateOperator) = applyso!(ϕ, transpose(O), ψ)
 
 
 function _so_sv_product!(ϕ::StateVector, O::StateOperator, ψ::StateVector)
-    contract!(tensor(ϕ), tensor(O), tensor(ψ), outerinds(O), Tuple(1:ndims(tensor(ψ))),
+    contract!(tensor(ϕ), tensor(O), tensor(ψ),
+        outerinds(O), Tuple(1:ndims(tensor(ψ))),
         isconj(ϕ) ? !isconj(O) : isconj(O), isconj(ϕ) ? !isconj(ψ) : isconj(ψ) )
 end
 
@@ -93,10 +90,8 @@ julia> O = O1 * O2;
 ```
 """
 function applyso(O1::StateOperator, O2::StateOperator)
-    O = GStateTensor(2, dim(O1), promote_tensor(_so_so_product_dims(O1, O2), O1, O2))
-    if !_so_so_product_check(O, O1, O2)
-        throw(ArgumentError("Arguments have properties that do not match."))
-    end
+    _op_op_validation(O1, O2)
+    O = GStateTensor(2, promote_tensor(_so_so_product_dims(O1, O2), O1, O2))
     _so_so_product!(O, O1, O2)
     return O
 end
@@ -118,22 +113,8 @@ julia> applyso!(O, O1, O2);
 ```
 """
 function applyso!(O::StateOperator, O1::StateOperator, O2::StateOperator)
-    if !_so_so_product_check(O, O1, O2)
-        throw(ArgumentError("Arguments have properties that do not match."))
-    end
+    _op_op_validation(O, O1, O2)
     _so_so_product!(O, O1, O2)
-end
-
-function _so_so_product_check(O::StateOperator, O1::StateOperator, O2::StateOperator)
-    if length(O) != length(O1) != length(O2)
-        return false
-    end
-    for i = Base.OneTo(length(O))
-        if innerdim(O, i) != innerdim(O1, i) || outerdim(O, i) != outerdim(O2, i) || outerdim(O1, i) != innerdim(O2, i)
-            return false
-        end
-    end
-    return true
 end
 
 function _so_so_product_dims(O1::StateOperator, O2::StateOperator)

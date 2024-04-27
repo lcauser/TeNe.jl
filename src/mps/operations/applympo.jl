@@ -28,10 +28,13 @@ Apply MPO `O` to MPS `ψ`.
       no limit.
 """
 function applympo(O::MPO, ψ::MPS; alg=:naive, kwargs...)
-    if ! _mpo_mps_product_check(O, ψ)
-        throw(ArgumentError("Arguments have properties that do not match."))
-    end
+    # Checks on the arguments
+    _op_vec_validation(O, ψ)
+
+    # Create a new MPS to store the result 
     ϕ = MPS(dim(ψ), length(ψ); T=_promote_tensor_eltype(O, ψ))
+
+    # Run the algorithm
     if alg==:naive
         _mpo_mps_naive!(ϕ, O, ψ; kwargs...)
     elseif alg==:zipup 
@@ -42,26 +45,14 @@ function applympo(O::MPO, ψ::MPS; alg=:naive, kwargs...)
     return ϕ
 end
 applympo(ψ::MPS, O::MPO; kwargs...) = applympo(transpose(O), ψ; kwargs...)
-*(O::MPO, ψ::MPS) = applympo(O, ψ; cutoff=1e-12)
-*(ψ::MPS, O::MPO) = applympo(ψ, O; cutoff=1e-12)
-
-function _mpo_mps_product_check(O::MPO, ψ::MPS)
-    if length(O) != length(ψ)
-        return false
-    end
-    for i in eachindex(ψ)
-        if dim(ψ, i) != outerdim(O, i)
-            return false
-        end
-    end
-    return true
-end
+*(O::MPO, ψ::MPS) = applympo(O, ψ; cutoff=_TeNe_cutoff)
+*(ψ::MPS, O::MPO) = applympo(ψ, O; cutoff=_TeNe_cutoff)
 
 # Naive method; do the contraction exactly and then truncate
 function _mpo_mps_naive!(ϕ::MPS, O::MPO, ψ::MPS; kwargs...)
     # Move canonical centre of both to the first site 
-    movecenter!(O, 1)
-    movecenter!(ψ, 1)
+    movecenter!(O, firstindex(O))
+    movecenter!(ψ, firstindex(ψ))
 
     # Do the contraction 
     ϕ.center = firstindex(ϕ)
@@ -119,10 +110,13 @@ Apply MPO `O1` to MPO `O2`.
       no limit.
 """
 function applympo(O1::MPO, O2::MPO; alg=:naive, kwargs...)
-    if !_mpo_mpo_product_check(O1, O2)
-        throw(ArgumentError("Arguments have properties that do not match."))
-    end
+    # Checks on the arguments
+    _op_op_validation(O1, O2)
+
+    # Create MPO to store the result 
     O = MPO(dim(O1), length(O2); T=_promote_tensor_eltype(O1, O2))
+
+    # Run the algorithm
     if alg==:naive
         _mpo_mpo_naive!(O, O1, O2; kwargs...)
     elseif alg==:zipup 
@@ -133,19 +127,6 @@ function applympo(O1::MPO, O2::MPO; alg=:naive, kwargs...)
     return O
 end
 *(O1::MPO, O2::MPO) = applympo(O1, O2; cutoff=_TeNe_cutoff)
-
-function _mpo_mpo_product_check(O1::MPO, O2::MPO)
-    if length(O) != length(ψ)
-        return false
-    end
-    for i in eachindex(ψ)
-        if outedim(O1, i) != innerdim(O2, i)
-            return false
-        end
-    end
-    return true
-end
-
 
 function _mpo_mpo_naive!(O::MPO, O1::MPO, O2::MPO; kwargs...)
     # Move canonical centre of both to the first site 
@@ -205,10 +186,8 @@ julia> O = productmpo(10, [0 1; 1 0]);
 julia> ϕ = O * ψ;
 """
 function applympo(O::MPO, ψ::StateVector)
-    ϕ = GStateTensor(1, dim(ψ), promote_tensor(_mpo_sv_product_dims(O), tensor(ψ), O[begin]))
-    if !_mpo_sv_product_check(ϕ, O, ψ)
-        throw(ArgumentError("Arguments have properties that do not match."))
-    end
+    _op_vec_validation(O, ψ)
+    ϕ = GStateTensor(1, promote_tensor(innerdims(O), tensor(ψ), O[begin]))
     _mpo_sv_product!(ϕ, O, ψ)
     return ϕ
 end
@@ -232,9 +211,7 @@ julia> ϕ = StateVector(2, 10);
 julia> applympo!(ϕ, O, ψ);
 """
 function applympo!(ϕ::StateVector, O::MPO, ψ::StateVector)
-    if !_mpo_sv_product_check(ϕ, O, ψ)
-        throw(ArgumentError("Arguments have properties that do not match."))
-    end
+    _op_vec_validation(ϕ, O, ψ)
     _mpo_sv_product!(ϕ, O, ψ)
 end
 applympo!(ϕ::StateVector, ψ::StateVector, O::MPO) = applyMPO(ϕ, transpose(O), ψ)
@@ -252,22 +229,6 @@ function _mpo_sv_product!(ϕ::StateVector, O::MPO, ψ::StateVector)
     tensor(ϕ) .= isconj(ϕ) ? conj.(ten) : ten
 end
 
-function _mpo_sv_product_check(ϕ::StateVector, O::MPO, ψ::StateVector)
-    if !(length(ϕ) == length(O) == length(ψ))
-        return false
-    end
-    for i in eachindex(O)
-        if dim(ψ, i) != outerdim(O, i) || dim(ϕ, i) != innerdim(O, i)
-            return false
-        end
-    end
-    return true 
-end
-
-function _mpo_sv_product_dims(O::MPO)
-    return Tuple(map(j->size(O[j], innerdim(O, j)), eachindex(O)))
-end
-
 
 ### Applying an MPO to a StateOperator
 """
@@ -277,18 +238,14 @@ end
 Multiply a StateOperator by an MPO.
 """
 function applympo(O1::MPO, O2::StateOperator)
-    O = GStateTensor(dim(O2), promote_tensor(_mpo_so_dims(O1, O2), O1, O2))
-    if !_mpo_so_product_check(O, O1, O2) 
-        throw(ArgumentError("Arguments have properties that do not match."))
-    end
+    _op_op_validation(O1, O2)
+    O = GStateTensor(2, promote_tensor(_mpo_so_dims(O1, O2), O1, O2))
     _mpo_so_product!(O, O1, O2)
     return O
 end
 function applympo(O1::StateOperator, O2::MPO)
-    if !issimilar(O1, O2)
-        throw(ArgumentError("Arguments have properties that do not match."))
-    end
-    O = StateOperator(dim(O2), length(O2))
+    _op_op_validation(O1, O2)
+    O = GStateTensor(2, dim(O2), promote_tensor(_mpo_so_dims(O1, O2, true), O1, O2))
     _mpo_so_product!(O, O2, O1; tp=true)
     return O
 end
@@ -302,16 +259,12 @@ end
 Multiply a StateOperator by an MPO, and store the result in `O`.
 """
 function applympo!(O::StateOperator, O1::MPO, O2::StateOperator)
-    if !issimilar(O, O1, O2)
-        throw(ArgumentError("Arguments have properties that do not match."))
-    end
+    _op_op_validation(O, O1, O2)
     _mpo_so_product!(O, O1, O2)
 end
 
 function applympo!(O::StateOperator, O1::StateOperator, O2::MPO)
-    if !issimilar(O, O1, O2)
-        throw(ArgumentError("Arguments have properties that do not match."))
-    end
+    _op_op_validation(O, O1, O2)
     _mpo_so_product!(O, transpose(O2), transpose(O1); tp=true)
 end
 
@@ -340,25 +293,13 @@ function _mpo_so_product!(O::StateOperator, O1::MPO, O2::StateOperator; tp::Bool
     end
 end
 
-function _mpo_so_product_check(O::StateOperator, O1::MPO, O2::StateOperator)
-    if !(length(O1) == length(O2) == length(O))
-        return false
+function _mpo_so_dims(O1::MPO, O2::StateOperator, reverse::Bool=false)
+    if reverse
+        dims = Tuple(map(j->isodd(j) ? size(tensor(O2), istranspose(O2) ? j+1 : j) :
+            size(O1[cld(j, 2)], outerind(O1)), Base.OneTo(2*length(O1))))
+    else
+        dims = Tuple(map(j->isodd(j) ? size(O1[cld(j, 2)], innerind(O1)) :
+            size(tensor(O2), istranspose(O2) ? j-1 : j), Base.OneTo(2*length(O1))))
     end
-    for i in eachindex(O1)
-        if size(tensor(O), istranspose(O) ? 2*i : 2*i-1) != size(O[i], istranspose(O) ? 3 : 2)
-            return false
-        end
-        if size(tensor(O), istranspose(O) ? 2*i-1 : 2*i) != size(tensor(O2), istranspose(O2) ? 2*i-1 : 2*i)
-            return false
-        end
-        if size(tensor(O2), istranspose(O2) ? 2*i : 2*i-1) != size(O[i], istranspose(O) ? 2 : 3)
-            return false
-        end
-    end
-    return true 
-end
-
-function _mpo_so_dims(O1::MPO, O2::StateOperator)
-    return Tuple(map(j->isodd(j) ? size(O1[cld(j, 2)], istranspose(O1) ? 3 : 2) :
-        size(tensor(O2), istranspose(O2) ? j-1 : j), Base.OneTo(2*length(O1))))
+    return dims
 end

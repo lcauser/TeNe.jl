@@ -1,4 +1,4 @@
-abstract type AbstractStateTensor <: AbstractTensorNetworkState  end 
+abstract type AbstractStateTensor <: TensorNetworkState  end 
 
 # Maybe for later: genalise to more general tensor network states?
 """
@@ -25,6 +25,8 @@ Base.lastindex(ψ::GStateTensorTrait) = Base.lastindex(ψ.StateTensor)
 Base.eachindex(ψ::GStateTensorTrait) = Base.eachindex(ψ.StateTensor)
 Base.setindex!(ψ::GStateTensorTrait, x, is...) = Base.setindex!(ψ.StateTensor, x, is...)
 dim(ψ::GStateTensorTrait) = dim(ψ.StateTensor)
+dim(ψ::GStateTensorTrait, i...) = dim(ψ.StateTensor, i...)
+dims(ψ::GStateTensorTrait, i::Int) = dims(ψ.StateTensor, i)
 TeNe.rank(ψ::GStateTensorTrait) = rank(ψ.StateTensor)
 TeNe.norm(ψ::GStateTensorTrait) = TeNe.norm(ψ.StateTensor)
 tensor(ψ::GStateTensorTrait) = tensor(ψ.StateTensor)
