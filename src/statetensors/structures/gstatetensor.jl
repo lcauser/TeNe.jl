@@ -123,8 +123,6 @@ end
 
 
 ### Base operations
-import Base.+, Base.-, Base.*, Base./
-
 function *(ψ::GStateTensor, a::Number)
     ten = ψ.tensor .* a
     return GStateTensor(rank(ψ), dim(ψ), ten)

@@ -112,11 +112,9 @@ function add(ops1::OpList, ops2::OpList)
     append!(ops.coeffs, ops2.coeffs)
     return ops
 end
-import Base.+
 +(ops1::OpList, ops2::OpList) = add(ops1, ops2)
 
 ### Multiplication of opeartor lists 
-import Base.*
 function *(x::Number, y::OpList)
     y = deepcopy(y)
     for i = 1:length(y.coeffs)

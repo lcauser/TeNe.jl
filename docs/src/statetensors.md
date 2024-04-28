@@ -71,12 +71,12 @@ randomso
 productso(::Int, ::AbstractMatrix)
 ```
 
+### Construct an operator from a list
 We can also use the LatticeTypes interface to initalise as a product of a string of operators...
 ```@docs
-productso(::LatticeTypes, ::AbstractVector{String})
+StateOperator(::OpList)
 ```
 
-### Construct an operator from a list
 
 ### Products
 A StateVector or a StateOperator can be multiplied by a StateOperator.

@@ -7,6 +7,9 @@ using StaticArrays
 using KernelAbstractions
 using HDF5
 
+# Imports 
+import Base: +, -, *, /
+
 # Caching; intermediate contractions memory can be pre-allocated and reused.
 const _CACHE_MEM_LIM = 4294967296
 const _CACHE = LRU{Tuple{DataType, Int64, Int64, Int64, Int64}, Any}(maxsize=_CACHE_MEM_LIM, by=Base.summarysize)
@@ -76,4 +79,5 @@ include("statetensors/operations/trace.jl")
 include("mps/operations/applympo.jl")
 include("mps/operations/inner.jl")
 include("mps/operations/trace.jl")
+include("mps/operations/creatempo.jl")
 end

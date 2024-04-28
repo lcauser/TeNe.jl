@@ -2,7 +2,6 @@
     Calculating inner products of StateVectors and StateOperators.
 =#
 
-import Base.*
 export inner, dot
 
 ### Inner products of StateVectors

@@ -1,7 +1,6 @@
 #=
     Applying MPOs to MPS and StateTensors...
 =#
-import Base.*
 export applympo, applympo!
 
 ### Applying an MPO to an MPS

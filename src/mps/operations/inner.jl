@@ -2,7 +2,6 @@
     Inner products with MPS and MPOs 
 =#
 
-import Base.* 
 export dot, inner 
 
 ### Inner product of MPS 
@@ -27,7 +26,6 @@ function inner(ψ::MPS, ϕ::MPS)
     return _mps_mps_product(ψ, ϕ)
 end
 dot(ψ::MPS, ϕ::MPS) = inner(ψ, ϕ)
-import Base.*
 *(ψ::MPS, ϕ::MPS) = inner(ψ, ϕ)
 
 

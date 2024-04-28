@@ -341,7 +341,6 @@ function replacesites!(ψ::GMPS, A, site::Int, direction::Bool=false, normalize:
 end
 
 ### Products with numbers
-import Base.*, Base./
 function *(ψ::GMPS, a::Number)
     ϕ = deepcopy(ψ)
     if center(ψ) != 0
@@ -356,7 +355,6 @@ end
 
 ### Addition and subtraction 
 # TODO later: add variational option
-import Base.+, Base.-
 
 function +(ψ::GMPS{r}, ϕ::GMPS{r}) where {r}
     _vec_vec_validation(ψ, ϕ)

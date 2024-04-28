@@ -106,6 +106,10 @@ productmpo(lt::LatticeTypes, ops::AbstractVector{String})
 ```
 
 ### Construct an MPO from an operator list
+A more powerful option is to write an operator as an OpList, and then use the `MPO(::OpList)` function to automatically find an exact MPO representation.
+```@docs
+MPO(::OpList)
+```
 
 ### Products
 The expectation value of a string of MPOs with respect to some MPSs can be calculated exactly. The below can be done with many MPOs.

@@ -146,6 +146,42 @@ function productso(lt::LatticeTypes, ops::AbstractVector{String})
 end
 productstateoperator(lt::LatticeTypes, states::AbstractVector{String}) = productso(lt, states)
 
+### Initalising StateOperator from OpList 
+"""
+    StateOperator(ops::OpList)
+
+Create a StateOperator from an OpList.
+
+# Examples 
+
+```julia-repl
+julia> lt = Qubits();
+julia> H = OpList(lt, 10);
+julia> for i = 1:10 add!(H, "x", i) end;
+julia> for i = 1:9 add!(H, ["z", "z"], [i, i+1]) end;
+julia> H = StateOperator(H);
+```
+"""
+function StateOperator(ops::OpList)
+    O = StateOperator(dim(ops.lt), ops.length; T=eltype(ops.lt))
+    for i in eachindex(ops.ops)
+        ten = ones(eltype(ops.lt), )
+        k = 1
+        for j = Base.OneTo(length(O))
+            if k <= length(ops.sites[i]) && ops.sites[i][k] == j
+                oper = ops.ops[i][k]
+                k += 1
+            else
+                oper = "id"
+            end
+            ten = tensorproduct(ten, op(ops.lt, oper))
+        end
+        tensor(O) .+= ten
+    end
+    return O
+end
+
+
 ### Exponential of a state tensor 
 export exp
 """
