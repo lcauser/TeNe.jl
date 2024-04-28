@@ -17,8 +17,17 @@ function ismps(ψ)
     return typeof(ψ) <: MPS
 end
 
-export dim 
+export dim, dims
 dim(ψ::MPS, site::Int) = size(ψ[site], 2)
+function dim(ψ::MPS)
+    ds = dims(ψ)
+    if all(map(j->j==ds[1], ds))
+        return ds[1]
+    else
+        return 0
+    end
+end
+dims(ψ::MPS) = dims(ψ, 1)
 
 ### Initalising MPSs 
 export randommps, productmps
@@ -81,6 +90,27 @@ function productmps(N::Int, A::Q; T::Type=ComplexF64, normalize::Bool=false) whe
         movecenter!(ψ, firstindex(ψ))
         normalize!(ψ)
     end
+    return ψ
+end
+
+"""
+    productmps(lt::LatticeTypes, states::AbstractVector{String})
+
+Create an MPS from a string of states.
+
+# Example 
+
+```julia-repl
+julia> lt = Qubits();
+julia> ψ = productmps(lt, ["up" for _ = 1:20]);
+```
+"""
+function productmps(lt::LatticeTypes, states::AbstractVector{String})
+    ψ = MPS(dim(lt), length(states); T=eltype(lt))
+    for i in eachindex(states)
+        ψ[i][1, :, 1] .= state(lt, states[i])
+    end
+    movecenter!(ψ, firstindex(ψ))
     return ψ
 end
 

@@ -20,7 +20,6 @@ Create a generalised matrix product state with physical dimension dim.
 """
 
 mutable struct GMPS{r} <: AbstractMPS
-    dim::Int
     tensors::Vector{<:AbstractArray}
     center::Int
 end
@@ -64,8 +63,6 @@ function Base.setindex!(ψ::GMPS, x, i::Int)
     ψ.tensors[i...] = x
 end
 
-#Base.collect(ψ::GMPS) = ψ
-
 ### MPS Properties 
 export rank, dim, center, bonddim, maxbonddim
 
@@ -83,13 +80,6 @@ Returns the rank of an MPS object.
 """
 TeNe.rank(::GMPS{r}) where {r} = r
 
-"""
-    dim(::GMPS)
-
-The size of the physical dimensions in a GMPS. Returns `0` for heterogeneous 
-systems (i.e. an invariant physical dimension).
-"""
-dim(ψ::GMPS) = ψ.dim
 
 """
     Base.length(::GMPS)
@@ -105,6 +95,43 @@ The orthogonal center of an MPS. Returns `0` if nothing is set.
 """
 center(ψ::GMPS) = ψ.center
 
+### Physical dimenons
+
+"""
+    dim(ψ::GMPS, [which::Int, site::Int])
+
+The size of the physical dimensions in a GMPS. Returns `0` for heterogeneous 
+systems (i.e. an invariant physical dimension). The axis and the lattice site
+can also be specified.
+"""
+function dim(ψ::GMPS)
+    ds = Tuple(map(j->dim(ψ, j), Base.OneTo(rank(ψ))))
+    if all(map(j->j==ds[1], ds))
+        return ds[1]
+    else
+        return 0
+    end
+end
+function dim(ψ::GMPS, which::Int)
+    ds = dims(ψ, which)
+    if all(map(j->j==ds[1], ds))
+        return ds[1]
+    else
+        return 0
+    end
+end
+dim(ψ::GMPS, which::Int, site::Int) = size(ψ[site], 1+which)
+
+"""
+    dim(ψ::GMPS, which::Int)
+
+The size of the physical dimensions across an axis in a GMPS.
+"""
+function dims(ψ::GMPS, which::Int)
+    return Tuple(map(j->dim(ψ, which, j), eachindex(ψ)))
+end
+
+### Bond dimensions
 """
     bonddim(::GMPS, idx::Int)
 
@@ -314,7 +341,6 @@ function replacesites!(ψ::GMPS, A, site::Int, direction::Bool=false, normalize:
 end
 
 ### Products with numbers
-import Base.*, Base./
 function *(ψ::GMPS, a::Number)
     ϕ = deepcopy(ψ)
     if center(ψ) != 0
@@ -329,30 +355,23 @@ end
 
 ### Addition and subtraction 
 # TODO later: add variational option
-import Base.+, Base.-
 
 function +(ψ::GMPS{r}, ϕ::GMPS{r}) where {r}
-    # Checks 
-    if !issimilar(ψ, ϕ)
-        throw(ArgumentError("GMPS have differing properties."))
-    end
+    _vec_vec_validation(ψ, ϕ)
     movecenter!(ψ, firstindex(ψ))
     movecenter!(ϕ, firstindex(ϕ))
     return _add_exact(ψ, ϕ, false; cutoff=_TeNe_cutoff)
 end
 
 function -(ψ::GMPS{r}, ϕ::GMPS{r}) where {r}
-    # Checks 
-    if !issimilar(ψ, ϕ)
-        throw(ArgumentError("GMPS have differing properties."))
-    end
+    _vec_vec_validation(ψ, ϕ)
     movecenter!(ψ, firstindex(ψ))
     movecenter!(ϕ, firstindex(ϕ))
     return _add_exact(ψ, ϕ, true; cutoff=_TeNe_cutoff)
 end
 
 function _add_exact(ψ::GMPS{r}, ϕ::GMPS{r}, subtract::Bool=false; kwargs...) where {r}
-    Ψ = GMPS(r, dim(ψ), length(ψ); T=Base.promote_op(*, eltype(ψ), eltype(ϕ)))
+    Ψ = GMPS(r, dim(ψ), length(ψ); T=_promote_tensor_eltype(ψ, ϕ))
     Ψ.center = firstindex(Ψ)
     for i in eachindex(Ψ)
         # Create the tensor 
@@ -430,7 +449,7 @@ end
 export randomgmps
 function GMPS(rank::Int, d::Int, N::Int; T::Type=ComplexF64)
     tensors = [zeros(T, (1, [d for __ = Base.OneTo(rank)]..., 1)) for _ = Base.OneTo(N)]
-    return GMPS{rank}(d, tensors, 0)
+    return GMPS{rank}(tensors, 0)
 end
 
 """
@@ -444,7 +463,7 @@ Create a GMPS with random entries.
 """
 function randomgmps(rank::Int, dim::Int, length::Int, bonddim::Int; T::Type=ComplexF64)
     # Create the GMPS
-    ψ = GMPS(rank, dim, length)
+    ψ = GMPS(rank, dim, length; T=T)
     for i = Base.OneTo(length)
         D1 = i == firstindex(ψ) ? 1 : bonddim
         D2 = i == lastindex(ψ) ? 1 : bonddim
@@ -501,9 +520,8 @@ function Base.show(io::IO, ψ::GMPS)
 end
 
 ### Creating copies
-Base.copy(ψ::GMPS) = typeof(ψ)(dim(ψ), ψ.tensors, center(ψ))
-Base.deepcopy(ψ::GMPS) = typeof(ψ)(Base.copy(dim(ψ)), Base.copy(ψ.tensors),
-                                        Base.copy(center(ψ)))
+Base.copy(ψ::GMPS) = typeof(ψ)(ψ.tensors, center(ψ))
+Base.deepcopy(ψ::GMPS) = typeof(ψ)(Base.copy(ψ.tensors), Base.copy(center(ψ)))
 
 
 ### Save and write
@@ -515,7 +533,6 @@ function HDF5.write(parent::Union{HDF5.File, HDF5.Group}, name::AbstractString,
     write(g, "length", length(M))
     write(g, "center", center(M))
     write(g, "rank", r)
-    write(g, "dim", dim(M))
     for i = 1:length(M)
         write(g, "MPS[$(i)]", M[i])
     end
@@ -530,10 +547,9 @@ function HDF5.read(parent::Union{HDF5.File, HDF5.Group}, name::AbstractString,
     end
     N = read(g, "length")
     center = read(g, "center")
-    dim = read(g, "dim")
     tensors = [read(g, "MPS[$(i)]") for i=Base.OneTo(N)]
     rank = read(g, "rank")
-    return GMPS{rank}(dim, tensors, center)
+    return GMPS{rank}(tensors, center)
 end
 
 ### Conjugation of GMPS 

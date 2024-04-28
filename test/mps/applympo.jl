@@ -36,4 +36,13 @@
         ψ′ = applympo(O, ψ)
         isapprox(inner(ψ′, ϕ), 1)
     end
+
+    @test begin 
+        lt = Qubits()
+        O = productmpo(lt, ["x" for _ = 1:20])
+        ψ = productmps(lt, ["up" for _ = 1:20])
+        ϕ = productmps(lt, ["dn" for _ = 1:20])
+        ψ′ = applympo(O, ψ)
+        isapprox(inner(ψ′, ϕ), 1)
+    end
 end

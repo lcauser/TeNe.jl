@@ -30,7 +30,8 @@ TeNe.transpose(O::AdjointStateOperator) = ConjGStateTensor(O.StateTensor)
 TeNe.adjoint(O::ConjGStateTensor{2}) = TransposeStateOperator(O.StateTensor)
 TeNe.adjoint(O::TransposeStateOperator) = ConjGStateTensor(O.StateTensor)
 
-const StateOperator = Union{GStateTensor{2}, ConjGStateTensor{2}, TransposeStateOperator, AdjointStateOperator}
+const StateOperator = Union{GStateTensor{2}, ConjGStateTensor{2},
+    TransposeStateOperator, AdjointStateOperator}
 export StateOperator
 
 export isstateoperator 
@@ -43,17 +44,6 @@ function isstateoperator(O)
     return typeof(O) <: StateOperator
 end
 
-# Physical dimensions 
-export innerdim, outerdim, innerdims, outerdims
-innerdim(O::Union{GStateTensor{2}, ConjGStateTensor{2}}, site::Int) = size(tensor(O), 2*site-1)
-innerdim(O::Union{AdjointStateOperator, TransposeStateOperator}, site::Int) = size(tensor(O), 2*site)
-outerdim(O::Union{GStateTensor{2}, ConjGStateTensor{2}}, site::Int) = size(tensor(O), 2*site)
-outerdim(O::Union{AdjointStateOperator, TransposeStateOperator}, site::Int) = size(tensor(O), 2*site-1)
-innerdims(O::Union{GStateTensor{2}, ConjGStateTensor{2}}) = tuple(map(j->size(tensor(O), 2*j-1)), Base.OneTo(length(O)))
-innerdims(O::Union{AdjointStateOperator, TransposeStateOperator}) = tuple(map(j->size(tensor(O), 2*j)), Base.OneTo(length(O)))
-outerdims(O::Union{GStateTensor{2}, ConjGStateTensor{2}}) = tuple(map(j->size(tensor(O), 2*j)), Base.OneTo(length(O)))
-outerdims(O::Union{AdjointStateOperator, TransposeStateOperator}) = tuple(map(j->size(tensor(O), 2*j-1)), Base.OneTo(length(O)))
-
 # Indices
 innerind(::Union{GStateTensor{2}, ConjGStateTensor{2}}, site::Int) = 2*site-1
 innerind(::Union{AdjointStateOperator, TransposeStateOperator}, site::Int) = 2*site
@@ -63,6 +53,17 @@ innerinds(O::Union{GStateTensor{2}, ConjGStateTensor{2}}) = Tuple(1:2:2*length(O
 innerinds(O::Union{AdjointStateOperator, TransposeStateOperator}) = Tuple(2:2:2*length(O))
 outerinds(O::Union{GStateTensor{2}, ConjGStateTensor{2}}) = Tuple(2:2:2*length(O))
 outerinds(O::Union{AdjointStateOperator, TransposeStateOperator}) = Tuple(1:2:2*length(O))
+
+# Physical dimensions 
+export innerdim, outerdim, innerdims, outerdims
+innerdim(O::Union{GStateTensor{2}, ConjGStateTensor{2}}, site::Int) = size(tensor(O), 2*site-1)
+innerdim(O::Union{AdjointStateOperator, TransposeStateOperator}, site::Int) = size(tensor(O), 2*site)
+outerdim(O::Union{GStateTensor{2}, ConjGStateTensor{2}}, site::Int) = size(tensor(O), 2*site)
+outerdim(O::Union{AdjointStateOperator, TransposeStateOperator}, site::Int) = size(tensor(O), 2*site-1)
+innerdims(O::Union{GStateTensor{2}, ConjGStateTensor{2}}) = Tuple(map(j->size(tensor(O), 2*j-1), Base.OneTo(length(O))))
+innerdims(O::Union{AdjointStateOperator, TransposeStateOperator}) = Tuple(map(j->size(tensor(O), 2*j), Base.OneTo(length(O))))
+outerdims(O::Union{GStateTensor{2}, ConjGStateTensor{2}}) = Tuple(map(j->size(tensor(O), 2*j), Base.OneTo(length(O))))
+outerdims(O::Union{AdjointStateOperator, TransposeStateOperator}) = Tuple(map(j->size(tensor(O), 2*j-1), Base.OneTo(length(O))))
 
 ### Initialising StateOperators 
 export randomso, randomstateoperator, productso, productstateoperator
@@ -121,6 +122,64 @@ function productso(N::Int, A::AbstractMatrix; kwargs...)
     return productgst(N, A; kwargs...)
 end
 productstateoperator(N::Int, A::AbstractMatrix; kwargs...) = productso(N, A; kwargs...)
+
+
+"""
+    productso(lt::LatticeTypes, states::AbstractVector{String})
+    productstateoperator(lt::LatticeTypes, states::AbstractVector{String})
+
+Create a product operator from a string of operator names.
+
+# Example 
+
+```julia-repl
+julia> lt = Qubits();
+julia> ψ = productso(lt, ["x" for _ = 1:6]);
+```
+"""
+function productso(lt::LatticeTypes, ops::AbstractVector{String})
+    tensor = ones(eltype(lt), )
+    for i in eachindex(ops)
+        tensor = tensorproduct(tensor, op(lt, ops[i]); tocache = i!=lastindex(ops))
+    end
+    return GStateTensor(2, tensor)
+end
+productstateoperator(lt::LatticeTypes, states::AbstractVector{String}) = productso(lt, states)
+
+### Initalising StateOperator from OpList 
+"""
+    StateOperator(ops::OpList)
+
+Create a StateOperator from an OpList.
+
+# Examples 
+
+```julia-repl
+julia> lt = Qubits();
+julia> H = OpList(lt, 10);
+julia> for i = 1:10 add!(H, "x", i) end;
+julia> for i = 1:9 add!(H, ["z", "z"], [i, i+1]) end;
+julia> H = StateOperator(H);
+```
+"""
+function StateOperator(ops::OpList)
+    O = StateOperator(dim(ops.lt), ops.length; T=eltype(ops.lt))
+    for i in eachindex(ops.ops)
+        ten = ones(eltype(ops.lt), )
+        k = 1
+        for j = Base.OneTo(length(O))
+            if k <= length(ops.sites[i]) && ops.sites[i][k] == j
+                oper = ops.ops[i][k]
+                k += 1
+            else
+                oper = "id"
+            end
+            ten = tensorproduct(ten, op(ops.lt, oper))
+        end
+        tensor(O) .+= ten
+    end
+    return O
+end
 
 
 ### Exponential of a state tensor 

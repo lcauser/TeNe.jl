@@ -111,9 +111,9 @@ function _trace_check_args(sx, cix)
 end
 
 function _trace_check_result(z, x, sx, rix)
-    if typeof(get_backend(x)) != typeof(get_backend(z))
-        throw(ArgumentError("Tensors are stored on different backends."))
-    end
+    #if typeof(get_backend(x)) != typeof(get_backend(z))
+    #    throw(ArgumentError("Tensors are stored on different backends."))
+    #end
     if size(z) != sx[rix]
         throw(ArgumentError("Destination tensor has the wrong dimensions."))
     end

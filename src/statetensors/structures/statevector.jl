@@ -16,7 +16,8 @@ function isstatevector(ψ)
 end
 
 export dim 
-dim(ψ::StateVector, site::Int) = size(tensor(ψ), site)
+dim(ψ::StateVector, site::Int) = dim(ψ, 1, site)
+dims(ψ::StateVector) = dims(ψ, 1)
 
 
 ### Initialising state vectors 
@@ -65,6 +66,27 @@ function productsv(N::Int, A::AbstractVector; kwargs...)
 end
 productstatevector(N::Int, A::AbstractVector; kwargs...) = productsv(N, A; kwargs...)
 
+"""
+    productsv(lt::LatticeTypes, states::AbstractVector{String})
+    productstatevector(lt::LatticeTypes, states::AbstractVector{String})
+
+Create a product state from a string of state names.
+
+# Example 
+
+```julia-repl
+julia> lt = Qubits();
+julia> ψ = productsv(lt, ["up" for _ = 1:6]);
+```
+"""
+function productsv(lt::LatticeTypes, states::AbstractVector{String})
+    tensor = ones(eltype(lt), )
+    for i in eachindex(states)
+        tensor = tensorproduct(tensor, state(lt, states[i]); tocache = i!=lastindex(states))
+    end
+    return GStateTensor(1, tensor)
+end
+productstatevector(lt::LatticeTypes, states::AbstractVector{String}) = productsv(lt, states)
 
 
 ### Entanglement entropy 

@@ -52,16 +52,16 @@ innerdim(O::Union{GMPS{2}, ConjGMPS{2}}, site::Int) = size(O[site], 2)
 innerdim(O::Union{AdjointMPO, TransposeMPO}, site::Int) = size(O[site], 3)
 outerdim(O::Union{GMPS{2}, ConjGMPS{2}}, site::Int) = size(O[site], 3)
 outerdim(O::Union{AdjointMPO, TransposeMPO}, site::Int) = size(O[site], 2)
-innerdims(O::Union{GMPS{2}, ConjGMPS{2}}) = Tuple(map(j->size(O[j], 2), eachindex(O)))
-innerdims(O::Union{AdjointMPO, TransposeMPO}) = Tuple(map(j->size(O[j], 3), eachindex(O)))
-outerdims(O::Union{GMPS{2}, ConjGMPS{2}}) = Tuple(map(j->size(O[j], 3), eachindex(O)))
-outerdims(O::Union{AdjointMPO, TransposeMPO}) = Tuple(map(j->size(O[j], 2), eachindex(O)))
+innerdims(O::Union{GMPS{2}, ConjGMPS{2}}) = dims(O, 1)
+innerdims(O::Union{AdjointMPO, TransposeMPO}) = dims(O, 2)
+outerdims(O::Union{GMPS{2}, ConjGMPS{2}}) = dims(O, 2)
+outerdims(O::Union{AdjointMPO, TransposeMPO}) = dims(O, 1)
 
 # Return the correct indices
-innerind(::Union{GMPS{2}, ConjGMPS{2}}) = 2
-innerind(::Union{AdjointMPO, TransposeMPO}) = 3
-outerind(::Union{GMPS{2}, ConjGMPS{2}}) = 3
-outerind(::Union{AdjointMPO, TransposeMPO}) = 2
+innerind(::Union{GMPS{2}, ConjGMPS{2}}, ::Int=0) = 2
+innerind(::Union{AdjointMPO, TransposeMPO}, ::Int=0) = 3
+outerind(::Union{GMPS{2}, ConjGMPS{2}}, ::Int=0) = 3
+outerind(::Union{AdjointMPO, TransposeMPO}, ::Int=0) = 2
 
 ### Initalising MPOs 
 export randommpo, productmpo
@@ -129,6 +129,27 @@ function productmpo(N::Int, A::AbstractArray; T::Type=ComplexF64)
     else
         throw(ArgumentError("You must provide an array with just two or four dimensions."))
     end
+    return O
+end
+
+"""
+    productmpo(lt::LatticeTypes, ops::AbstractVector{String})
+
+Create an MPO from a string of operators.
+
+# Example 
+
+```julia-repl
+julia> lt = Qubits();
+julia> O = productmpo(lt, ["x" for _ = 1:20]);
+```
+"""
+function productmpo(lt::LatticeTypes, ops::AbstractVector{String})
+    O = MPO(dim(lt), length(ops); T=eltype(lt))
+    for i in eachindex(ops)
+        O[i][1, :, :, 1] .= op(lt, ops[i])
+    end
+    movecenter!(O, firstindex(O))
     return O
 end
 

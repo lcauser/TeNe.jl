@@ -2,7 +2,6 @@
     Calculating inner products of StateVectors and StateOperators.
 =#
 
-import Base.*
 export inner, dot
 
 ### Inner products of StateVectors
@@ -14,10 +13,7 @@ export inner, dot
 Calculate the inner product of two StateVectors `ψ` and `ϕ`.
 """
 function inner(ψ::StateVector, ϕ::StateVector)
-    # Checks 
-    if !_sv_sv_product_check(ψ, ϕ)
-        throw(ArgumentError("Arguments have properties that do not match."))
-    end
+    _vec_vec_validation(ψ, ϕ)
     return _sv_sv_product(ψ, ϕ)
 end
 dot(ψ::StateVector, ϕ::StateVector) = inner(ψ, ϕ)
@@ -27,18 +23,6 @@ function _sv_sv_product(ψ::StateVector, ϕ::StateVector)
     return contract(reshape(tensor(ψ), length(tensor(ψ))),
              reshape(tensor(ϕ), length(tensor(ϕ))),
              1, 1, !isconj(ψ), isconj(ϕ))[]
-end
-
-function _sv_sv_product_check(ψ::StateVector, ϕ::StateVector)
-    if length(ψ) != length(ϕ)
-        return false 
-    end
-    for i = Base.OneTo(length(ψ))
-        if size(tensor(ψ), i) != size(tensor(ϕ), i)
-            return false
-        end
-    end
-    return true
 end
 
 ### Inner products with StateOperators
@@ -65,18 +49,19 @@ function inner(ψ::StateVector, ϕs::Union{StateVector, StateOperator}...)
         end
     end
     if !isstatevector(ϕs[end])
-        throw(ArgumentError("The last term in the MPS must be an MPO."))
+        throw(ArgumentError("The last term in the product must be an MPS."))
     end
+    _vec_op_vec_validation(ψ, ϕs[end], ϕs[begin:end-1]...)
 
     # Create a StateVector from the cache 
-    ϕ = GStateTensor(1, dim(ψ), cache(size(tensor(ϕs[end])), tensor(ϕs[end])))
+    ϕ = GStateTensor(1, cache(outerdims(ϕs[end-1]), tensor(ϕs[end-1]), tensor(ϕs[end])))
 
     # Contraction
     applyso!(ϕ, ϕs[end-1], ϕs[end])
     for i = Base.range(length(ϕs)-2, 1, step=-1)
-        ϕnew = GStateTensor(1, dim(ψ), cache(size(tensor(ϕs[end])), tensor(ϕs[end]), tensor(ϕ)))
-        applyso!(ϕnew, ϕs[i], ϕ)
+        ϕnew = GStateTensor(1, cache(outerdims(ϕs[i]), tensor(ϕs[i])))
+        _so_sv_product!(ϕnew, ϕs[i], ϕ)
         ϕ = ϕnew
     end
-    return inner(ψ, ϕ)
+    return _sv_sv_product(ψ, ϕ)
 end

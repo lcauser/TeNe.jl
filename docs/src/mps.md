@@ -31,6 +31,11 @@ The simplest way is to just provide a translationally invariant tensor `A` for t
 productmps(N::Int, A::Q) where {Q<:AbstractArray}
 ```
 
+Alternatively, we can use the LatticeTypes interface to write a product state.
+```@docs
+productmps(lt::LatticeTypes, states::AbstractVector{String})
+```
+
 #### From StateVectors
 If you need to write an MPS using some known StateVector, you can call `MPS(ψ::StateVector)`.
 ```@docs
@@ -91,11 +96,20 @@ Like the MPS, an MPO can be initiated randomly or as a product operator.
 It can also be initiated from some StateOperator.
 ```@docs
 randommpo
-productmpo
+productmpo(N::Int, A::AbstractArray; T::Type=ComplexF64)
 MPO(::GStateTensor{2})
 ```
 
+Alternatively, we can use the LatticeTypes interface to write an operator.
+```@docs
+productmpo(lt::LatticeTypes, ops::AbstractVector{String})
+```
+
 ### Construct an MPO from an operator list
+A more powerful option is to write an operator as an OpList, and then use the `MPO(::OpList)` function to automatically find an exact MPO representation.
+```@docs
+MPO(::OpList)
+```
 
 ### Products
 The expectation value of a string of MPOs with respect to some MPSs can be calculated exactly. The below can be done with many MPOs.

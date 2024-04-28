@@ -1,5 +1,5 @@
 # Abstract MPS
-abstract type AbstractMPS <: AbstractTensorNetworkState end
+abstract type AbstractMPS <: TensorNetworkState end
 """
     issimilar(::AbstractMPS...)
 
@@ -24,6 +24,8 @@ Base.lastindex(ψ::GMPSTrait) = Base.lastindex(ψ.MPS)
 Base.eachindex(ψ::GMPSTrait) = Base.eachindex(ψ.MPS)
 Base.setindex!(ψ::GMPSTrait, x, i::Int) = Base.setindex!(ψ.MPS, x, i)
 dim(ψ::GMPSTrait) = dim(ψ.MPS)
+dim(ψ::GMPSTrait, i...) = dim(ψ.MPS, i...)
+dims(ψ::GMPSTrait, i::Int) = dims(ψ.MPS, i::Int)
 TeNe.rank(ψ::GMPSTrait) = rank(ψ.MPS)
 center(ψ::GMPSTrait) = center(ψ.MPS)
 movecenter!(ψ::GMPSTrait, site::Int) = movecenter!(ψ.MPS, site)

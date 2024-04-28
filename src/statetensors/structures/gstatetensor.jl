@@ -7,7 +7,6 @@
 =#
 
 mutable struct GStateTensor{r, T<:AbstractArray} <: AbstractStateTensor
-    dim::Int
     tensor::T
 end
 export GStateTensor
@@ -35,14 +34,6 @@ Returns the rank of a state tensor.
 TeNe.rank(::GStateTensor{r}) where {r} = r
 
 """
-    dim(::GStateTensor)
-
-Returns the physical dimension of a state tensor. Returns `0` for heterogeneous 
-systems (i.e. an invariant physical dimension).
-"""
-TeNe.dim(ψ::GStateTensor) = ψ.dim
-
-"""
     Base.length(::GStateTensor)
 
 The length of a state tensor.
@@ -50,6 +41,65 @@ The length of a state tensor.
 Base.length(ψ::GStateTensor) = fld(ndims(ψ.tensor), rank(ψ))
 
 tensor(ψ::GStateTensor) = ψ.tensor
+
+
+### Dimensions
+export ind, inds, dim, dims
+
+"""
+    ind(::GStateTensor, which::Int, site::Int)
+
+Return the index of the tensor for dimension `which` at position `site`.
+"""
+function ind(::GStateTensor{r}, which::Int, site::Int) where {r}
+    return r*(site-1)+which
+end
+
+"""
+    inds(::GStateTensor, which::Int)
+
+Return the indices of the tensor for dimension `which` at each site.
+"""
+function inds(ψ::GStateTensor{r}, which::Int) where {r}
+    return Tuple(which:r:r*length(ψ))
+end
+
+"""
+    dim(ψ::GStateTensor, [which::Int, site::Int])
+
+Return the physical dimension of a StateTensor. The axis can be specified using
+`which`, and furthermore the `site`. Returns `0` for heterogeneous systems.
+"""
+function dim(ψ::GStateTensor, which::Int, site::Int)
+    return size(tensor(ψ), ind(ψ, which, site))
+end
+
+function dim(ψ::GStateTensor, which::Int)
+    ds = dims(ψ, which)
+    if all(map(j->j==ds[1], ds))
+        return ds[1]
+    else
+        return 0
+    end
+end
+
+function dim(ψ::GStateTensor)
+    ds = size(tensor(ψ))
+    if all(map(j->j==ds[1], ds))
+        return ds[1]
+    else
+        return 0
+    end
+end
+
+"""
+    dims(ψ::GStateTensor, which::Int)
+
+Return the size of the tensor for dimensions `which` at each site.
+"""
+function dims(ψ::GStateTensor, which::Int)
+    return map(j->size(tensor(ψ), j), inds(ψ, which))
+end
 
 ### Norms 
 export norm, normalize!
@@ -73,8 +123,6 @@ end
 
 
 ### Base operations
-import Base.+, Base.-, Base.*, Base./
-
 function *(ψ::GStateTensor, a::Number)
     ten = ψ.tensor .* a
     return GStateTensor(rank(ψ), dim(ψ), ten)
@@ -108,15 +156,15 @@ Base.deepcopy(ψ::GStateTensor) = typeof(ψ)(Base.copy(dim(ψ)), Base.copy(ψ.te
 ### Initalising 
 function GStateTensor(rank::Int, dim::Int, length::Int; T::Type=ComplexF64)
     tensor = zeros(T, map(j->dim, Base.OneTo(rank*length))...)
-    return GStateTensor{rank, typeof(tensor)}(dim, tensor)
+    return GStateTensor{rank, typeof(tensor)}(tensor)
 end
 
-function GStateTensor(rank::Int, dim::Int, tensor::Q) where {Q<:AbstractArray}
-    return GStateTensor{rank, typeof(tensor)}(dim, tensor)
+function GStateTensor(rank::Int, tensor::Q) where {Q<:AbstractArray}
+    return GStateTensor{rank, typeof(tensor)}(tensor)
 end
 
 function randomgst(rank::Int, d::Int, N::Int; T::Type=ComplexF64)
-    ψ = GStateTensor(rank, d, randn(T, map(j->d, Base.OneTo(rank*N))...))
+    ψ = GStateTensor(rank, randn(T, map(j->d, Base.OneTo(rank*N))...))
     normalize!(ψ)
     return ψ
 end
@@ -126,9 +174,7 @@ function productgst(N::Int, A::AbstractArray; T::Type=ComplexF64)
     for i = Base.OneTo(N)
         tensor = tensorproduct(tensor, A; tocache = i!=N)
     end
-    sA = size(A)
-    dim = all(j->sA[j]==sA[1], Base.OneTo(ndims(A))) ? sA[1] : 0
-    return GStateTensor(ndims(A), dim, tensor)
+    return GStateTensor(ndims(A), tensor)
 end
 
 
@@ -139,7 +185,6 @@ function HDF5.write(parent::Union{HDF5.File, HDF5.Group}, name::AbstractString,
     attributes(g)["type"] = "StateTensor"
     attributes(g)["version"] = 1
     write(g, "rank", r)
-    write(g, "dim", dim(M))
     write(g, "tensor", M.tensor)
 end
 
@@ -150,10 +195,9 @@ function HDF5.read(parent::Union{HDF5.File, HDF5.Group}, name::AbstractString,
     if read(attributes(g)["type"]) != "StateTensor"
         error("HDF5 group of file does not contain State Tensor data.")
     end
-    dim = read(g, "dim")
     tensor = read(g, "tensor")
     rank = read(g, "rank")
-    return GStateTensor(rank, dim, tensor)
+    return GStateTensor(rank, tensor)
 end
 
 

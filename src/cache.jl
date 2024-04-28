@@ -30,7 +30,8 @@ end
 
 # Accessing from an array 
 function cache(x::Q, level::Int, sublevel::Int, threadid::Int) where {Q<:AbstractArray}
-    backend = typeof(get_backend(x))
+    #backend = typeof(get_backend(x)) # Disabled for now...
+    backend = CPU
     return cache(eltype(x), size(x), level, sublevel, threadid; backend=backend)
 end
 

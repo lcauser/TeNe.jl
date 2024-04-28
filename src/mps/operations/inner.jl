@@ -2,7 +2,6 @@
     Inner products with MPS and MPOs 
 =#
 
-import Base.* 
 export dot, inner 
 
 ### Inner product of MPS 
@@ -23,14 +22,10 @@ julia> ϕ * ψ
 ```
 """
 function inner(ψ::MPS, ϕ::MPS)
-    # Checks 
-    if !_mps_mps_product_check(ψ::MPS, ϕ::MPS)
-        throw(ArgumentError("Arguments have properties that do not match."))
-    end
+    _vec_vec_validation(ψ, ϕ)
     return _mps_mps_product(ψ, ϕ)
 end
 dot(ψ::MPS, ϕ::MPS) = inner(ψ, ϕ)
-import Base.*
 *(ψ::MPS, ϕ::MPS) = inner(ψ, ϕ)
 
 
@@ -75,11 +70,9 @@ function inner(ψ::MPS, ϕs::Union{MPS, MPO}...)
         end
     end
     if !ismps(ϕs[end])
-        throw(ArgumentError("The last term in the MPS must be an MPO."))
+        throw(ArgumentError("The last term in the product must be an MPS."))
     end
-    if !_mps_mpo_mps_product_check(ψ, ϕs[end], ϕs[begin:end-1]...)
-        throw(ArgumentError("Arguments have properties that do not match."))
-    end
+    _vec_op_vec_validation(ψ, ϕs[end], ϕs[begin:end-1]...)
     return _mps_mpo_mps_product(ψ, ϕs[end], ϕs[begin:end-1]...)
 end
 
@@ -101,31 +94,6 @@ function _mps_mpo_mps_product(ψ::MPS, ϕ::MPS, Os::MPO...)
     return block[]
 end
 
-function _mps_mpo_mps_product_check(ψ::MPS, ϕ::MPS, Os::MPO...)
-    if length(ψ) != length(ϕ)
-        return false 
-    end
-    for i in eachindex(Os)
-        if length(Os[i]) != length(ψ)
-            return false 
-        end
-    end
-    for i in eachindex(ψ)
-        if dim(ψ, i) != innerdim(Os[1], i)
-            return false 
-        end
-        if dim(ϕ, i) != outerdim(Os[end], i)
-            return false
-        end
-        for j in Base.OneTo(length(Os)-1)
-            if outerdim(Os[j], i) != innerdim(Os[j+1], i)
-                return false
-            end
-        end
-    end
-    return true
-end
-
 ### Inner products MPOs with StateVectors
 """
     inner(ψ::StateVector, O::MPO, ϕ::StateVector)
@@ -143,9 +111,7 @@ function inner(ψ::StateVector, ϕs::Union{StateVector, MPO}...)
     if !isstatevector(ϕs[end])
         throw(ArgumentError("The last term in the MPS must be an StateVector."))
     end
-    if !_sv_mpo_sv_product_check(ψ, ϕs[end], ϕs[begin:end-1]...)
-        throw(ArgumentError("Arguments have properties that do not match."))
-    end
+    _vec_op_vec_validation(ψ, ϕs[end], ϕs[begin:end-1]...)
     return _sv_mpo_sv_product(ψ, ϕs[end], ϕs[begin:end-1]...)
 end
 
@@ -156,29 +122,4 @@ function _sv_mpo_sv_product(ψ::StateVector, ϕ::StateVector, Os::MPO...)
         ϕ = ϕ′
     end
     return _sv_sv_product(ψ, ϕ)
-end
-
-function _sv_mpo_sv_product_check(ψ::StateVector, ϕ::StateVector, Os::MPO...)
-    if length(ψ) != length(ϕ)
-        return false 
-    end
-    for i in eachindex(Os)
-        if length(Os[i]) != length(ψ)
-            return false 
-        end
-    end
-    for i in Base.OneTo(length(ψ))
-        if dim(ψ, i) != innerdim(Os[1], i)
-            return false 
-        end
-        if dim(ϕ, i) != outerdim(Os[end], i)
-            return false
-        end
-        for j in Base.OneTo(length(Os)-1)
-            if outerdim(Os[j], i) != innerdim(Os[j+1], i)
-                return false
-            end
-        end
-    end
-    return true
 end
