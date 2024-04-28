@@ -11,6 +11,10 @@ include("tensors/combinedims.jl")
 include("tensors/exp.jl")
 include("tensors/svd.jl")
 
+# Lattice types
+include("latticetypes/qubits.jl")
+include("latticetypes/oplist.jl")
+
 # State vectors 
 include("statetensors/applyso.jl")
 include("statetensors/inner.jl")

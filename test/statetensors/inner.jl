@@ -42,4 +42,10 @@
         O = productso(8, [0 1; 0 0])
         isapprox(inner(ϕ, adjoint(O), ψ), 0)
     end
+
+    @test begin 
+        ψ = productsv(8, [1, 0])
+        ϕ = productsv(Qubits(), ["up" for _ = 1:8])
+        isapprox(inner(ψ, ϕ), 1)
+    end
 end

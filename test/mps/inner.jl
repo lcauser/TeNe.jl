@@ -30,4 +30,12 @@
         O = productmpo(20, [0 1; 0 0])
         isapprox(inner(ϕ, adjoint(O), ψ), 0)
     end
+
+    @test begin 
+        lt = Qubits()
+        O = productmpo(lt, ["x" for _ = 1:20])
+        ψ = productmps(lt, ["up" for _ = 1:20])
+        ϕ = productmps(lt, ["dn" for _ = 1:20])
+        isapprox(inner(ψ, O, ϕ), 1)
+    end
 end

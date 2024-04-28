@@ -113,11 +113,20 @@ function opprod(lt::LatticeTypes, names::AbstractArray{String})
     end
 end
 
-
 # Show info 
 function Base.show(io::IO, lt::LatticeTypes)
     println(io, "Lattice Type")
     println(io, "Dimension: $(dim(lt))")
     println(io, "States: $(lt.statenames)")
     println(io, "Operators: $(lt.opnames)")
+end
+
+# Check to see if state is contained in the LatticeTypes 
+function statein(lt::LatticeTypes, name::String)
+    return name in lt.statenames
+end
+
+# Check to see if operator is contained in the LatticeTypes 
+function opin(lt::LatticeTypes, name::String)
+    return name in lt.opnames
 end
