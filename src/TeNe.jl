@@ -80,4 +80,9 @@ include("mps/operations/applympo.jl")
 include("mps/operations/inner.jl")
 include("mps/operations/trace.jl")
 include("mps/operations/creatempo.jl")
+
+
+### Circuits 
+include("circuits/gates.jl")
+include("circuits/qubitgates.jl")
 end
