@@ -58,16 +58,25 @@ include("mps/structures/gmps.jl")
 include("mps/structures/mps.jl")
 include("mps/structures/mpo.jl")
 
+### Circuits 
+include("circuits/gates.jl")
+include("circuits/qubitgates.jl")
+
+### Type validation 
 # Type abstraction 
 const TensorNetworkVector = Union{StateVector, MPS}
 const TensorNetworkOperator = Union{StateOperator, MPO}
 
-# Type validation 
+# Tensor networks 
 include("validation/vec_vec.jl")
 include("validation/op_vec.jl")
 include("validation/vec_op_vec.jl")
 include("validation/op_op.jl")
 include("validation/op_trace.jl")
+
+# Circuits
+include("validation/gate_vec.jl")
+include("validation/gate_op.jl")
 
 ### Tensor Network Operations 
 # State Tensors 
@@ -80,9 +89,4 @@ include("mps/operations/applympo.jl")
 include("mps/operations/inner.jl")
 include("mps/operations/trace.jl")
 include("mps/operations/creatempo.jl")
-
-
-### Circuits 
-include("circuits/gates.jl")
-include("circuits/qubitgates.jl")
 end

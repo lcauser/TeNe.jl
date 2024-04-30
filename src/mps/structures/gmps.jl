@@ -273,7 +273,7 @@ Replace the tensors over a small range of sites in a GMPS.
 """
 function replacesites!(ψ::GMPS, A, site::Int, direction::Bool=false, normalize::Bool=false; kwargs...)
     # Determine the number of sites
-    nsites = (ndims(A) - 2) / rank(ψ)
+    nsites = fld((ndims(A) - 2), rank(ψ))
 
     # Deal with case of just one site
     if nsites == 1

@@ -5,31 +5,104 @@ abstract type AbstractGate end
 export applygate!
 """
     applygate!(U::AbstractGate, ψ::StateVector, sites)
+    applygate!(ψ::StateVector, U::AbstractGate, sites)
 
 Apply a circuit gate `U` to the StateVector `ψ` at lattice sites `sites`.
 """
 function applygate!(U::AbstractGate, ψ::StateVector, sites)
-    # Check sites 
-    ψlen = length(ψ)
-    if any(map(j->(j>ψlen || j <= 0), sites))
-        throw(ArgumentError("The list of sites $(sites) does not fall between 1 and $(length(ψ))."))
-    end
-
-    # Check dimensions of sites 
-    if any(map(j->dim(ψ, j)!=dim(U), sites))
-        throw(ArgumentError("The StateVector has the wrong physical dimensions."))
-    end
-
-    # Apply the gate
+    _gate_vec_validation(U, ψ, sites)
     _applygate!(U, ψ, sites)
+end
+
+function applygate!(ψ::StateVector, U::AbstractGate, sites)
+    _gate_vec_validation(U, ψ, sites)
+    _applygate!(ψ, U, sites)
 end
 
 # Unsafe gate application
 function _applygate!(U::AbstractGate, ψ::StateVector, sites)
-    rixs = Tuple(setdiff(Base.OneTo(length(ψ)), sites)) # Remove allocations?
-    ψ′ = contract(tensor(U), tensor(ψ), Tuple(Base.range(2, ndims(tensor(U)), step=2)),
-        sites, false, isconj(ψ))
-    permutedims!(tensor(ψ), ψ′, reverseperms((sites..., rixs...)))
+    # Contraction indices
+    ris = Tuple(setdiff(Base.OneTo(length(ψ)), sites)) # Remove allocations?
+    uis = Base.range(2, ndims(tensor(U)), step=2)
+
+    # Do the contraction
+    ψ′ = contract(tensor(U), tensor(ψ), uis, sites, isconj(ψ), false)
+    permutedims!(tensor(ψ), ψ′, reverseperms((sites..., ris...)))
+end
+
+function _applygate!(ψ::StateVector, U::AbstractGate, sites)
+    # Contraction indices
+    ris = Tuple(setdiff(Base.OneTo(length(ψ)), sites)) # Remove allocations?
+    uis = Base.range(1, ndims(tensor(U)), step=2)
+
+    # Do the contraction
+    ψ′ = contract(tensor(U), tensor(ψ), uis, sites, isconj(ψ), false)
+    permutedims!(tensor(ψ), ψ′, reverseperms((sites..., ris...)))
+end
+
+
+### Applying gates to StateOperators 
+
+"""
+    applygate!(U::AbstractGate, O::StateOperator, sites)
+    applygate!(O::StateOperator, U::AbstractGate, sites)
+
+Apply a circuit gate `U` to the StateOperator `O` at lattice sites `sites`.
+"""
+function applygate!(U::AbstractGate, O::StateOperator, sites)
+    _gate_op_validation(U, O, sites)
+    _applygate!(U, O, sites)
+end
+
+function applygate!(O::StateOperator, U::AbstractGate, sites)
+    _gate_op_validation(U, O, sites)
+    _applygate!(O, U, sites)
+end
+
+# Unsafe gate application 
+function _applygate!(U::AbstractGate, O::StateOperator, sites)
+    # Contraction indices
+    Ois = Tuple(map(j->istranspose(O) ? outerind(O, j) : innerind(O, j), sites))
+    ris = Tuple(setdiff(Base.OneTo(ndims(tensor(O))), Ois))
+    uis = Base.range(istranspose(O) ? 1 : 2, ndims(tensor(U)), step=2)
+
+    # Do the contraction 
+    O′ = contract(tensor(U), tensor(O), uis, Ois, isconj(O), false)
+    permutedims!(tensor(O), O′, reverseperms((Ois..., ris...)))
+end
+
+function _applygate!(O::StateOperator, U::AbstractGate, sites)
+    # Contraction indices
+    Ois = Tuple(map(j->istranspose(O) ? innerind(O, j) : outerind(O, j), sites))
+    ris = Tuple(setdiff(Base.OneTo(ndims(tensor(O))), Ois))
+    uis = Base.range(istranspose(O) ? 2 : 1, ndims(tensor(U)), step=2)
+
+    # Do the contraction 
+    O′ = contract(tensor(O), tensor(U), Ois, uis, false, isconj(O))
+    permutedims!(tensor(O), O′, reverseperms((ris..., Ois...)))
+end
+
+
+### Applying gates to MPS 
+
+
+# Unsafe application 
+function _applygate!(U::AbstractGate, ψ::MPS, site::Int, rev::Bool=false)
+    num_sites = length(U)
+    firstsite = rev ? site - num_sites + 1 : site 
+    lastsite = rev ? site : site + num_sites - 1
+
+    # Contract MPS tensors
+    ten = ψ[firstsite]
+    for i = Base.range(firstsite+1, lastsite)
+        ten = contract(ten, ψ[i], ndims(ten), 1)
+    end
+
+    # Apply the gate 
+    ten = contract(ten, tensor(U), Base.range(2, 1+num_sites), Base.range(2, ndims(tensor(U)), step=2))
+
+    
+
 end
 
 
