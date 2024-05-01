@@ -57,10 +57,11 @@ include("mps/structures/abstractmps.jl")
 include("mps/structures/gmps.jl")
 include("mps/structures/mps.jl")
 include("mps/structures/mpo.jl")
+include("mps/structures/mpsprojector.jl")
 
 # Type abstraction 
 const TensorNetworkVector = Union{StateVector, MPS}
-const TensorNetworkOperator = Union{StateOperator, MPO}
+const TensorNetworkOperator = Union{StateOperator, MPO, MPSProjector}
 
 # Type validation 
 include("validation/vec_vec.jl")
@@ -68,6 +69,11 @@ include("validation/op_vec.jl")
 include("validation/vec_op_vec.jl")
 include("validation/op_op.jl")
 include("validation/op_trace.jl")
+
+### Tensor Network Projections 
+# MPS 
+include("mps/projections/abstractmpsprojection.jl")
+include("mps/projections/projmps.jl")
 
 ### Tensor Network Operations 
 # State Tensors 
