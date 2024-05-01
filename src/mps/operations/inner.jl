@@ -94,6 +94,36 @@ function _mps_mpo_mps_product(ψ::MPS, ϕ::MPS, Os::MPO...)
     return block[]
 end
 
+### Inner products of MPSs with both/either MPSProjectors and MPOs 
+function inner(ψ::MPS, ϕs::Union{MPS, MPO, MPSProjector}...)
+    # Checks 
+    for i = 1:length(ϕs)-1
+        if rank(ϕs[i])!=2
+            throw(ArgumentError("The inner terms in the braket must be MPOs or MPSProjectors."))
+        end
+    end
+    if !ismps(ϕs[end])
+        throw(ArgumentError("The last term in the product must be an MPS."))
+    end
+    _vec_op_vec_validation(ψ, ϕs[end], ϕs[begin:end-1]...)
+
+    prod = 1.0
+    prod_string = Union{MPS, MPO}[ψ]
+    for ϕ in ϕs
+        if ismpsprojector(ϕ)
+            push!(prod_string, ϕ.ψ)
+            prod *= ϕ.λ * inner(prod_string...)
+            prod_string = Union{MPS, MPO}[ϕ.ϕ]
+        else
+            push!(prod_string, ϕ)
+        end
+    end
+    prod *= inner(prod_string...)
+    return prod
+end
+
+
+
 ### Inner products MPOs with StateVectors
 """
     inner(ψ::StateVector, O::MPO, ϕ::StateVector)

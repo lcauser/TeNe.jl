@@ -27,6 +27,9 @@ function MPSProjector(ψ::MPS, ϕ::MPS; λ::Number=1.0)
 end
 MPSProjector(ψ::MPS; λ::Number=1.0) = MPSProjector(ψ, ψ, true, λ)
 
+ismpsprojector(O::MPSProjector) = true 
+ismpsprojector(O) = false
+
 
 ### Properties of an MPSProjector 
 Base.firstindex(O::MPSProjector) = Base.firstindex(O.ψ)
