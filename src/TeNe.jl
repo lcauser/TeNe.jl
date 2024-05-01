@@ -83,6 +83,7 @@ include("statetensors/operations/trace.jl")
 
 # MPS
 include("mps/operations/applympo.jl")
+include("mps/operations/applyprojector.jl")
 include("mps/operations/inner.jl")
 include("mps/operations/trace.jl")
 include("mps/operations/creatempo.jl")
