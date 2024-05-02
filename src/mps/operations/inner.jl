@@ -64,14 +64,7 @@ Calculate the expectation of a string of operators `Os` with respect to MPSs `ψ
 """
 function inner(ψ::MPS, ϕs::Union{MPS, MPO}...)
     # Checks 
-    for i = 1:length(ϕs)-1
-        if !ismpo(ϕs[i])
-            throw(ArgumentError("The inner terms in the braket must be MPOs."))
-        end
-    end
-    if !ismps(ϕs[end])
-        throw(ArgumentError("The last term in the product must be an MPS."))
-    end
+    _inner_validation(ψ, ϕs...)
     _vec_op_vec_validation(ψ, ϕs[end], ϕs[begin:end-1]...)
     return _mps_mpo_mps_product(ψ, ϕs[end], ϕs[begin:end-1]...)
 end
@@ -97,14 +90,7 @@ end
 ### Inner products of MPSs with both/either MPSProjectors and MPOs 
 function inner(ψ::MPS, ϕs::Union{MPS, MPO, MPSProjector}...)
     # Checks 
-    for i = 1:length(ϕs)-1
-        if rank(ϕs[i])!=2
-            throw(ArgumentError("The inner terms in the braket must be MPOs or MPSProjectors."))
-        end
-    end
-    if !ismps(ϕs[end])
-        throw(ArgumentError("The last term in the product must be an MPS."))
-    end
+    _inner_validation(ψ, ϕs...)
     _vec_op_vec_validation(ψ, ϕs[end], ϕs[begin:end-1]...)
 
     prod = 1.0
@@ -133,14 +119,7 @@ Calculate the expectation of a string of operators `Os` with respect to StateVec
 """
 function inner(ψ::StateVector, ϕs::Union{StateVector, MPO}...)
     # Checks 
-    for i = 1:length(ϕs)-1
-        if !ismpo(ϕs[i])
-            throw(ArgumentError("The inner terms in the braket must be MPOs."))
-        end
-    end
-    if !isstatevector(ϕs[end])
-        throw(ArgumentError("The last term in the MPS must be an StateVector."))
-    end
+    _inner_validation(ψ, ϕs...)
     _vec_op_vec_validation(ψ, ϕs[end], ϕs[begin:end-1]...)
     return _sv_mpo_sv_product(ψ, ϕs[end], ϕs[begin:end-1]...)
 end
