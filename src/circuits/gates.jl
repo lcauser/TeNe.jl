@@ -84,10 +84,12 @@ end
 
 
 ### Applying gates to MPS 
+function applygate!(U::AbstractGate, ψ::MPS, site::Int, rev::Bool=false; kwargs...)
 
+end
 
 # Unsafe application 
-function _applygate!(U::AbstractGate, ψ::MPS, site::Int, rev::Bool=false)
+function _applygate!(U::AbstractGate, ψ::MPS, site::Int, rev::Bool=false; kwargs...)
     num_sites = length(U)
     firstsite = rev ? site - num_sites + 1 : site 
     lastsite = rev ? site : site + num_sites - 1
@@ -100,10 +102,10 @@ function _applygate!(U::AbstractGate, ψ::MPS, site::Int, rev::Bool=false)
 
     # Apply the gate 
     ten = contract(ten, tensor(U), Base.range(2, 1+num_sites), Base.range(2, ndims(tensor(U)), step=2))
-
-    
-
+    ten = permutedim(ten, 2, ndims(ten))
+    replacesites!(ψ, ten, site, rev; kwargs...)
 end
+
 
 
 ### A customizable gate 
