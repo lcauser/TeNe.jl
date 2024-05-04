@@ -19,7 +19,7 @@ function _vec_op_vec_validation(ψ::TensorNetworkVector, ϕ::TensorNetworkVector
     return true
 end
 
-function _inner_validation(args)
+function _inner_validation(args...)
     if rank(args[begin]) != 1
         throw(ArgumentError("The first term in the inner product must be rank-1."))
     end

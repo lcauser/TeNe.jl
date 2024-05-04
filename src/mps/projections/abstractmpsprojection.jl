@@ -1,6 +1,7 @@
 abstract type MPSProjection end 
 
 ### Properties of projections
+export center, leftblock, rightblock, block
 """
     length(proj::MPSProjection)
 
@@ -24,7 +25,7 @@ center(proj::MPSProjection) = proj.center
 Return the left edge block for a projection.
 """
 function leftedge(proj::MPSProjection)
-    return cache_ones(Tuple(map(j->size(proj.objects[j][1], 1), Eachindex(proj.objects))))
+    return cache_ones(Tuple(map(j->size(proj.objects[j][1], 1), Base.eachindex(proj.objects))))
 end
 
 
@@ -44,12 +45,12 @@ end
 Fetch the left block at a given site.
 """
 function leftblock(proj::MPSProjection, idx::Int)
-    if i <= 1
+    if idx < 1
         return leftedge(proj)
-    elseif i > length(proj)
+    elseif idx >= length(proj)
         throw(ArgumentError("Index $(idx) is out of range."))
     else
-        return proj.lefts[i-1]
+        return proj.lefts[idx]
     end
 end
 
@@ -59,12 +60,12 @@ end
 Fetch the right block at a given site.
 """
 function rightblock(proj::MPSProjection, idx::Int)
-    if i >= length(proj)
+    if idx > length(proj)
         return rightedge(proj)
-    elseif i < 1
+    elseif idx <= 1
         throw(ArgumentError("Index $(idx) is out of range."))
     else
-        return proj.lefts[i-1]
+        return proj.rights[idx-1]
     end
 end
 
@@ -90,6 +91,7 @@ function Base.setindex!(proj::MPSProjection, x, idx::Int)
 end
 
 ### Moving the centre of a block 
+export movecenter!
 """
     movecenter!(proj::MPSProjection, idx::Int)
 
