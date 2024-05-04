@@ -63,7 +63,7 @@ function _buildleft(projψ::ProjMPS, site::Int)
     ten = contract(ten, projψ.objects[begin][site], 1, 1, false, !isconj(projψ.objects[begin]))
     for i = Base.OneTo(length(projψ.objects)-2)
         ten = contract(ten, projψ.objects[begin+i][site], (1, ndims(ten)-1),
-            (1, istranspose(projψ.objects[begin+i]) ? 3 : 2), false, isconj(projψ.objects[begin+i]))
+            (1, innerind(projψ.objects[begin+i])), false, isconj(projψ.objects[begin+i]))
     end
     ten = contract(ten, projψ.objects[end][site], (1, ndims(ten)-1), (1, 2), false,
         isconj(projψ.objects[end]))
@@ -87,7 +87,7 @@ function _buildright(projψ::ProjMPS, site::Int)
     ten = rightblock(projψ, site+1)
     ten = contract(projψ.objects[end][site], ten, 3, length(projψ.objects), isconj(projψ.objects[end]), false)
     for i = Base.OneTo(length(projψ.objects)-2)
-        ten = contract(projψ.objects[end-i][site], ten, (istranspose(projψ.objects[end-i]) ? 2 : 3, 4),
+        ten = contract(projψ.objects[end-i][site], ten, (outerind(projψ.objects[end-i]), 4),
             (2, ndims(ten)), isconj(projψ.objects[end-i]), false)
     end
     ten = contract(projψ.objects[begin][site], ten, (2, 3), (2, ndims(ten)),
@@ -154,7 +154,7 @@ function gradient(projψ::ProjMPS, A::AbstractArray, dir::Bool=false)
     for i in Base.OneTo(length(projψ.objects)-2)
         for j in Base.range(firstsite, lastsite)
             left = contract(left, projψ.objects[begin+i][j], (1+i, length(projψ.objects)+1),
-                (1, istranspose(projψ.objects[begin+i]) ? 3 : 2), false, isconj(projψ.objects[begin+i]))
+                (1, innerind(projψ.objects[begin+i])), false, isconj(projψ.objects[begin+i]))
             left = permutedim(left, ndims(left), 1+i)
         end
     end
@@ -165,3 +165,40 @@ function gradient(projψ::ProjMPS, A::AbstractArray, dir::Bool=false)
     return grad
 end
 
+
+function product(projψ::ProjMPS, A::AbstractArray, dir::Bool=false; tocache::Bool=false)
+    # If not symmetric, this is just the inner product!
+    if !projψ.sym
+        return inner(projψ, A, dir)
+    end
+
+    # Properties...
+    nsites = ndims(A)-2
+    nobjects = length(projψ.objects)
+    firstsite = dir ? center(projψ) + 1 - nsites : center(projψ)
+    lastsite = dir ? center(projψ) : center(projψ) + nsites - 1
+
+    # Fetch the blocks 
+    left = leftblock(projψ, firstsite-1)
+    right = rightblock(projψ, lastsite+1)
+
+    # Contract with A 
+    right = contract(A, right, 2+nsites, nobjects, isconj(projψ.objects[end]))
+    right = permutedim(right, 1, nsites+nobjects)
+
+    # Contract with the middle blocks 
+    for i in Base.OneTo(nobjects-2)
+        for j in Base.range(lastsite, firstsite, step=-1)
+            right = contract(projψ.objects[end-i][j], right,
+                (outerind(projψ.objects[end-i]), 4), (nsites, nsites+nobjects-i),
+                isconj(projψ.objects[end-i]))
+            right = permutedim(right, 1, nsites+nobjects-i)
+        end
+    end
+
+    # Contract with the left block 
+    prod = contract(left, right, Base.range(2, ndims(left)),
+        Base.range(nsites+2, ndims(right)); tocache=tocache)
+    prod .*= projψ.λ
+    return prod
+end
