@@ -117,7 +117,7 @@ with some replacement for the lattice sites `A`. Use `dir=true` if sweeping left
 """
 function inner(projψ::ProjMPS, A::AbstractArray, dir::Bool=false)
     grad = gradient(projψ, A, dir)
-    return contract(grad, A, Base.OneTo(ndims(grad)), Base.OneTo(ndims(A)), false, isconj(projψ.objects[end]))
+    return contract(grad, A, Base.OneTo(ndims(grad)), Base.OneTo(ndims(A)), false, isconj(projψ.objects[end]))[]
 end
 
 
@@ -165,7 +165,17 @@ function gradient(projψ::ProjMPS, A::AbstractArray, dir::Bool=false)
     return grad
 end
 
+export product
 
+"""
+    product(projψ::ProjMPS, A::AbstractArray, dir::Bool=false; kwargs...)
+
+Calculate the product of an MPS projection with a tensor `A`.
+
+# Optional Keyword Arguments 
+
+    - `tocache::Bool=false`: Save the product to the cache?
+"""
 function product(projψ::ProjMPS, A::AbstractArray, dir::Bool=false; tocache::Bool=false)
     # If not symmetric, this is just the inner product!
     if !projψ.sym

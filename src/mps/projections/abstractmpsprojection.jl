@@ -102,16 +102,16 @@ function movecenter!(proj::MPSProjection, idx::Int)
         for i in Base.OneTo(idx-1)
             buildleft!(proj, i)
         end
-        for i in range(length(proj), idx+1, step=-1)
+        for i in Base.range(length(proj), idx+1, step=-1)
             buildright!(proj, i)
         end
     else
         if idx > center(proj)
-            for i in range(center(proj), idx-1)
+            for i in Base.range(center(proj), idx-1)
                 buildleft!(proj, i)
             end
         elseif idx < center(proj)
-            for i = 1:center(proj)-idx Base.range(center(proj), idx+1, step=-1)
+            for i = Base.range(center(proj), idx+1, step=-1)
                 buildright!(proj, i)
             end
         end
