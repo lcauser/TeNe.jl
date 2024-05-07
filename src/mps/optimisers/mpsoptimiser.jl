@@ -50,8 +50,25 @@ end
 
 ### Sweeping procedure 
 export sweep!
+"""
+    sweep!(optim::MPSOptimiser, sweeps::Int=1, tol::Float64=1e-6; kwargs...)
+
+Perform a number of iterations `sweeps` of optimisation on the MPS using the MPSOptimiser `optim`.
+Set `sweeps=0` to do until convergence is met, according to `tol`.
+
+# Optional Keyword Arguments 
+
+    - `nsites::Int=2`: The number of sites to update in the optimisation.
+    - `minsweeps::Int=0`: The minimum number of iterations to do.
+    - `cutoff::Float64=$(_TeNe_cutoff)`: Truncation criteria to reduce the bond dimension.
+      Good values range from 1e-8 to 1e-14.
+    - `mindim::Int=1`: Mininum dimension for truncated.
+    - `maxdim::Int=0`: Maximum bond dimension for truncation. Set to 0 to have
+      no limit.
+"""
+
 function sweep!(optim::MPSOptimiser, sweeps::Int=1, tol::Float64=1e-6; nsites::Int=2,
-    mindim::Int=0, maxdim::Int=0, cutoff::Float64=1e-12, minsweeps::Int=0)
+    mindim::Int=0, maxdim::Int=0, cutoff::Float64=_TeNe_cutoff, minsweeps::Int=0)
     
     # Loop through the number of sweeps 
     iters = 0
@@ -60,6 +77,7 @@ function sweep!(optim::MPSOptimiser, sweeps::Int=1, tol::Float64=1e-6; nsites::I
         # Loop through the sites & update
         sites = optim.dir ? Base.range(lastindex(optim.ψ), firstindex(optim.ψ) + nsites - 1, step = -1) :
             Base.range(firstindex(optim.ψ), lastindex(optim.ψ) + 1 - nsites)
+        
         for site in sites
             # Move the canonical center 
             movecenter!(optim, site)
@@ -76,7 +94,7 @@ function sweep!(optim::MPSOptimiser, sweeps::Int=1, tol::Float64=1e-6; nsites::I
             A = update(optim.update, optim, A)
 
             # Restore the MPS 
-            replacesites!(optim.ψ, A, firstsite, optim.normalize; cutoff=cutoff, maxdim=maxdim, mindim=mindim)
+            replacesites!(optim.ψ, A, site, optim.normalize; cutoff=cutoff, maxdim=maxdim, mindim=mindim)
         end
         movecenter!(optim, optim.dir ? lastindex(optim.ψ) : firstindex(optim.ψ))
         optim.dir = !optim.dir
@@ -85,15 +103,15 @@ function sweep!(optim::MPSOptimiser, sweeps::Int=1, tol::Float64=1e-6; nsites::I
         cost = measure(optim.objective, optim)
         push!(optim.costs, cost)
 
-        # Output information 
+        # Output information
+        iters += 1
+        optim.sweeps += 1 # Increment an internal counter 
         if optim.verbose 
             @printf("iter=%d, energy=%.8E, maxbonddim=%d \n", optim.sweeps,
                    real(cost), maxbonddim(optim.ψ))
         end
 
-        # Increment counters & check for convergence 
-        iters += 1
-        optim.sweeps += 1 # Increment an internal counter
+        # Check for convergence 
         if iters >= minsweeps 
             # Check sweeps 
             if sweeps != 0 && iters >= sweeps
@@ -101,9 +119,9 @@ function sweep!(optim::MPSOptimiser, sweeps::Int=1, tol::Float64=1e-6; nsites::I
             end
 
             # Check cost 
-            diff = optim.costs[end] - optim.cost[end-1]
+            diff = optim.costs[end] - optim.costs[end-1]
             if optim.relativecheck
-                diff = 2*diff / (abs(optim.costs[end]) + abs(optim.cost[end-1]))
+                diff = 2*diff / (abs(optim.costs[end]) + abs(optim.costs[end-1]))
             end
             if diff < tol
                 break 
