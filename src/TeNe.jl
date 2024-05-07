@@ -6,6 +6,8 @@ using LRUCache
 using StaticArrays
 using KernelAbstractions
 using HDF5
+using Printf
+
 
 # Imports 
 import Base: +, -, *, /
@@ -87,4 +89,8 @@ include("mps/operations/applyprojector.jl")
 include("mps/operations/inner.jl")
 include("mps/operations/trace.jl")
 include("mps/operations/creatempo.jl")
+
+### Optmisation methods 
+# MPS 
+include("mps/optimisers/mpsoptimiser.jl")
 end
