@@ -7,7 +7,7 @@ using StaticArrays
 using KernelAbstractions
 using HDF5
 using Printf
-
+using KrylovKit
 
 # Imports 
 import Base: +, -, *, /
@@ -20,7 +20,7 @@ include("cache.jl")
 #KernelAbstractions.get_backend(::SMatrix) = CPU
 
 # Default settings 
-const _TeNe_cutoff = 1e-16
+const _TeNe_cutoff = 1e-12
 
 abstract type TensorNetworkState end
 function issimilar(ψs::TensorNetworkState...)
@@ -93,4 +93,5 @@ include("mps/operations/creatempo.jl")
 ### Optmisation methods 
 # MPS 
 include("mps/optimisers/mpsoptimiser.jl")
+include("mps/optimisers/dmrg.jl")
 end

@@ -176,7 +176,7 @@ Calculate the product of an MPS projection with a tensor `A`.
 
     - `tocache::Bool=false`: Save the product to the cache?
 """
-function product(projψ::ProjMPS, A::AbstractArray, dir::Bool=false; tocache::Bool=false)
+function product(projψ::ProjMPS, A::AbstractArray, dir::Bool=false; tocache::Bool=true)
     # If not symmetric, this is just the inner product!
     if !projψ.sym
         return inner(projψ, A, dir)
