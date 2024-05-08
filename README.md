@@ -1,6 +1,7 @@
 # TeNe.jl
 
 [![Build Status](https://github.com/lcauser/TeNe.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/lcauser/TeNe.jl/actions/workflows/CI.yml?query=branch%3Amain)
+[![Documentation - DEV](https://img.shields.io/badge/Documentation-DEV-2ea44f)](https://lcauser.github.io/TeNe.jl/dev/)
 
 TeNe.jl is a Julia package for running tensor network calculations.
 Please note that it is currently **in development**, but with rapid progress!
