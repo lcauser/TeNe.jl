@@ -73,33 +73,6 @@ iter=11, objective=-2.51077971E+01, maxbonddim=14
 iter=12, objective=-2.51077971E+01, maxbonddim=14 
 ```
 It is clear that at this point, reducing the `cutoff` any further gives very minor improvement to the ground state energy.
-We can see the results below:
-```@eval
-using TeNe
-using Plots
-
-N = 20
-qu = Qubits()
-H = OpList(qu, N)
-for j = 1:N
-    add!(H, "x", j, -1.0)
-end
-for j = 1:N-1
-    add!(H, ["z", "z"], [j, j+1], -1.0)
-end
-H = MPO(H)
-ψ = randommps(2, N, 1)
-energy, optim = dmrg(ψ, H; cutoff=1e-6, maxdim=512, maxsweeps=10, verbose=false)
-sweep!(optim, 10; cutoff=1e-8)
-sweep!(optim, 10; cutoff=1e-10)
-sweep!(optim, 10; cutoff=1e-12)
-plot(optim.costs)
-xlabel!("Sweeps")
-ylabel!("Energy")
-savefig("dmrg_energy.pdf")
-nothing
-```
-![](dmrg_energy.pdf)
 
 ## Measuring observables
 We now have the ground state and the ground state energy, but these alone are not all that interesting. 
