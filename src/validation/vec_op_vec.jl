@@ -18,3 +18,17 @@ function _vec_op_vec_validation(ψ::TensorNetworkVector, ϕ::TensorNetworkVector
     end
     return true
 end
+
+function _inner_validation(args...)
+    if rank(args[begin]) != 1
+        throw(ArgumentError("The first term in the inner product must be rank-1."))
+    end
+    for i in Base.OneTo(length(args)-2)
+        if rank(args[begin+i]) != 2
+            throw(ArgumentError("The middle terms in the inner product must be rank-2."))
+        end
+    end
+    if rank(args[end]) != 1
+        throw(ArgumentError("The last term in the inner product must be rank-1."))
+    end
+end

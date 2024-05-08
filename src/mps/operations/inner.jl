@@ -64,14 +64,7 @@ Calculate the expectation of a string of operators `Os` with respect to MPSs `ψ
 """
 function inner(ψ::MPS, ϕs::Union{MPS, MPO}...)
     # Checks 
-    for i = 1:length(ϕs)-1
-        if !ismpo(ϕs[i])
-            throw(ArgumentError("The inner terms in the braket must be MPOs."))
-        end
-    end
-    if !ismps(ϕs[end])
-        throw(ArgumentError("The last term in the product must be an MPS."))
-    end
+    _inner_validation(ψ, ϕs...)
     _vec_op_vec_validation(ψ, ϕs[end], ϕs[begin:end-1]...)
     return _mps_mpo_mps_product(ψ, ϕs[end], ϕs[begin:end-1]...)
 end
@@ -94,6 +87,29 @@ function _mps_mpo_mps_product(ψ::MPS, ϕ::MPS, Os::MPO...)
     return block[]
 end
 
+### Inner products of MPSs with both/either MPSProjectors and MPOs 
+function inner(ψ::MPS, ϕs::Union{MPS, MPO, MPSProjector}...)
+    # Checks 
+    _inner_validation(ψ, ϕs...)
+    _vec_op_vec_validation(ψ, ϕs[end], ϕs[begin:end-1]...)
+
+    prod = 1.0
+    prod_string = Union{MPS, MPO}[ψ]
+    for ϕ in ϕs
+        if ismpsprojector(ϕ)
+            push!(prod_string, ϕ.ψ)
+            prod *= ϕ.λ * inner(prod_string...)
+            prod_string = Union{MPS, MPO}[ϕ.ϕ]
+        else
+            push!(prod_string, ϕ)
+        end
+    end
+    prod *= inner(prod_string...)
+    return prod
+end
+
+
+
 ### Inner products MPOs with StateVectors
 """
     inner(ψ::StateVector, O::MPO, ϕ::StateVector)
@@ -103,14 +119,7 @@ Calculate the expectation of a string of operators `Os` with respect to StateVec
 """
 function inner(ψ::StateVector, ϕs::Union{StateVector, MPO}...)
     # Checks 
-    for i = 1:length(ϕs)-1
-        if !ismpo(ϕs[i])
-            throw(ArgumentError("The inner terms in the braket must be MPOs."))
-        end
-    end
-    if !isstatevector(ϕs[end])
-        throw(ArgumentError("The last term in the MPS must be an StateVector."))
-    end
+    _inner_validation(ψ, ϕs...)
     _vec_op_vec_validation(ψ, ϕs[end], ϕs[begin:end-1]...)
     return _sv_mpo_sv_product(ψ, ϕs[end], ϕs[begin:end-1]...)
 end
@@ -122,4 +131,46 @@ function _sv_mpo_sv_product(ψ::StateVector, ϕ::StateVector, Os::MPO...)
         ϕ = ϕ′
     end
     return _sv_sv_product(ψ, ϕ)
+end
+
+
+### Inner products of MPS with operator lists 
+"""
+    inner(ψ::MPS, O::OpList, ϕ::MPS)
+
+Measure the expectation value for each operator in an OpList with respect to MPSs
+`ψ` and `ϕ`.
+"""
+function inner(ψ::MPS, O::OpList, ϕ::MPS)
+    # Validation 
+    _vec_op_vec_validation(ψ, ϕ, O)
+
+    # Build the environment 
+    proj = ProjMPS(ψ, ϕ)
+
+    # Calculate the expectation for each operator in the list 
+    expectations = zeros(_promote_tensor_eltype(O, ψ, ϕ), length(O.ops))
+    for i in eachindex(O.ops)
+        expectations[i] = _inner(proj, O.lt, O.ops[i], O.sites[i]) * O.coeffs[i]
+    end
+    return expectations
+end
+
+function _inner(proj::ProjMPS, lt::LatticeTypes, ops::Vector{String}, sites::Vector{Int})
+    # Fetch the blocks
+    left = leftblock(proj, sites[begin]-1)
+    right = rightblock(proj, sites[end]+1)
+
+    # Contract with the center sites and the relavent operator 
+    ctr = 1
+    for i in Base.range(sites[begin], sites[end])
+        left = contract(left, proj.objects[begin][i], 1, 1, false, !isconj(proj.objects[begin]))
+        if ctr <= length(sites) && i == sites[ctr]
+            left = contract(left, op(lt, ops[ctr]), 2, 1)
+            left = permutedim(left, 3, 2)
+            ctr += 1
+        end
+        left = contract(left, proj.objects[end][i], (1, 2), (1, 2), false, isconj(proj.objects[end]))
+    end
+    return contract(left, right, (1, 2), (1, 2))[]
 end

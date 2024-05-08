@@ -6,6 +6,8 @@ using LRUCache
 using StaticArrays
 using KernelAbstractions
 using HDF5
+using Printf
+using KrylovKit
 
 # Imports 
 import Base: +, -, *, /
@@ -18,7 +20,7 @@ include("cache.jl")
 #KernelAbstractions.get_backend(::SMatrix) = CPU
 
 # Default settings 
-const _TeNe_cutoff = 1e-16
+const _TeNe_cutoff = 1e-12
 
 abstract type TensorNetworkState end
 function issimilar(ψs::TensorNetworkState...)
@@ -57,6 +59,7 @@ include("mps/structures/abstractmps.jl")
 include("mps/structures/gmps.jl")
 include("mps/structures/mps.jl")
 include("mps/structures/mpo.jl")
+include("mps/structures/mpsprojector.jl")
 
 ### Circuits 
 include("circuits/gates.jl")
@@ -65,7 +68,7 @@ include("circuits/qubitgates.jl")
 ### Type validation 
 # Type abstraction 
 const TensorNetworkVector = Union{StateVector, MPS}
-const TensorNetworkOperator = Union{StateOperator, MPO}
+const TensorNetworkOperator = Union{StateOperator, MPO, MPSProjector, OpList}
 
 # Tensor networks 
 include("validation/vec_vec.jl")
@@ -78,6 +81,13 @@ include("validation/op_trace.jl")
 include("validation/gate_vec.jl")
 include("validation/gate_op.jl")
 
+### Tensor Network Projections 
+# MPS 
+include("mps/projections/abstractmpsprojection.jl")
+include("mps/projections/projmps.jl")
+include("mps/projections/projmpssquared.jl")
+#include("mps/projections/projmpsprojector.jl") # Disabled for now due to unknown bug
+
 ### Tensor Network Operations 
 # State Tensors 
 include("statetensors/operations/applyso.jl")
@@ -86,7 +96,13 @@ include("statetensors/operations/trace.jl")
 
 # MPS
 include("mps/operations/applympo.jl")
+include("mps/operations/applyprojector.jl")
 include("mps/operations/inner.jl")
 include("mps/operations/trace.jl")
 include("mps/operations/creatempo.jl")
+
+### Optmisation methods 
+# MPS 
+include("mps/optimisers/mpsoptimiser.jl")
+include("mps/optimisers/dmrg.jl")
 end
