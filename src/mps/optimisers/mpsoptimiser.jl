@@ -37,6 +37,14 @@ end
 export MPSOptimiser 
 
 ### Iniating an MPS optimiser 
+"""
+    MPSOptimiser(ψ::MPS, projψs::Vector{<:MPSProjection}, update::MPSUpdate,
+        objective::MPSObjective, [observers::Vector{<:MPSObserver}])
+
+Create an optimiser for an MPS `ψ` with the projections `projψs` used in the optimisation.
+The `update` defines the type of local update done for the MPS, and the `objective` is the
+objective function.
+"""
 function MPSOptimiser(ψ::MPS, projψs::Vector{<:MPSProjection}, update::MPSUpdate,
     objective::MPSObjective, observers::Vector{<:MPSObserver}=MPSObserver[];
     normalize::Bool=true, relativecheck::Bool=true, verbose::Bool=true, tol::Float64=1e-6,

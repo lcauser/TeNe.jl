@@ -7,7 +7,7 @@ mutable struct ProjMPSSquared{Q<:Number} <: MPSProjection
     λ::Q
 end
 
-export ProjMPS
+export ProjMPSSquared
 """
     ProjMPS(ψ::MPS, args::Union{MPS, MPO, MPSProjector}...; kwargs...)
 
