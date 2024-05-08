@@ -8,6 +8,7 @@
     E2 = -23.772631597776236
 
     # Create Hamiltonian 
+    qu = Qubits()
     H = OpList(qu, N)
     for i = 1:N
         add!(H, "x", i, -h)
