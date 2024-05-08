@@ -1,6 +1,4 @@
-# Example code 
-
-## Density-matrix renormalization group (DMRG)
+# Density-matrix renormalization group (DMRG)
 
 The most profound and impactful tensor-network based algorithm is the much celebrated DMRG method,
 most-commonly used for estimating the ground-state properties of a one-dimensional quantum Hamiltonian.
@@ -10,7 +8,7 @@ In practice, we construct the Hamiltonian $\hat{H}$ as an exact matrix product o
     E = \frac{\braket{\psi | \hat{H} | \psi}}{\braket{\psi | \psi}}.
 ```
 
-### Constructing the MPO
+## Constructing the MPO
 Finding the MPO for $\hat{H}$ is not always an easy task.
 TeNe is able to construct the MPO for $\hat{H}$ automatically using a simple interface. 
 Below, we create the Hamiltonian for a transverse-field Ising model
@@ -35,12 +33,12 @@ Then, we create an operator list for $N=20$ qubits, passing through the qubits t
 identify operators.
 We then add the terms to the list like an equation, and convert it to an MPO.
 
-### Finding the ground state 
+## Finding the ground state 
 To find the ground state, we want to call the DMRG algorithm.
-We must first have some initial MPS guess, which we'll choose to be random `ψ = randommps(2, 20, 1)`, which initalises the MPS with bond dimension $\chi=1$.
+We must first have some initial MPS guess, which we'll choose to be random `ψ = randommps(2, N, 1)`, which initalises the MPS with bond dimension $\chi=1$.
 This is all we need to call the DMRG algorithm.
 ```julia
-ψ = randommps(2, 20, 1)
+ψ = randommps(2, N, 1)
 energy, optim = dmrg(ψ, H; cutoff=1e-12, maxdim=16, maxsweeps=30)
 ```
 There are many keyword arguments you can specify to control the hyperparameters for the method,
@@ -52,11 +50,11 @@ However, we will list some important ones here:
 - `minsweeps`: The minumum number of iterations to run.
 A strategy we suggest to use the algorithm with a large `maxdim`, but use the `cutoff` to control the bond dimension, on a scheduele from large-to-small.
 ```julia
-ψ = randommps(2, 20, 1)
-energy, optim = dmrg(ψ, H; cutoff=1e-6, maxdim=512, maxsweeps=10);
-sweep!(optim, 10; cutoff=1e-8);
-sweep!(optim, 10; cutoff=1e-10);
-sweep!(optim, 10; cutoff=1e-12);
+ψ = randommps(2, N, 1)
+energy, optim = dmrg(ψ, H; cutoff=1e-6, maxdim=512, maxsweeps=10)
+sweep!(optim, 10; cutoff=1e-8)
+sweep!(optim, 10; cutoff=1e-10)
+sweep!(optim, 10; cutoff=1e-12)
 ```
 Notice that we can continue to do iterations using DMRG using the optimiser `optim`: the `10` is the number of (maximum) number of iterations to do, and the hyperparameters can be changed using key arguments.
 The output should look something like :
@@ -75,7 +73,55 @@ iter=11, objective=-2.51077971E+01, maxbonddim=14
 iter=12, objective=-2.51077971E+01, maxbonddim=14 
 ```
 It is clear that at this point, reducing the `cutoff` any further gives very minor improvement to the ground state energy.
+We can see the results below:
+```@eval
+using TeNe
+using Plots
 
-### Measuring observables
+N = 20
+qu = Qubits()
+H = OpList(qu, N)
+for j = 1:N
+    add!(H, "x", j, -1.0)
+end
+for j = 1:N-1
+    add!(H, ["z", "z"], [j, j+1], -1.0)
+end
+H = MPO(H)
+ψ = randommps(2, N, 1)
+energy, optim = dmrg(ψ, H; cutoff=1e-6, maxdim=512, maxsweeps=10)
+sweep!(optim, 10; cutoff=1e-8)
+sweep!(optim, 10; cutoff=1e-10)
+sweep!(optim, 10; cutoff=1e-12)
+plot(optim.costs)
+xlabel!("Sweeps")
+ylabel!("Energy")
+savefig("dmrg_energy.pdf")
+nothing
+```
+![](dmrg_energy.pdf)
+
+## Measuring observables
 We now have the ground state and the ground state energy, but these alone are not all that interesting. 
-What we would really like to do is measure some observables.
+What we would really like to do is measure he properties of the ground state, such as the magnetisations $\hat{X}_{j}$ and $\hat{Z}_{j}\hat{Z}_{j+1}$.
+```julia
+xs = OpList(qu, N)
+for j = 1:N
+    add!(xs, "x", j)
+end
+xs = real(inner(ψ, xs, ψ))
+
+zs = OpList(qu, N)
+for j = 1:N-1
+    add!(zs, ["z", "z"], [j, j+1])
+end
+zs = real(inner(ψ, zs, ψ))
+```
+
+## Finding excited states
+While DMRG is particularly well suited to extremal eigenstates, it can be used reasonably well to estimate the low-lying excited states.
+This is done by simply adding the (outer product of the) state `ψ` to our Hamiltonian.
+```julia
+ψ′ = randommps(2, N, 1)
+energy, optim = dmrg(ψ′, H, ψ; cutoff=1e-12, maxdim=128, maxsweeps=30)
+```

@@ -5,10 +5,8 @@ makedocs(
     sitename="TeNe.jl",
     pages = [
         "Introduction" => "index.md",
-        "Examples" => "examples.md",
-        "Tensors" => "tensors.md",
-        "State tensors" => "statetensors.md",
-        "Matrix product states" => "mps.md"
+        "Examples" => ["examples/dmrg.md"],
+        "Manual" => ["manual/tensors.md", "manual/statetensors.md", "manual/mps.md"]
     ]
 )
 deploydocs(

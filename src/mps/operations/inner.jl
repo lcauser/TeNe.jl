@@ -174,4 +174,3 @@ function _inner(proj::ProjMPS, lt::LatticeTypes, ops::Vector{String}, sites::Vec
     end
     return contract(left, right, (1, 2), (1, 2))[]
 end
-
