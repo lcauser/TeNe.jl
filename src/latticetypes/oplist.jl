@@ -37,6 +37,14 @@ function Base.copy(ops::OpList)
     return ops2
 end
 
+### Some basic properties 
+TeNe.rank(::OpList) = 2
+TeNe.dim(H::OpList) = dim(H.lt)
+Base.length(H::OpList) = H.length
+innerdims(H::OpList) = ntuple(x->dim(H), Val(length(H)))
+outerdims(H::OpList) = ntuple(x->dim(H), Val(length(H)))
+Base.eltype(H::OpList) = eltype(H.lt)
+
 ### Add to the list
 export add!
 """

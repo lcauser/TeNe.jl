@@ -63,7 +63,7 @@ include("mps/structures/mpsprojector.jl")
 
 # Type abstraction 
 const TensorNetworkVector = Union{StateVector, MPS}
-const TensorNetworkOperator = Union{StateOperator, MPO, MPSProjector}
+const TensorNetworkOperator = Union{StateOperator, MPO, MPSProjector, OpList}
 
 # Type validation 
 include("validation/vec_vec.jl")
