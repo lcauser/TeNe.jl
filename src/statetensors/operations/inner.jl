@@ -43,14 +43,7 @@ julia> inner(ψ, O, O, ψ)
 """
 function inner(ψ::StateVector, ϕs::Union{StateVector, StateOperator}...)
     # Checks 
-    for i = Base.OneTo(length(ϕs)-1)
-        if !isstateoperator(ϕs[i])
-            throw(ArgumentError("The inner terms in the braket must be MPOs."))
-        end
-    end
-    if !isstatevector(ϕs[end])
-        throw(ArgumentError("The last term in the product must be an MPS."))
-    end
+    _inner_validation(ψ, ϕs...)
     _vec_op_vec_validation(ψ, ϕs[end], ϕs[begin:end-1]...)
 
     # Create a StateVector from the cache 

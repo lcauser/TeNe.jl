@@ -251,90 +251,63 @@ end
 
 ### Replace the sites within a MPS with a contraction of multiple sites
 """
-    replacesites!(ψ::GMPS, A, site::Int, direction::Bool=false, normalize::Bool=false; kwargs...)
+    replacesites!(ψ::GMPS, A::AbstractArray, site::Int, direction::Bool=false, normalize::Bool=false; kwargs...)
 
 Replace the tensors over a small range of sites in a GMPS.
 
 # Arguments 
 
-    - `ψ`: The GMPS.
-    - `A': The updated composite tensor.
+    - `ψ::GMPS`: The GMPS.
+    - `A::AbstractArray': The updated composite tensor.
     - `site::Int`: The first site in the range which is replaced.
     - `direction::Bool=false`: The sweeping direction; `true` is sweeping left, `false` sweeping right.
-    - `normalize::Bool=false`: Normalize the GMPS after replacing the sites?
 
 # Optional Keyword Arguments
 
+    - `normalize::Bool=false`: Normalize the GMPS after replacing the sites?
     - `cutoff::Float64=0.0`: Truncation criteria to reduce the bond dimension.
       Good values range from 1e-8 to 1e-14.
     - `mindim::Int=1`: Mininum dimension for truncated.
     - `maxdim::Int=0`: Maximum bond dimension for truncation. Set to 0 to have
       no limit.
 """
-function replacesites!(ψ::GMPS, A, site::Int, direction::Bool=false, normalize::Bool=false; kwargs...)
+function replacesites!(ψ::GMPS, A::AbstractArray, site::Int, direction::Bool=false;
+        normalize::Bool=false, kwargs...)
     # Determine the number of sites
-    nsites = (ndims(A) - 2) / rank(ψ)
+    nsites = fld((ndims(A) - 2), rank(ψ))
 
-    # Deal with case of just one site
     if nsites == 1
-        ψ[site] = A
-        ctr = site + 1 - 2*direction
-        if 0 < ctr && ctr <= length(ψ)
-            movecenter!(ψ, ctr)
-        end
+        # Deal with case of just one site
+        ψ[site] .= A
         if normalize
             normalize!(ψ)
         end
-    end
-
-    # Repeatidly apply SVD to split the tensors
-    U = A
-    for i = 1:nsites-1
-        if direction
-            ### Sweeping Left
-            # Group together the last indices
-            idxs = collect(length(size(U))-rank(ψ):length(size(U)))
-            U, cmb = combineidxs(U, idxs)
-
-            # Find the next site to update
-            site1 = site+nsites-i
-
-            # Apply SVD and determine the tensors
-            U, S, V = tsvd(U, ndims(U); kwargs...)
-            U = contract(U, S, length(size(U)), 1)
-            D = site1 == length(ψ) ? 1 : size(ψ[site1+1])[1]
-            dims = (size(S)[2], [dim(ψ) for i=1:rank(ψ)]..., D)
-            V = reshape(V, dims)
-
-            # Update tensors
-            ψ[site1] = V
-        else
-            ### Sweeping right
-            # Combine first two indexs together
-            idxs = collect(1:1+rank(ψ))
-            U, cmb = combineidxs(U, idxs)
-
-            # Find the next site to update
-            site1 = site + i - 1
-
-            # Apply SVD and determine the tensors
-            U, S, V = svd(U, ndims(U); kwargs...)
-            U = contract(U, S, length(size(U)), 1)
-            U = moveidx(U, length(size(U)), 1)
-            D = site1 == 1 ? 1 : size(ψ[site1-1])[2+rank(ψ)]
-            dims = (size(S)[2], D, [dim(ψ) for i=1:rank(ψ)]...)
-            V = reshape(V, dims)
-            V = moveidx(V, 1, -1)
-
-            # Update tensors
-            ψ[site1] = V
+        return nothing
+    else
+        # Have to restore MPS form using SVDs
+        U = A
+        for i = Base.OneTo(nsites-1)
+            if direction 
+                # Sweeping left
+                U, S, V = tsvd(U, Tuple(Base.range(ndims(U)-rank(ψ), ndims(U))); kwargs...)
+                ψ[site - i + 1] = V
+                U = contract(U, S, ndims(U), 1)
+            else
+                # Sweeping right 
+                V, S, U = tsvd(U, Tuple(Base.range(2+rank(ψ), ndims(U))); kwargs...)
+                ψ[site + i - 1] = V 
+                U = contract(S, U, 2, 1) 
+            end
         end
+        lastsite = direction ? site + 1 - nsites : site - 1 + nsites 
+        if size(ψ[lastsite]) == size(U)
+            ψ[lastsite] .= U
+        else
+            ψ[lastsite] = copy(U)
+        end
+        ψ.center = lastsite
     end
 
-    # Update the final site
-    site1 = direction ? site : site + nsites - 1
-    ψ[site1] = U
-    ψ.center = site1
     if normalize
         normalize!(ψ)
     end
