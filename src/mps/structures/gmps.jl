@@ -494,7 +494,7 @@ end
 
 ### Creating copies
 Base.copy(ψ::GMPS) = typeof(ψ)(ψ.tensors, center(ψ))
-Base.deepcopy(ψ::GMPS) = typeof(ψ)(Base.copy(ψ.tensors), Base.copy(center(ψ)))
+Base.deepcopy(ψ::GMPS) = typeof(ψ)(Base.deepcopy(ψ.tensors), Base.deepcopy(center(ψ)))
 
 
 ### Save and write
