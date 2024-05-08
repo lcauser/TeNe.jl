@@ -23,6 +23,7 @@ mutable struct MPSOptimiser
     cutoff::Float64 
     mindim::Int
     maxdim::Int 
+    tol::Float64
 
     # Objective function 
     objective::MPSObjective
@@ -38,11 +39,11 @@ export MPSOptimiser
 ### Iniating an MPS optimiser 
 function MPSOptimiser(ψ::MPS, projψs::Vector{<:MPSProjection}, update::MPSUpdate,
     objective::MPSObjective, observers::Vector{<:MPSObserver}=MPSObserver[];
-    normalize::Bool=true, relativecheck::Bool=true, verbose::Bool=true,
+    normalize::Bool=true, relativecheck::Bool=true, verbose::Bool=true, tol::Float64=1e-6,
     nsites::Int=2, cutoff::Float64=_TeNe_cutoff, mindim::Int=0, maxdim::Int=0)
     
     optim = MPSOptimiser(ψ, projψs, update, false, 0, normalize, nsites, cutoff, mindim,
-        maxdim, objective, eltype(objective)[], relativecheck, verbose, observers)
+        maxdim, tol, objective, eltype(objective)[], relativecheck, verbose, observers)
     push!(optim.costs, measure(objective, optim))
     return optim
 end

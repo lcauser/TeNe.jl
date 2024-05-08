@@ -35,4 +35,5 @@ end
     include("mps/trace.jl")
     include("mps/creatempo.jl")
     include("mps/projmps.jl")
+    include("mps/dmrg.jl")
 end

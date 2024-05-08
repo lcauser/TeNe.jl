@@ -18,6 +18,7 @@ Run the DMRG algorithm to find extremal eigenvalues of the sum of operators `Hs`
     - `mindim::Int=1`: Mininum dimension for truncated. Not needed if `nsites=1`.
     - `maxdim::Int=0`: Maximum bond dimension for truncation. Set to 0 to have
     no limit. Not needed if `nsites=1`.
+    - `tol::Float64=1e-8`: Convergence tolerance per sweep.
     - `which::Symbol=:SR`: Which eigenvalue to target? Use `:SR` for the smallest real
     component, `:LR` for the largest real component.
     - `ishermitian::Bool=true`: Is the operator Hermitian?
@@ -26,20 +27,23 @@ Run the DMRG algorithm to find extremal eigenvalues of the sum of operators `Hs`
     - `krylovtol::Float=1e-14`: The tolerance for the Krylov iterator.
     - `verbose::Boo=true`: Output the information during optimisation?
 """
-function dmrg(ψ::MPS, Hs::Union{MPO, MPS}...; kwargs...)
+function dmrg(ψ::MPS, Hs::Union{MPO, MPS, MPSProjector}...; kwargs...)
     # Construct the projections 
     projψs = MPSProjection[]
+    λproj::Number = get(kwargs, :λproj, 100.0)
     for H in Hs
-        if ismpo(H)
+        if ismpo(H) || ismpsprojector(H)
             push!(projψs, ProjMPS(ψ, H, ψ; sym=true))
-        end
+        else
+            push!(projψs, ProjMPSSquared(H, ψ; λ=λproj))
+        end            
     end
 
     # Create the updater 
     update = MPSUpdateDMRG(;
         which=get(kwargs, :which, :SR),
         ishermitian=get(kwargs, :ishermitian, true),
-        krylovtol=get(kwargs, :tol, 1e-6),
+        krylovtol=Float64(get(kwargs, :krylovtol, 1e-14)),
         kryloviters=get(kwargs, :kryloviters, 2),
         krylovdim=get(kwargs, :krylovdim, 3)
     )
@@ -48,9 +52,10 @@ function dmrg(ψ::MPS, Hs::Union{MPO, MPS}...; kwargs...)
     optim = MPSOptimiser(ψ, projψs, update, MPSObjectiveDMRG();
         nsites=get(kwargs, :nsites, 2),
         verbose=get(kwargs, :verbose, true),
-        cutoff=get(kwargs, :cutoff, _TeNe_cutoff),
+        cutoff=Float64(get(kwargs, :cutoff, _TeNe_cutoff)),
         mindim=get(kwargs, :mindim, 0),
-        maxdim=get(kwargs, :maxdim, 0)
+        maxdim=get(kwargs, :maxdim, 0),
+        tol=Float64(get(kwargs, :tol, 1e-8))
     )
 
     # Run the optimiser 

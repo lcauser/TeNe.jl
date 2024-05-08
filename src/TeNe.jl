@@ -76,6 +76,8 @@ include("validation/op_trace.jl")
 # MPS 
 include("mps/projections/abstractmpsprojection.jl")
 include("mps/projections/projmps.jl")
+include("mps/projections/projmpssquared.jl")
+#include("mps/projections/projmpsprojector.jl") # Disabled for now due to unknown bug
 
 ### Tensor Network Operations 
 # State Tensors 

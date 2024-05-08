@@ -14,6 +14,15 @@ end
 export ProjMPS
 """
     ProjMPS(ψ::MPS, args::Union{MPS, MPO}...; kwargs...)
+
+Create a projection for the inner product of a string of GMPSs.
+
+# Optional Keyword Arguments
+
+    - `λ::Number=1.0`: Multiplies the projection by a constant.
+    - `center::Int=0`: Initalise the projection at some center. By default, it defaults to 
+    the center of the last MPS (`center=0`).
+    - `sym::Bool=false`: Is the projection symmetric in `ψ`? i.e. of the form `<ψ|O1…Ok|ψ>`?
 """
 function ProjMPS(ψ::MPS, args::Union{MPS, MPO}...; λ::Number=1.0, center::Int=0, sym::Bool=false)
     # Validation 
@@ -41,7 +50,7 @@ function ProjMPS(ψ::MPS, args::Union{MPS, MPO}...; λ::Number=1.0, center::Int=
     end
 
     # Move center 
-    projψ.center = center == 0 ? ψ.center : center
+    projψ.center = center == 0 ? args[end].center : center
     return projψ
 end
 
@@ -164,6 +173,44 @@ function gradient(projψ::ProjMPS, A::AbstractArray, dir::Bool=false)
     grad .*= projψ.λ
     return grad
 end
+
+# Calculating the gradient on the conjugate MPS!
+function gradientconj(projψ::ProjMPS, A::AbstractArray, dir::Bool=false; tocache::Bool=false)
+    # Properties...
+    nsites = ndims(A)-2
+    firstsite = dir ? center(projψ) + 1 - nsites : center(projψ)
+    lastsite = dir ? center(projψ) : center(projψ) + nsites - 1
+
+    # Fetch the blocks 
+    left = leftblock(projψ, firstsite-1)
+    right = rightblock(projψ, lastsite+1)
+
+    # Contract with the first MPS
+    if projψ.sym
+        right = contract(A, right, ndims(A), ndims(right), isconj(projψ.objects[end]))
+        right = permutedim(right, 1, ndims(right))
+    else
+        for i in Base.range(lastsite, firstsite, step=-1)
+            right = contract(projψ.objects[end][i], right, 3, ndims(right), isconj(projψ.objects[end]))
+            right = permutedim(right, 1, ndims(right))
+        end
+    end
+
+    # Contract with MPOs 
+    for i in Base.OneTo(length(projψ.objects)-2)
+        for j in Base.range(lastsite, firstsite, step=-1)
+            right = contract(projψ.objects[end-i][j], right, (outerind(projψ.objects[end-i]), 4),
+                (nsites, ndims(right)-i), isconj(projψ.objects[end-i]))
+            right = permutedim(right, 1, ndims(right)-i)
+        end
+    end
+
+    # Contract the left with the right
+    grad = contract(left, right, Base.range(2, ndims(left)), Base.range(2+nsites, ndims(right)); tocache=tocache)
+    grad .*= projψ.λ
+    return grad
+end
+
 
 export product
 
