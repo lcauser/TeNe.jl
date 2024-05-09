@@ -1,5 +1,8 @@
 abstract type AbstractGate end
 
+# Some general functions that can be overwritten 
+
+
 ### Applying gates to StateVectors 
 # Safe application of a gate 
 export applygate!
