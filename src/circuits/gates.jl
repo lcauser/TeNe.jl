@@ -93,14 +93,14 @@ the MPS: `rev=false` for sweeping right, and `rev=true` for sweeping left.
 The first (or last for `rev=true`) site that the gate is applied to is `site`.
 """
 function applygate!(U::AbstractGate, ψ::MPS, site::Int, rev::Bool=false; kwargs...)
-    _gate_vec_validation(U, ψ, rev ? Base.range(site+1-length(U), site) :
-        Base.range(site, site+length(U)-1))
+    _gate_vec_validation(U, ψ, Tuple(rev ? Base.range(site+1-length(U), site) :
+        Base.range(site, site+length(U)-1)))
     _applygate!(U, ψ, site, rev; kwargs...)
 end
 
 function applygate!(ψ::MPS, U::AbstractGate, site::Int, rev::Bool=false; kwargs...)
-    _gate_vec_validation(U, ψ, rev ? Base.range(site+1-length(U), site) :
-        Base.range(site, site+length(U)-1))
+    _gate_vec_validation(U, ψ, Tuple(rev ? Base.range(site+1-length(U), site) :
+        Base.range(site, site+length(U)-1)))
     _applygate!(U, ψ, site, rev, true; kwargs...)
 end
 
@@ -138,7 +138,7 @@ end
 mutable struct CircuitGate{d, n, T} <: AbstractGate where {d, n, T<:AbstractArray}
     gate::T
 end
-export creategate
+export creategate, makeunitary!, makeunitary
 """
     creategate(gate::AbstractArray)
 
@@ -163,3 +163,42 @@ export tensor, dim, qubits
 tensor(gate::CircuitGate) = gate.gate
 dim(::CircuitGate{d}) where {d} = d 
 Base.length(::CircuitGate{d, n}) where {d, n} = n
+
+# Polar decomposition 
+"""
+    makeunitary!(gate::CircuitGate)
+
+Make a CircuitGate unitary via the polar decomposition, which finds the unitary matrix 
+which most closely resembles the gate.
+
+# Examples
+
+```julia-repl 
+julia> U = creategate(randn(ComplexF64, 2, 2, 2, 2));
+julia> makeunitary!(U)
+```
+"""
+function makeunitary!(gate::CircuitGate)
+    U, _, V = tsvd(tensor(gate), Base.range(2, 2*length(gate), step=2))
+    ten = contract(U, V, ndims(U), 1)
+    permutedims!(tensor(gate), ten, map(j->isodd(j) ? cld(j, 2) : length(gate)+fld(j, 2), Base.OneTo(2*length(gate))))
+end
+
+"""
+    makeunitary(gate::CircuitGate)
+
+Make a CircuitGate unitary via the polar decomposition, which finds the unitary matrix 
+which most closely resembles the gate. Returns the unitary gate as a new allocation.
+
+# Examples
+
+```julia-repl 
+julia> g = creategate(randn(ComplexF64, 2, 2, 2, 2));
+julia> U = makeunitary(g)
+```
+"""
+function makeunitary(gate::CircuitGate)
+    newgate = creategate(deepcopy(tensor(gate)))
+    makeunitary!(newgate)
+    return newgate
+end

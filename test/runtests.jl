@@ -41,4 +41,5 @@ end
 # Circuits 
 @testset "Circuits" begin 
     include("circuits/qubitgates.jl")
+    include("circuits/gates.jl")
 end
