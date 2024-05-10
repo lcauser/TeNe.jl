@@ -37,3 +37,8 @@ end
     include("mps/projmps.jl")
     include("mps/dmrg.jl")
 end
+
+# Circuits 
+@testset "Circuits" begin 
+    include("circuits/qubitgates.jl")
+end

@@ -1,8 +1,5 @@
 abstract type AbstractGate end
 
-# Some general functions that can be overwritten 
-
-
 ### Applying gates to StateVectors 
 # Safe application of a gate 
 export applygate!
@@ -87,15 +84,41 @@ end
 
 
 ### Applying gates to MPS 
-function applygate!(U::AbstractGate, ψ::MPS, site::Int, rev::Bool=false; kwargs...)
+"""
+    applygate!(U::AbstractGate, ψ::MPS, site::Int, [rev::Bool=false]; kwargs...)
+    applygate!(ψ::MPS, U::AbstractGate, site::Int, [rev::Bool=false]; kwargs...)
 
+Apply a circuit gate `U` to an MPS `ψ`. The bool `rev` specifies the sweeping direction of 
+the MPS: `rev=false` for sweeping right, and `rev=true` for sweeping left.
+The first (or last for `rev=true`) site that the gate is applied to is `site`.
+"""
+function applygate!(U::AbstractGate, ψ::MPS, site::Int, rev::Bool=false; kwargs...)
+    _gate_vec_validation(U, ψ, rev ? Base.range(site+1-length(U), site) :
+        Base.range(site, site+length(U)-1))
+    _applygate!(U, ψ, site, rev; kwargs...)
+end
+
+function applygate!(ψ::MPS, U::AbstractGate, site::Int, rev::Bool=false; kwargs...)
+    _gate_vec_validation(U, ψ, rev ? Base.range(site+1-length(U), site) :
+        Base.range(site, site+length(U)-1))
+    _applygate!(U, ψ, site, rev, true; kwargs...)
 end
 
 # Unsafe application 
-function _applygate!(U::AbstractGate, ψ::MPS, site::Int, rev::Bool=false; kwargs...)
+function _applygate!(U::AbstractGate, ψ::MPS, site::Int, rev::Bool=false, trans::Bool=false; kwargs...)
+    # Properties 
     num_sites = length(U)
     firstsite = rev ? site - num_sites + 1 : site 
     lastsite = rev ? site : site + num_sites - 1
+
+    # Move the center 
+    if !(center(ψ) >= firstsite && center(ψ) <= lastsite)
+        if center(ψ) < firstsite
+            movecenter!(ψ, firstsite)
+        else
+            movecenter!(ψ, lastsite)
+        end 
+    end
 
     # Contract MPS tensors
     ten = ψ[firstsite]
@@ -104,11 +127,11 @@ function _applygate!(U::AbstractGate, ψ::MPS, site::Int, rev::Bool=false; kwarg
     end
 
     # Apply the gate 
-    ten = contract(ten, tensor(U), Base.range(2, 1+num_sites), Base.range(2, ndims(tensor(U)), step=2))
+    ten = contract(ten, tensor(U), Base.range(2, 1+num_sites),
+        Base.range(trans ? 1 : 2, ndims(tensor(U)), step=2), false, isconj(ψ))
     ten = permutedim(ten, 2, ndims(ten))
     replacesites!(ψ, ten, site, rev; kwargs...)
 end
-
 
 
 ### A customizable gate 
