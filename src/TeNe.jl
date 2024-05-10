@@ -64,6 +64,7 @@ include("mps/structures/mpsprojector.jl")
 ### Circuits 
 include("circuits/gates.jl")
 include("circuits/qubitgates.jl")
+include("circuits/circuitlayer.jl")
 
 ### Type validation 
 # Type abstraction 
