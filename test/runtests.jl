@@ -42,4 +42,5 @@ end
 @testset "Circuits" begin 
     include("circuits/qubitgates.jl")
     include("circuits/gates.jl")
+    include("circuits/circuitlayers.jl")
 end

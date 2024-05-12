@@ -202,3 +202,20 @@ function makeunitary(gate::CircuitGate)
     makeunitary!(newgate)
     return newgate
 end
+
+
+### Making random unitaries 
+
+function _unitary_close_to_id(d::Int, N::Int, ϵ::Number=1e-1)
+    # identity
+    id = LinearAlgebra.diagm(ones(ComplexF64, d))
+    H = ones(ComplexF64, )
+    for i = 1:N
+        H = tensorproduct(H, id; tocache=!(i==N))
+    end
+    
+    H .+= ϵ*randn(ComplexF64, [d for _ = 1:2*N]...)
+    U = creategate(H)
+    makeunitary!(U)
+    return U
+end
