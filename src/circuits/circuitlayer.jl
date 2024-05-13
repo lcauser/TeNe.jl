@@ -90,3 +90,15 @@ function applygates!(layer::CircuitLayer, ψ::MPS; kwargs...)
         applygate!(layer.gates[i], ψ, layer.sites[i][rev ? end : begin], rev; kwargs...)
     end
 end
+
+function applygates!(ψ::MPS, layer::CircuitLayer; kwargs...)
+    # Decide on the sweeping direction 
+    rev = center(ψ) > length(ψ) / 2
+
+    # Loop through each gate
+    lst = eachindex(layer.sites)
+    lst = rev ? reverse(lst) : lst
+    for i in lst
+        applygate!(ψ, layer.gates[i], layer.sites[i][rev ? end : begin], rev; kwargs...)
+    end
+end

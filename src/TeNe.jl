@@ -65,6 +65,7 @@ include("mps/structures/mpsprojector.jl")
 include("circuits/gates.jl")
 include("circuits/qubitgates.jl")
 include("circuits/circuitlayer.jl")
+include("circuits/circuit.jl")
 include("circuits/connectors/1d.jl")
 include("circuits/connectors/mps.jl")
 
