@@ -134,6 +134,25 @@ function _applygate!(U::AbstractGate, ψ::MPS, site::Int, rev::Bool=false, trans
 end
 
 ### Apply a gate to an MPO 
+"""
+    applygate!(U::AbstractGate, O::MPO, site::Int, [rev::Bool=false]; kwargs...)
+    applygate!(O::MPO, U::AbstractGate, site::Int, [rev::Bool=false]; kwargs...)
+
+Apply a circuit gate `U` to an MPO `O`. The bool `rev` specifies the sweeping direction of 
+the MPO: `rev=false` for sweeping right, and `rev=true` for sweeping left.
+The first (or last for `rev=true`) site that the gate is applied to is `site`.
+"""
+function applygate!(U::AbstractGate, O::MPO, site::Int, rev::Bool=false; kwargs...)
+    _gate_op_validation(U, O, Tuple(rev ? Base.range(site+1-length(U), site) :
+        Base.range(site, site+length(U)-1)))
+    _applygate!(U, O, site, rev; kwargs...)
+end
+
+function applygate!(O::MPO, U::AbstractGate, site::Int, rev::Bool=false; kwargs...)
+    _gate_op_validation(U, O, Tuple(rev ? Base.range(site+1-length(U), site) :
+        Base.range(site, site+length(U)-1)))
+    _applygate!(U, O, site, rev, true; kwargs...)
+end
 
 # Unsafe application 
 function _applygate!(U::AbstractGate, O::MPO, site::Int, rev::Bool=false, trans::Bool=false; kwargs...)
