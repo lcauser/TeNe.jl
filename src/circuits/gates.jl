@@ -133,6 +133,43 @@ function _applygate!(U::AbstractGate, ψ::MPS, site::Int, rev::Bool=false, trans
     replacesites!(ψ, ten, site, rev; kwargs...)
 end
 
+### Apply a gate to an MPO 
+
+# Unsafe application 
+function _applygate!(U::AbstractGate, O::MPO, site::Int, rev::Bool=false, trans::Bool=false; kwargs...)
+    # Properties 
+    num_sites = length(U)
+    firstsite = rev ? site - num_sites + 1 : site 
+    lastsite = rev ? site : site + num_sites - 1
+
+    # Move the center 
+    if !(center(O) >= firstsite && center(O) <= lastsite)
+        if center(O) < firstsite
+            movecenter!(O, firstsite)
+        else
+            movecenter!(O, lastsite)
+        end 
+    end
+
+    # Contract MPS tensors
+    ten = O[firstsite]
+    for i = Base.range(firstsite+1, lastsite)
+        ten = contract(ten, O[i], ndims(ten), 1)
+    end
+
+    # Apply the gate 
+    ten = contract(ten, tensor(U),
+        Base.range(trans ⊻ istranspose(O) ? 3 : 2, ndims(ten)-1, step=2),
+        Base.range(trans ? 1 : 2, ndims(tensor(U)), step=2),
+        false, isconj(O))
+    
+    # Permute the gates 
+    perms = (1, Tuple(map(j -> isodd(j) ? 2 + num_sites + cld(j, 2) : 2 + cld(j, 2),
+        Base.OneTo(2*num_sites)))..., 2)
+    ten = _permutedims(ten, perms)
+    replacesites!(O, ten, site, rev; kwargs...)
+end
+
 
 ### A customizable gate 
 mutable struct CircuitGate{d, n, T} <: AbstractGate where {d, n, T<:AbstractArray}
