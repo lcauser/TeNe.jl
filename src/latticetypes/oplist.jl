@@ -173,11 +173,12 @@ end
 ### Conversions to actual operators
 export totensor
 """
-    totensor(ops::OpList,  idx::Int)
+    totensor(ops::OpList, idx::Int, [paddingleft::Int, paddingright::Int])
 
 Construct the tensor from an operator in an OpList.
+Use `paddingleft` and `paddingright` to add identity paddings to either side. 
 """
-function totensor(ops::OpList,  idx::Int)
+function totensor(ops::OpList, idx::Int, paddingleft::Int=0, paddingright::Int=0)
     # Fetch the relevent information
     opers = ops.ops[idx]
     sites = ops.sites[idx]
@@ -186,8 +187,8 @@ function totensor(ops::OpList,  idx::Int)
     # Create the tensor through a tensor product
     prod = ones(eltype(ops.lt), )
     i = 1
-    for site = 1:rng
-        if sites[1]+site-1 in sites
+    for site = Base.range(1-paddingleft, rng+paddingright)
+        if i <= length(sites) && site > 0 && site <= rng && (sites[i] == sites[1] + site - 1)
             oper = opers[i]
             i += 1
         else
