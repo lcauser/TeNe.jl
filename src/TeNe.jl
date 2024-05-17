@@ -61,16 +61,29 @@ include("mps/structures/mps.jl")
 include("mps/structures/mpo.jl")
 include("mps/structures/mpsprojector.jl")
 
+### Circuits 
+include("circuits/gates.jl")
+include("circuits/qubitgates.jl")
+include("circuits/circuitlayer.jl")
+include("circuits/circuit.jl")
+include("circuits/connectors/1d.jl")
+include("circuits/connectors/mps.jl")
+
+### Type validation 
 # Type abstraction 
 const TensorNetworkVector = Union{StateVector, MPS}
 const TensorNetworkOperator = Union{StateOperator, MPO, MPSProjector, OpList}
 
-# Type validation 
+# Tensor networks 
 include("validation/vec_vec.jl")
 include("validation/op_vec.jl")
 include("validation/vec_op_vec.jl")
 include("validation/op_op.jl")
 include("validation/op_trace.jl")
+
+# Circuits
+include("validation/gate_vec.jl")
+include("validation/gate_op.jl")
 
 ### Tensor Network Projections 
 # MPS 

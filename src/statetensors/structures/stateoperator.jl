@@ -47,8 +47,8 @@ end
 # Indices
 innerind(::Union{GStateTensor{2}, ConjGStateTensor{2}}, site::Int) = 2*site-1
 innerind(::Union{AdjointStateOperator, TransposeStateOperator}, site::Int) = 2*site
-outerind(::Union{GStateTensor{2}, ConjGStateTensor{2}}, site::Int) = 2*sie
-outerind(::Union{AdjointStateOperator, TransposeStateOperator}, site::Int) = s*site-1
+outerind(::Union{GStateTensor{2}, ConjGStateTensor{2}}, site::Int) = 2*site
+outerind(::Union{AdjointStateOperator, TransposeStateOperator}, site::Int) = 2*site-1
 innerinds(O::Union{GStateTensor{2}, ConjGStateTensor{2}}) = Tuple(1:2:2*length(O))
 innerinds(O::Union{AdjointStateOperator, TransposeStateOperator}) = Tuple(2:2:2*length(O))
 outerinds(O::Union{GStateTensor{2}, ConjGStateTensor{2}}) = Tuple(2:2:2*length(O))

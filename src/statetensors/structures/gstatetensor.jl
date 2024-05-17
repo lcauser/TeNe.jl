@@ -150,8 +150,8 @@ function Base.show(io::IO, ψ::GStateTensor)
     println(io, Base.size(ψ.tensor))
 end
 
-Base.copy(ψ::GStateTensor) = typeof(ψ)(dim(ψ), ψ.tensor)
-Base.deepcopy(ψ::GStateTensor) = typeof(ψ)(Base.copy(dim(ψ)), Base.copy(ψ.tensor))
+Base.copy(ψ::GStateTensor) = typeof(ψ)(ψ.tensor)
+Base.deepcopy(ψ::GStateTensor) = typeof(ψ)(Base.copy(ψ.tensor))
 
 ### Initalising 
 function GStateTensor(rank::Int, dim::Int, length::Int; T::Type=ComplexF64)

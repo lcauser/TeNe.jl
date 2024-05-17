@@ -101,3 +101,8 @@ function _permutedims(x, order; sublevel=:auto)
     permutedims!(z, x, order)
     return z
 end
+
+### Function for reversing permutation ordering 
+function reverseperms(perms)
+    return sortperm([perms...])
+end
