@@ -105,6 +105,10 @@ include("mps/operations/inner.jl")
 include("mps/operations/trace.jl")
 include("mps/operations/creatempo.jl")
 
+# Circuits 
+include("circuits/operations/applygate.jl")
+include("circuits/operations/applygates.jl")
+
 ### Optmisation methods 
 # MPS 
 include("mps/optimisers/mpsoptimiser.jl")
