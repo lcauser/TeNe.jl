@@ -27,10 +27,3 @@ function randombwcircuit(d::Int, N::Int, depth::Int; ϵ::Number=0.01)
     end
     return circuit
 end
-
-### Multiplying by a circuit 
-function applygates!(circuit::Circuit, ψ::Union{TensorNetworkState, TensorNetworkOperator}; kwargs...)
-    for m in eachindex(circuit.layers)
-        applygates!(circuit.layers[m], ψ; kwargs...)
-    end
-end
