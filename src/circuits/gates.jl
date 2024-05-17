@@ -164,8 +164,8 @@ function _applygate!(U::AbstractGate, O::MPO, site::Int, rev::Bool=false, trans:
         false, isconj(O))
     
     # Permute the gates 
-    perms = (1, Tuple(map(j -> isodd(j) ? 2 + num_sites + cld(j, 2) : 2 + cld(j, 2),
-        Base.OneTo(2*num_sites)))..., 2)
+    perms = (1, Tuple(map(j -> isodd(j) ? 2 + num_sites + cld(j, 2) : 1 + cld(j, 2),
+        Base.OneTo(2*num_sites)))..., 2+num_sites)
     ten = _permutedims(ten, perms)
     replacesites!(O, ten, site, rev; kwargs...)
 end
