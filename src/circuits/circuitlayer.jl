@@ -79,7 +79,7 @@ end
 
 ### Applying a circuit layer to an mps 
 export applygates!
-function applygates!(layer::CircuitLayer, ψ::MPS; kwargs...)
+function applygates!(layer::CircuitLayer, ψ::Union{MPS, MPO}; kwargs...)
     # Decide on the sweeping direction 
     rev = center(ψ) > length(ψ) / 2
 
@@ -91,7 +91,7 @@ function applygates!(layer::CircuitLayer, ψ::MPS; kwargs...)
     end
 end
 
-function applygates!(ψ::MPS, layer::CircuitLayer; kwargs...)
+function applygates!(ψ::Union{MPS, MPO}, layer::CircuitLayer; kwargs...)
     # Decide on the sweeping direction 
     rev = center(ψ) > length(ψ) / 2
 
@@ -104,13 +104,13 @@ function applygates!(ψ::MPS, layer::CircuitLayer; kwargs...)
 end
 
 ### Applying a circuit layer to a state vector
-function applygates!(layer::CircuitLayer, ψ::StateVector; kwargs...)
+function applygates!(layer::CircuitLayer, ψ::Union{StateVector, StateOperator}; kwargs...)
     for i in eachindex(layer.sites)
         applygate!(layer.gates[i], ψ, layer.sites[i])
     end
 end
 
-function applygates!(ψ::StateVector, layer::CircuitLayer; kwargs...)
+function applygates!(ψ::Union{StateVector, StateOperator}, layer::CircuitLayer; kwargs...)
     for i in eachindex(layer.sites)
         applygate!(ψ, layer.gates[i], layer.sites[i])
     end
