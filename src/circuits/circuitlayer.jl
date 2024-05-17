@@ -102,3 +102,16 @@ function applygates!(ψ::MPS, layer::CircuitLayer; kwargs...)
         applygate!(ψ, layer.gates[i], layer.sites[i][rev ? end : begin], rev; kwargs...)
     end
 end
+
+### Applying a circuit layer to a state vector
+function applygates!(layer::CircuitLayer, ψ::StateVector; kwargs...)
+    for i in eachindex(layer.sites)
+        applygate!(layer.gates[i], ψ, layer.sites[i])
+    end
+end
+
+function applygates!(ψ::StateVector, layer::CircuitLayer; kwargs...)
+    for i in eachindex(layer.sites)
+        applygate!(ψ, layer.gates[i], layer.sites[i])
+    end
+end
