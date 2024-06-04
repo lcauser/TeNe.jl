@@ -179,6 +179,9 @@ function update(::MPSUpdate, ::MPSOptimiser, A)
     return A
 end
 
+# A void updater 
+struct MPSUpdateVoid <: MPSUpdate end
+
 ### MPS Objective 
 function measure(::MPSObjective, ::MPSOptimiser)
     return 0.0
