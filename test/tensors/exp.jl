@@ -10,4 +10,9 @@
     B = TeNe.exp(A, (1, 2, 3), (4, 5, 6))
     C = reshape(LinearAlgebra.exp(reshape(A, (36, 36))), (4, 3, 3, 4, 3, 3))
     @test isapprox(B, C)
+
+    A = rand(ComplexF64, 5, 5)
+    B = TeNe.exp(A, 2, prefactor=-1im)
+    C = exp(-1im*A)
+    @test isapprox(B, C)
 end

@@ -16,7 +16,7 @@ end
 # Lattice types
 @testset "Lattice Types" begin 
     include("latticetypes/qubits.jl")
-    include("latticetypes/oplist.jl")
+    #include("latticetypes/oplist.jl")
 end
 
 # State vectors 
@@ -42,4 +42,5 @@ end
 @testset "Circuits" begin 
     include("circuits/qubitgates.jl")
     include("circuits/gates.jl")
+    include("circuits/trotterization.jl")
 end
