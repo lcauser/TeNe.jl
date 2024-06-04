@@ -111,4 +111,24 @@
             end
         end
     end
+
+    # Uncompressed gates 
+    @testset "_create_trotter_gate_uncompressed" begin 
+        @testset "two sites" begin 
+            H = OpList(Qubits(), 20)
+            for i = 1:20
+                add!(H, "x", i, 0.34)
+            end
+            for i = 1:19
+                add!(H, ["z", "z"], [i, i+1], 0.56)
+            end
+
+            @test begin
+                op = TeNe._create_trotter_gate_uncompressed(H, 0.1, 5, 1)
+                op2 = TeNe.exp(0.34*0.1*[0.0 1; 1 0], (2))
+                isapprox(op, op2)
+                true
+            end
+        end
+    end
 end

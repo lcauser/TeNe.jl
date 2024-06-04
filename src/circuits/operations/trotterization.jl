@@ -8,7 +8,6 @@ end
 
 
 ### Creating the Trotter gate in a compressed way
-
 function _create_trotter_gate_compressed(H::OpList, t::Number, site::Int)
     # Create a tensor to store the result
     rng = siterange(H) 
@@ -39,4 +38,24 @@ function _create_trotter_gate_compressed(H::OpList, t::Number, site::Int)
     # Exponentiate the tensor 
     ten = TeNe.exp(ten, Tuple(Base.range(2, 2*rng, step=2)); prefactor=t)
     return ten    
+end
+
+### Creating the trotter gate without compression 
+function _create_trotter_gate_uncompressed(H::OpList, t::Number, site::Int, rng::Int)
+    # Create a tensor to store the result 
+    ten = zeros(eltype(H.lt), [dim(H) for _ = 1:2*rng]...)
+
+    # Find operators which start at this index
+    idxs = siteindexs(H, site)
+    for idx in idxs 
+        # Make sure the operator has small enough range 
+        rng_local = H.sites[idx][end] - H.sites[idx][begin] + 1
+        if rng_local == rng
+            ten .+= totensor(H, idx, 0, 0; tocache=true)
+        end
+    end
+
+    # Exponentiate the tensor 
+    ten = TeNe.exp(ten, Tuple(Base.range(2, 2*rng, step=2)); prefactor=t)
+    return ten  
 end
