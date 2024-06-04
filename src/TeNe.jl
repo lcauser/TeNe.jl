@@ -114,4 +114,5 @@ include("circuits/operations/trotterization.jl")
 # MPS 
 include("mps/optimisers/mpsoptimiser.jl")
 include("mps/optimisers/dmrg.jl")
+include("mps/optimisers/tebd.jl")
 end
