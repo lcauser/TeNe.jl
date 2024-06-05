@@ -205,6 +205,7 @@ mutable struct MPSObserverOpList <: MPSObserver
     O::OpList 
     measurements::Vector{<:AbstractArray}
 end
+export MPSObserverOpList
 
 function MPSObserver(O::OpList)
     return MPSObserverOpList(O, Vector{eltype(O)}[])
@@ -219,6 +220,7 @@ mutable struct MPSObserverMPO <: MPSObserver
     O::MPO 
     measurements::Vector{<:Number}
 end
+export MPSObserverMPO
 
 function MPSObserver(O::MPO)
     return MPSObserverMPO(O, Number[])
