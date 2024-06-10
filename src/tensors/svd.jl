@@ -37,14 +37,7 @@ end
 ### Unsafe SVD 
 function _svd(x, dims; cutoff::Float64=0.0, mindim::Int=1, maxdim::Int=0)
     # Permute and reshape 
-    sinners, souters, pixs = _svd_permute_dims(x, dims)
-    if !all(i->pixs[i]==i, 1:ndims(x))
-        y = cache(x, (sinners..., souters...))
-        permutedims!(y, x, pixs)
-    else 
-        y = x
-    end
-    y = reshape(y, (prod(sinners), prod(souters)))
+    y = _svd_reshape(x, dims)
     
     # Do the SVD using LinearAlgebra 
     local t
@@ -77,6 +70,18 @@ function _svd(x, dims; cutoff::Float64=0.0, mindim::Int=1, maxdim::Int=0)
     V = reshape(V, (vals, souters...))
 
     return U, S, V
+end
+
+function _svd_reshape(x, dims)
+    sinners, souters, pixs = _svd_permute_dims(x, dims)
+    if !all(i->pixs[i]==i, 1:ndims(x))
+        y = cache(x, (sinners..., souters...))
+        permutedims!(y, x, pixs)
+    else 
+        y = x
+    end
+    y = reshape(y, (prod(sinners), prod(souters)))
+    return y
 end
 
 ### Permuting dimensions 
