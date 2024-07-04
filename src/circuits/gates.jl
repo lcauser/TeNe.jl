@@ -30,6 +30,42 @@ tensor(gate::CircuitGate) = gate.gate
 dim(::CircuitGate{d}) where {d} = d 
 Base.length(::CircuitGate{d, n}) where {d, n} = n
 
+
+# Manipulations of gates
+"""
+    TeNe.conj(gate::CircuitGate)
+
+Find the complex conjugate of a gate.
+"""
+function TeNe.conj(gate::CircuitGate)
+    return CircuitGate{dim(gate), length(gate), typeof(gate.gate)}(conj(gate.gate))
+end
+
+
+"""
+    TeNe.adjoint(gate::CircuitGate)
+
+Find the adjoint of a gate.
+"""
+function TeNe.adjoint(gate::CircuitGate)
+    idxs = map(j->isodd(j) ? j+1 : j-1, Base.OneTo(ndims(gate.gate)))
+    new_gate = conj.(permutedims(gate.gate, idxs))
+    return CircuitGate{dim(gate), length(gate), typeof(gate.gate)}(new_gate)
+end
+
+
+"""
+    TeNe.transpose(gate::CircuitGate)
+
+Find the transpose of a gate.
+"""
+function TeNe.transpose(gate::CircuitGate)
+    idxs = map(j->isodd(j) ? j+1 : j-1, Base.OneTo(ndims(gate.gate)))
+    new_gate = permutedims(gate.gate, idxs)
+    return CircuitGate{dim(gate), length(gate), typeof(gate.gate)}(new_gate)
+end
+
+
 # Polar decomposition 
 """
     makeunitary!(gate::CircuitGate)
@@ -71,7 +107,6 @@ end
 
 
 ### Making random unitaries 
-
 function _unitary_close_to_id(d::Int, N::Int, ϵ::Number=1e-1)
     # identity
     id = LinearAlgebra.diagm(ones(ComplexF64, d))
