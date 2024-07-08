@@ -81,7 +81,8 @@ julia> makeunitary!(U)
 ```
 """
 function makeunitary!(gate::CircuitGate)
-    U, _, V = tsvd(tensor(gate), Base.range(2, 2*length(gate), step=2))
+    dims = Base.range(2, 2*length(gate), step=2)
+    U, _, V = tsvd(tensor(gate), dims; mindim=prod(dims))
     ten = contract(U, V, ndims(U), 1)
     permutedims!(tensor(gate), ten, map(j->isodd(j) ? cld(j, 2) : length(gate)+fld(j, 2), Base.OneTo(2*length(gate))))
 end
