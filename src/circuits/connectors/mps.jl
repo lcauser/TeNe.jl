@@ -4,6 +4,7 @@
 
 ### One-dimensional circuit 
 struct CircuitMPS <: CircuitConnectivity end
+export CircuitMPS
 
 """
     add!(layer::CircuitLayer, U::AbstractGate, sites, ::CircuitMPS)
@@ -13,7 +14,7 @@ is used for MPS, which maps the lattice sites inbetween the given `sites`.
 """
 function add!(layer::CircuitLayer, U::AbstractGate, sites, con::CircuitMPS)
     # Validation 
-    _validate_gate_layer(layer, gate, sites)
+    _validate_gate_layer(layer, U, sites)
 
     # Check if assigned
     sitesfull = Tuple(Base.range(min(sites...), max(sites...)))
@@ -26,10 +27,21 @@ function add!(layer::CircuitLayer, U::AbstractGate, sites, con::CircuitMPS)
         layer.assigned[site] = true
     end
 
-    # Add the tensor 
+    # Order the sites in the gate
     U, sites = _order_gate(U, sites)
-    push!(layer.gates, U)
-    push!(layer.sites, Tuple(sites))
+
+    # Find the position to insert 
+    idx = 1
+    for s in layer.sites 
+        if s[begin] > sitesfull[end]
+            break
+        end
+        idx += 1
+    end
+    
+    # Insert the gate
+    insert!(layer.gates, idx, U)
+    insert!(layer.sites, idx, Tuple(sites))
 end
 
 function _order_gate(U::AbstractGate, sites)

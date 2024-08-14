@@ -13,9 +13,26 @@ Base.length(circuit::Circuit) = circuit.N
 dim(::Circuit{d}) where {d} = d
 depth(circuit::Circuit) = length(circuit.layers)
 
+##
+
 
 ### Initalising a circuit 
+# Empty circuit 
+Circuit(d, N) = Circuit{d}(N, [])
+
+# Brickwall circuit 
 export randombwcircuit
+
+"""
+    randombwcircuit(d::Int, N::Int, depth::Int; ϵ::Number=0.01)
+
+Create a brickwall circuit composed of random unitary two-body gates for a lattice
+with physical dimension `d` and length `N`. The circuit has `depth` layers.
+
+# Optional Keyword Arguments
+    - `ϵ::Number=0.01`: Random gates are generated as gates close to identity; the ϵ 
+       is a paramater that controls how close to identity they are.
+"""
 function randombwcircuit(d::Int, N::Int, depth::Int; ϵ::Number=0.01)
     circuit = Circuit{d}(N, CircuitLayer[])
     for m = Base.OneTo(depth)
@@ -27,3 +44,4 @@ function randombwcircuit(d::Int, N::Int, depth::Int; ϵ::Number=0.01)
     end
     return circuit
 end
+
