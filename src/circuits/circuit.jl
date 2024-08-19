@@ -13,6 +13,7 @@ export Circuit
 Base.length(circuit::Circuit) = circuit.N 
 dim(::Circuit{d}) where {d} = d
 depth(circuit::Circuit) = length(circuit.layers)
+Base.eltype(circuit::Circuit) = _promote_tensor_eltype(circuit.layers...)
 
 ### Adding to a circuit 
 export add!, addlayer!
