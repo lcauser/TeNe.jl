@@ -29,6 +29,7 @@ export tensor, dim, qubits
 tensor(gate::CircuitGate) = gate.gate
 dim(::CircuitGate{d}) where {d} = d 
 Base.length(::CircuitGate{d, n}) where {d, n} = n
+Base.eltype(gate::CircuitGate) = eltype(gate.gate)
 
 # Polar decomposition 
 """
