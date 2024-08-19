@@ -6,6 +6,7 @@
 mutable struct Circuit{d}
     N::Int
     layers::Vector{CircuitLayer}
+    conn::CircuitConnectivity
 end
 
 export Circuit 
@@ -18,7 +19,13 @@ depth(circuit::Circuit) = length(circuit.layers)
 
 ### Initalising a circuit 
 # Empty circuit 
-Circuit(d, N) = Circuit{d}(N, [])
+function Circuit(d::Int, N::Int, connector::CircuitConnectivity=CircuitAll())
+    return Circuit{d}(N, [], connector)
+end
+
+function CircuitMPS(d::Int, N::Int)
+    return Circuit{d}(N, [], CircuitMPS())
+end
 
 # Brickwall circuit 
 export randombwcircuit
@@ -44,4 +51,3 @@ function randombwcircuit(d::Int, N::Int, depth::Int; ϵ::Number=0.01)
     end
     return circuit
 end
-
