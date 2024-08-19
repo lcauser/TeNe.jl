@@ -71,7 +71,7 @@ export rank, dim, center, bonddim, maxbonddim
 
 Returns the type of parameters within a GMPS.
 """
-Base.eltype(ψ::GMPS) = Base.eltype(ψ[begin])
+Base.eltype(ψ::GMPS) = _promote_tensor_eltype(ψ.tensors...)
 
 """
     rank(::GMPS)
