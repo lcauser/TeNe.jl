@@ -139,7 +139,8 @@ Return the bond dimension size between idx and idx + 1. Returns nothing if
 out of range.
 """
 function bonddim(ψ::GMPS, site::Int)
-    (site < firstindex(ψ) || site > lastindex(ψ)) && return nothing
+    (site < firstindex(ψ)-1 || site > lastindex(ψ)) && return nothing
+    site == firstindex(ψ)-1 && return 1
     return size(ψ[site])[2+rank(ψ)]
 end
 

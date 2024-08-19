@@ -13,6 +13,7 @@ mutable struct ProjMPSCircuit{Q<:Number}
     circuit::Circuit
     ψ::MPS
     λ::Q
+    T::Type
 
     # Approximate layer applications 
     tops::Vector{MPS} # ϕs
@@ -31,9 +32,15 @@ export ProjMPSCircuit
 function ProjMPSCircuit(ϕ::MPS, circuit::Circuit, ψ::MPS; cutoff::Float64=1e-12,
     maxdim::Int=0, depth_center::Int=1, width_center::Int=1, λ::Number=1.0)
 
+    # Create the top and bottom MPSs
     tops = MPS[MPS(dim(ψ), length(ψ)) for _ = 1:depth(circuit)]
     bottoms = MPS[MPS(dim(ψ), length(ψ)) for _ = 1:depth(circuit)]
-    projU = ProjMPSCircuit(ϕ, circuit, ψ, λ, tops, bottoms, 0, cutoff, maxdim, AbstractArray[], AbstractArray[], 0)
+
+    projU = ProjMPSCircuit(
+        ϕ, circuit, ψ, λ, _promote_tensor_eltype(ϕ, circuit, ψ, λ),
+        tops, bottoms, 0, cutoff, maxdim,
+        AbstractArray[], AbstractArray[], 0
+    )
     movecenter!(projU, depth_center)
         
     return projU
@@ -80,7 +87,7 @@ function rightblock(projU::ProjMPSCircuit, idx::Int)
 end
 
 
-### Builing blocks
+### Builing top and bottom MPSs
 function buildtop!(projU::ProjMPSCircuit, idx::Int)
     projU.tops[idx] = _buildtop(deepcopy(topblock(projU, idx-1)), projU, idx)
 end
@@ -98,6 +105,18 @@ function _buildbottom(ψ::MPS, projU::ProjMPSCircuit, idx::Int)
     applygates!(projU.circuit.layers[end+1-idx], ψ; cutoff=projU.cutoff, maxdim=projU.maxdim)
     return ψ
 end
+
+
+### Building left and right blocks 
+function _projmpscircuit_create_blocks(projU::ProjMPSCircuit)
+    lefts = []
+    rights = []
+    for i = Base.OneTo(length(projU.circuit.layers[projU.depth_center].gates))
+        sitebefore = projU.circuit.layers.sites[i] - 1
+        push!(lefts, ones(projU.T, sitebefo))
+    end
+end
+
 
 function _buildleft(projU::ProjMPSCircuit, idx::Int)
     
