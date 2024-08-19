@@ -22,6 +22,7 @@ end
 
 dim(::CircuitLayer{d}) where {d} = d
 Base.length(layer::CircuitLayer) = Base.length(layer.assigned)
+Base.eltype(layer::CircuitLayer) = _promote_tensor_eltype(layer.gates...)
 
 ### Connectors
 abstract type CircuitConnectivity end
