@@ -114,15 +114,13 @@ function _movecenter_depth!(projU::ProjMPSCircuit, idx::Int)
         for i in Base.range(depth(projU.circuit), idx+1, step=-1)
             buildbottom!(projU, i)
         end
-    else
-        if idx > projU.depth_center
+    elseif idx > projU.depth_center
             for i in Base.range(projU.depth_center, idx-1)
                 buildtop!(projU, i)
             end
-        elseif idx < projU.depth_center
-            for i = Base.range(projU.depth_center, idx+1, step=-1)
-                buildbottom!(projU, i)
-            end
+    elseif idx < projU.depth_center
+        for i = Base.range(projU.depth_center, idx+1, step=-1)
+            buildbottom!(projU, i)
         end
     end
     projU.depth_center = idx
