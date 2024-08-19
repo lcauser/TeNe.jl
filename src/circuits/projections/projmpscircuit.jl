@@ -99,6 +99,13 @@ function _buildbottom(ψ::MPS, projU::ProjMPSCircuit, idx::Int)
     return ψ
 end
 
+function _buildleft(projU::ProjMPSCircuit, idx::Int)
+    
+end
+
+function _buildright(projU::ProjMPSCircuit, idx::Int)
+    
+end
 
 
 ### Moving the center 
