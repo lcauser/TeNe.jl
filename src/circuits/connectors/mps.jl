@@ -55,3 +55,14 @@ function _order_gate(U::AbstractGate, sites)
     tensor(U2) .= _permutedims(tensor(U), tperms)
     return U2, Tuple(sites[perms])
 end
+
+### Creating a Circuit with an MPS connectivity.
+"""
+    CircuitMPS(d::Int, N::Int)
+
+Create a circuit with physical dimension `d` and `N` qudits with an MPS
+connectivity.
+"""
+function CircuitMPS(d::Int, N::Int)
+    return Circuit{d}(N, [], CircuitMPS())
+end
