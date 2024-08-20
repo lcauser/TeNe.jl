@@ -72,18 +72,30 @@ end
 
 
 function leftblock(projU::ProjMPSCircuit, idx::Int)
-    if idx < 0 || idx > length(projU.circuit.layers[projU.depth_center])
-        throw(DomainError("The block must be between 0 and $(length(projU.circuit.layers[projU.depth_center]))."))
+    if idx < 0 || idx > length(getlayer(projU, projU.depth_center).gates)
+        throw(DomainError("The block must be between 0 and $(length(getlayer(projU, projU.depth_center).gates))."))
     end
-    return projU.lefts[idx+1]
+    if idx == 0 
+        return ones(Float64, 1, 1)
+    end
+    return projU.lefts[idx]
 end
 
 
 function rightblock(projU::ProjMPSCircuit, idx::Int)
-    if idx < 1 || idx > length(projU.circuit.layers[projU.depth_center]+1)
-        throw(DomainError("The block must be between 0 and $(length(projU.circuit.layers[projU.depth_center]))."))
+    if idx < 1 || idx > length(getlayer(projU, projU.depth_center).gates)+1
+        throw(DomainError("The block must be between 1 and $(length(getlayer(projU, projU.depth_center).gates) + 1)."))
+    end
+    if idx == length(getlayer(projU, projU.depth_center).gates)+1
+        return ones(Float64, 1, 1)
     end
     return projU.lefts[idx]
+end
+
+
+### Fetching the layer 
+function getlayer(projU::ProjMPSCircuit, idx::Int)
+    return projU.circuit.layers[end + 1 - idx]
 end
 
 
@@ -108,18 +120,67 @@ end
 
 
 ### Building left and right blocks 
-function _projmpscircuit_create_blocks(projU::ProjMPSCircuit)
+function _create_blocks!(projU::ProjMPSCircuit)
     lefts = []
     rights = []
-    for i = Base.OneTo(length(projU.circuit.layers[projU.depth_center].gates))
-        sitebefore = projU.circuit.layers.sites[i] - 1
-        push!(lefts, ones(projU.T, sitebefo))
+    layer = getlayer(projU, projU.depth_center)
+    for i = Base.OneTo(length(layer.gates))
+        sitebefore = layer.sites[i][begin] - 1
+        siteafter = layer.sites[i][end] + 1
+        push!(lefts, ones(projU.T, bonddim(topblock(projU, projU.depth_center-1), sitebefore), 
+            bonddim(bottomblock(projU, projU.depth_center+1), sitebefore)))
+        push!(rights, ones(projU.T, bonddim(topblock(projU, projU.depth_center-1), siteafter), 
+            bonddim(bottomblock(projU, projU.depth_center+1), siteafter)))
     end
+    projU.lefts = lefts 
+    projU.rights = rights
 end
 
 
-function _buildleft(projU::ProjMPSCircuit, idx::Int)
-    
+function buildleft!(projU::ProjMPSCircuit, idx::Int)
+    projU.lefts[idx] .= _buildleft(projU, idx, leftblock(projU, idx-1))
+end
+
+function _buildleft(projU::ProjMPSCircuit, idx::Int, left)
+    # Fetch information
+    top_mps = topblock(projU, projU.depth_center-1)
+    bottom_mps = topblock(projU, projU.depth_center+1)
+    finalidx = getlayer(projU, projU.depth_center).sites[idx][end]
+
+    # Contract in the previous gate 
+    if idx != 1
+        # Fetch the previous gate 
+        sites_prev = getlayer(projU, projU.depth_center).sites[idx-1]
+        gate_prev = getlayer(projU, projU.depth_center).gates[idx-1]
+
+        # Contract with MPS tensors 
+        for site = Base.range(sites_prev[begin], sites_prev[end])
+            left = contract(left, top_mps[site], ndims(left)-1, 1, false, true)
+            if site in sites_prev
+                # Site is affected by gate
+                left = contract(left,  bottom_mps[site], ndims(left)-2, 1)
+                left = permutedim(left, ndims(left)-2, ndims(left)-1)
+            else
+                # Site is not affected by gate
+                left = contract(left,  bottom_mps[site], (ndims(left)-2, ndims(left)-1), (1, 2))
+            end
+        end
+
+        # Contract with gate 
+        left = contract(left, gate_prev, Base.OneTo(ndims(gate_prev)), Base.OneTo(ndims(gate_prev)))
+
+        # Set the starting
+        startidx = sites_prev[end] + 1
+    else
+        startidx = 1
+    end
+
+    # Contract the next sites leading up to the final site 
+    for site = Base.range(startidx, finalidx)
+        left = contract(left, top_mps[site], ndims(left)-1, 1, false, true)
+        left = contract(left, bottom_mps[site], (1, 2), (1, 2))
+    end
+
 end
 
 function _buildright(projU::ProjMPSCircuit, idx::Int)
@@ -133,6 +194,12 @@ function movecenter!(projU::ProjMPSCircuit, idx_depth::Int, idx_width::Int=0)
 end
 
 function _movecenter_depth!(projU::ProjMPSCircuit, idx::Int)
+    # Break if not chanign the depth 
+    if idx == projU.depth_center
+        return nothing
+    end
+
+    # Build the depth
     if projU.depth_center == 0
         for i in Base.OneTo(idx-1)
             buildtop!(projU, i)
@@ -141,13 +208,17 @@ function _movecenter_depth!(projU::ProjMPSCircuit, idx::Int)
             buildbottom!(projU, i)
         end
     elseif idx > projU.depth_center
-            for i in Base.range(projU.depth_center, idx-1)
-                buildtop!(projU, i)
-            end
+        for i in Base.range(projU.depth_center, idx-1)
+            buildtop!(projU, i)
+        end
     elseif idx < projU.depth_center
         for i = Base.range(projU.depth_center, idx+1, step=-1)
             buildbottom!(projU, i)
         end
     end
     projU.depth_center = idx
+
+    # Reset the width 
+    _create_blocks!(projU)
+    projU.width_center = 0
 end
