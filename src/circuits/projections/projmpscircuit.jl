@@ -145,13 +145,14 @@ function _buildleft(projU::ProjMPSCircuit, idx::Int, left)
     # Fetch information
     top_mps = topblock(projU, projU.depth_center-1)
     bottom_mps = topblock(projU, projU.depth_center+1)
-    finalidx = getlayer(projU, projU.depth_center).sites[idx][end]
+    layer = getlayer(projU, projU.depth_center)
+    finalidx = layer.sites[idx][end]
 
     # Contract in the previous gate 
     if idx != 1
         # Fetch the previous gate 
-        sites_prev = getlayer(projU, projU.depth_center).sites[idx-1]
-        gate_prev = getlayer(projU, projU.depth_center).gates[idx-1]
+        sites_prev = layer.sites[idx-1]
+        gate_prev = layer.gates[idx-1]
 
         # Contract with MPS tensors 
         for site = Base.range(sites_prev[begin], sites_prev[end])
@@ -183,8 +184,40 @@ function _buildleft(projU::ProjMPSCircuit, idx::Int, left)
 
 end
 
-function _buildright(projU::ProjMPSCircuit, idx::Int)
-    
+function _buildright(projU::ProjMPSCircuit, idx::Int, right)
+    # Fetch information
+    top_mps = topblock(projU, projU.depth_center-1)
+    bottom_mps = topblock(projU, projU.depth_center+1)
+    layer = getlayer(projU, projU.depth_center)
+    finalidx = laye.sites[idx][begin]
+
+    # Contract previous gate
+    if idx != length(layer.gates)
+        # Fetch the previous gate 
+        sites_prev = layer.sites[idx+1]
+        gate_prev = layer.gates[idx+1]
+
+        # Contract with MPS tensors 
+        for site = Base.range(sites_prev[end], sites_prev[begin], step=-1)
+            left = contract(left, top_mps[site], ndims(left)-1, 1, false, true)
+            if site in sites_prev
+                # Site is affected by gate
+                left = contract(left,  bottom_mps[site], ndims(left)-2, 1)
+                left = permutedim(left, ndims(left)-2, ndims(left)-1)
+            else
+                # Site is not affected by gate
+                left = contract(left,  bottom_mps[site], (ndims(left)-2, ndims(left)-1), (1, 2))
+            end
+        end
+
+        # Contract with gate 
+        left = contract(left, gate_prev, Base.OneTo(ndims(gate_prev)), Base.OneTo(ndims(gate_prev)))
+
+        # Set the starting
+        startidx = sites_prev[end] + 1
+    else
+        startidx = 1
+    end
 end
 
 
