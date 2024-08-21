@@ -8,15 +8,14 @@
         ϕ′ = deepcopy(ϕ)
         ψ′ = applygates(U, ψ)
         ol1 = inner(ϕ, ψ′)
-        projU = ProjMPSCircuit(ϕ, U, ψ)
+        projU = ProjMPSCircuit(ϕ, U, ψ; cutoff=0.0)
         ol2s = []
         for i = 2:5
             movecenter!(projU, i)
             ol2 = inner(conj(TeNe.topblock(projU, i-1)), TeNe.bottomblock(projU, i))
             push!(ol2s, ol2)
         end
-        println(ol1)
-        println(ol2s)
+        @test all(isapprox.(ol2s, ol1))
     end
     
 end
