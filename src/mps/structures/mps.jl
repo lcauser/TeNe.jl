@@ -182,3 +182,8 @@ function sample(ψ::MPS)
     end
     return config, P
 end
+
+
+### Conjugate of MPS 
+entropy(ψ::ConjGMPS{1}, site::Int) = entropy(ψ.MPS, site)
+sample(ψ::ConjGMPS{1}) = sample(ψ.MPS)
