@@ -16,6 +16,18 @@
             push!(ol2s, ol2)
         end
         @test all(isapprox.(ol2s, ol1))
+
+        ## Test for building left blocks 
+        ol2s = []
+        for i = 1:5
+            movecenter!(projU, i)
+            left = ones(Float64, 1, 1)
+            for j = 1:length(U.layers[end+1-i].sites)+1
+                left = copy(TeNe._buildleft(projU, j, left))
+            end
+            push!(ol2s, left[])
+        end
+        @test all(isapprox.(ol2s, ol1))
     end
     
 end
