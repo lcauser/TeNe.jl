@@ -314,6 +314,11 @@ function replacesites!(ψ::GMPS, A::AbstractArray, site::Int, direction::Bool=fa
     end
 end
 
+function replacesites!(ψ::GMPSTrait, A::AbstractArray, site::Int, direction::Bool=false;
+        normalize::Bool=false, kwargs...)
+    replacesites!(ψ.MPS, A, site, direction; normalize, kwargs...)
+end
+
 ### Products with numbers
 function *(ψ::GMPS, a::Number)
     ϕ = deepcopy(ψ)
@@ -534,3 +539,11 @@ end
 TeNe.conj(ψ::GMPS) = ConjGMPS(ψ)
 TeNe.conj(ψ::ConjGMPS) = ψ.MPS
 isconj(ψ::ConjGMPS) = true
+
+function Base.collect(ψ::ConjGMPS)
+    ϕ = deepcopy(ψ.MPS)
+    for i in Base.OneTo(length(ψ))
+        ϕ[i] .= conj.(ψ[i])
+    end
+    return ϕ
+end

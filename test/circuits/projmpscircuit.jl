@@ -5,13 +5,14 @@
         ψ = randommps(2, 10, 1)
         U = randombwcircuit(2, 10, 5)
         ϕ = randommps(2, 10, 1)
-        ψ′ = applympo(U, ψ)
+        ϕ′ = deepcopy(ϕ)
+        ψ′ = applygates(U, ψ)
         ol1 = inner(ϕ, ψ′)
         projU = ProjMPSCircuit(ϕ, U, ψ)
         ol2s = []
         for i = 2:5
             movecenter!(projU, i)
-            ol2 = inner(TeNe.topblock(projU, i-1), TeNe.bottomblock(projU, i))
+            ol2 = inner(conj(TeNe.topblock(projU, i-1)), TeNe.bottomblock(projU, i))
             push!(ol2s, ol2)
         end
         println(ol1)

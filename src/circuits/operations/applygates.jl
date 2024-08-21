@@ -50,6 +50,7 @@ function applygates!(circuit::Circuit, ψ::Union{TensorNetworkVector, TensorNetw
 end
 
 ### Applying gates and making a copy
+export applygates
 function applygates(
     circuit::Union{Circuit, CircuitLayer},
     ψ::Union{TensorNetworkVector, TensorNetworkOperator};
@@ -62,7 +63,7 @@ function applygates(
 end
 
 function applygates(
-    ψ::Union{TensorNetworkVector, TensorNetworkOperator}.
+    ψ::Union{TensorNetworkVector, TensorNetworkOperator},
     circuit::Union{Circuit, CircuitLayer};
     kwargs...
     )

@@ -37,7 +37,7 @@ function ProjMPSCircuit(ϕ::MPS, circuit::Circuit, ψ::MPS; cutoff::Float64=1e-1
     bottoms = MPS[MPS(dim(ψ), length(ψ)) for _ = 1:depth(circuit)]
 
     projU = ProjMPSCircuit(
-        ϕ, circuit, ψ, λ, _promote_tensor_eltype(ϕ, circuit, ψ, λ),
+        conj(ϕ), circuit, ψ, λ, _promote_tensor_eltype(ϕ, circuit, ψ, λ),
         tops, bottoms, 0, cutoff, maxdim,
         AbstractArray[], AbstractArray[], 0
     )
@@ -252,6 +252,6 @@ function _movecenter_depth!(projU::ProjMPSCircuit, idx::Int)
     projU.depth_center = idx
 
     # Reset the width 
-    _create_blocks!(projU)
-    projU.width_center = 0
+    #_create_blocks!(projU)
+    #projU.width_center = 0
 end
