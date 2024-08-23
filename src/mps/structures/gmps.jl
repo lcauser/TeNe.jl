@@ -543,4 +543,3 @@ end
 TeNe.normalize!(ψ::GMPSTrait) = normalize!(ψ.MPS)
 truncate!(ψ::GMPSTrait; kwargs...) = truncate!(ψ.MPS; kwargs...)
 expand!(ψ::GMPSTrait, bonddim::Int, noise=0.0) = expand!(ψ.MPS, bonddim, noise)
-movecenter!(ψ::GMPSTrait, site::Int) = movecenter!(ψ.MPS, site)

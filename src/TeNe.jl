@@ -115,4 +115,7 @@ include("circuits/operations/applygates.jl")
 # MPS 
 include("mps/optimisers/mpsoptimiser.jl")
 include("mps/optimisers/dmrg.jl")
+
+# Circuits 
+include("circuits/optimisers/stateoptimiser.jl")
 end

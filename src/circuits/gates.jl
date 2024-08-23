@@ -74,6 +74,7 @@ end
 ### Making random unitaries 
 
 function _unitary_close_to_id(d::Int, N::Int, ϵ::Number=1e-1)
+    ### Change to e^{-iϵH}?
     # identity
     id = LinearAlgebra.diagm(ones(ComplexF64, d))
     H = ones(ComplexF64, )
