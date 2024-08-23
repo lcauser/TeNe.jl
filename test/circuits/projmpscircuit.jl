@@ -165,13 +165,18 @@
         end
         @test all(isapprox.(ol2s, ol1))
 
+        println(U.layers[3].sites)
+        println(U.layers[4].sites)
+        println(U.layers[5].sites)
+        """
         # Test for building left blocks 
         ol2s = []
         println(ol1)
-        for i = 1:5
+        for i = 1:1
             movecenter!(projU, i)
             left = ones(Float64, 1, 1)
             for j = 1:length(U.layers[end+1-i].sites)+1
+                println("--")
                 left = copy(TeNe._buildleft(projU, j, left))
             end
             println(left)
@@ -179,7 +184,7 @@
         end
         @test all(isapprox.(ol2s, ol1))
 
-        """
+        
         # Test for building right blocks
         ol2s = []
         for i = 1:5

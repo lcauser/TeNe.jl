@@ -148,7 +148,7 @@ function _buildleft(projU::ProjMPSCircuit, idx::Int, left)
     bottom_mps = bottomblock(projU, projU.depth_center+1)
     layer = getlayer(projU, projU.depth_center)
     finalidx = idx <= length(layer.sites) ? layer.sites[idx][begin]-1 : length(projU.ψ)
-
+    
     # Contract in the previous gate 
     if idx != 1
         # Fetch the previous gate 
@@ -167,7 +167,7 @@ function _buildleft(projU::ProjMPSCircuit, idx::Int, left)
                 left = contract(left,  bottom_mps[site], (ndims(left)-2, ndims(left)-1), (1, 2))
             end
         end
-
+        
         # Contract with gate 
         cis = Base.OneTo(ndims(tensor(gate_prev)))
         left = contract(left, tensor(gate_prev), cis, cis)
@@ -180,7 +180,7 @@ function _buildleft(projU::ProjMPSCircuit, idx::Int, left)
 
     # Contract the next sites leading up to the final site 
     for site = Base.range(startidx, finalidx)
-        left = contract(left, top_mps[site], ndims(left)-1, 1, false, true)
+        left = contract(left, top_mps[site], 1, 1, false, true)
         left = contract(left, bottom_mps[site], (1, 2), (1, 2))
     end
     return left
