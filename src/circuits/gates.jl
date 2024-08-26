@@ -29,6 +29,7 @@ export tensor, dim, qubits
 tensor(gate::CircuitGate) = gate.gate
 dim(::CircuitGate{d}) where {d} = d 
 Base.length(::CircuitGate{d, n}) where {d, n} = n
+Base.eltype(gate::CircuitGate) = eltype(gate.gate)
 
 
 # Manipulations of gates
@@ -109,6 +110,7 @@ end
 
 ### Making random unitaries 
 function _unitary_close_to_id(d::Int, N::Int, ϵ::Number=1e-1)
+    ### Change to e^{-iϵH}?
     # identity
     id = LinearAlgebra.diagm(ones(ComplexF64, d))
     H = ones(ComplexF64, )

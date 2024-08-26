@@ -42,5 +42,9 @@ end
 @testset "Circuits" begin 
     include("circuits/qubitgates.jl")
     include("circuits/gates.jl")
+    include("circuits/circuitlayers.jl")
+    include("circuits/circuits.jl")
+    include("circuits/projmpscircuit.jl")
+    include("circuits/stateoptimiser.jl")
     include("circuits/trotterization.jl")
 end
