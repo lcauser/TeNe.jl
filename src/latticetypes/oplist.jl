@@ -173,27 +173,33 @@ end
 ### Conversions to actual operators
 export totensor
 """
-    totensor(ops::OpList,  idx::Int)
+    totensor(ops::OpList, idx::Int, [paddingleft::Int, paddingright::Int]; kwargs...)
 
 Construct the tensor from an operator in an OpList.
+Use `paddingleft` and `paddingright` to add identity paddings to either side. 
+
+# Optional Keyword Arguments 
+
+    - `tocache::Bool=false`: Store the result in the cache?
 """
-function totensor(ops::OpList,  idx::Int)
+function totensor(ops::OpList, idx::Int, paddingleft::Int=0, paddingright::Int=0; tocache::Bool=false)
     # Fetch the relevent information
     opers = ops.ops[idx]
     sites = ops.sites[idx]
-    rng = min(siterange(ops), ops.length - sites[1] + 1)
+    #rng = min(siterange(ops), ops.length - sites[1] + 1)
+    rng = sites[end] - sites[begin] + 1
 
     # Create the tensor through a tensor product
     prod = ones(eltype(ops.lt), )
     i = 1
-    for site = 1:rng
-        if sites[1]+site-1 in sites
+    for site = Base.range(1-paddingleft, rng+paddingright)
+        if i <= sites[end] && site > 0 && site <= rng && (sites[i] == sites[1] + site - 1)
             oper = opers[i]
             i += 1
         else
             oper = "id"
         end
-        prod = tensorproduct(prod, op(ops.lt, oper); tocache = site==rng)
+        prod = tensorproduct(prod, op(ops.lt, oper); tocache = site==rng+paddingright ? tocache : true)
     end
     return ops.coeffs[idx]*prod
 end

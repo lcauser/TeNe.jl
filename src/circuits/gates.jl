@@ -31,6 +31,42 @@ dim(::CircuitGate{d}) where {d} = d
 Base.length(::CircuitGate{d, n}) where {d, n} = n
 Base.eltype(gate::CircuitGate) = eltype(gate.gate)
 
+
+# Manipulations of gates
+"""
+    TeNe.conj(gate::CircuitGate)
+
+Find the complex conjugate of a gate.
+"""
+function TeNe.conj(gate::CircuitGate)
+    return CircuitGate{dim(gate), length(gate), typeof(gate.gate)}(conj(gate.gate))
+end
+
+
+"""
+    TeNe.adjoint(gate::CircuitGate)
+
+Find the adjoint of a gate.
+"""
+function TeNe.adjoint(gate::CircuitGate)
+    idxs = map(j->isodd(j) ? j+1 : j-1, Base.OneTo(ndims(gate.gate)))
+    new_gate = conj.(permutedims(gate.gate, idxs))
+    return CircuitGate{dim(gate), length(gate), typeof(gate.gate)}(new_gate)
+end
+
+
+"""
+    TeNe.transpose(gate::CircuitGate)
+
+Find the transpose of a gate.
+"""
+function TeNe.transpose(gate::CircuitGate)
+    idxs = map(j->isodd(j) ? j+1 : j-1, Base.OneTo(ndims(gate.gate)))
+    new_gate = permutedims(gate.gate, idxs)
+    return CircuitGate{dim(gate), length(gate), typeof(gate.gate)}(new_gate)
+end
+
+
 # Polar decomposition 
 """
     makeunitary!(gate::CircuitGate)
@@ -46,7 +82,8 @@ julia> makeunitary!(U)
 ```
 """
 function makeunitary!(gate::CircuitGate)
-    U, _, V = tsvd(tensor(gate), Base.range(2, 2*length(gate), step=2))
+    dims = Base.range(2, 2*length(gate), step=2)
+    U, _, V = tsvd(tensor(gate), dims; mindim=prod(map(j->size(tensor(gate), j), dims)))
     ten = contract(U, V, ndims(U), 1)
     permutedims!(tensor(gate), ten, map(j->isodd(j) ? cld(j, 2) : length(gate)+fld(j, 2), Base.OneTo(2*length(gate))))
 end
@@ -72,7 +109,6 @@ end
 
 
 ### Making random unitaries 
-
 function _unitary_close_to_id(d::Int, N::Int, ϵ::Number=1e-1)
     ### Change to e^{-iϵH}?
     # identity

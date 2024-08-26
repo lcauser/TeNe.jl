@@ -110,6 +110,7 @@ include("mps/operations/creatempo.jl")
 # Circuits 
 include("circuits/operations/applygate.jl")
 include("circuits/operations/applygates.jl")
+include("circuits/operations/trotterization.jl")
 
 ### Optmisation methods 
 # MPS 
