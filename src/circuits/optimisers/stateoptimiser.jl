@@ -6,9 +6,9 @@
 
 mutable struct StateOptimiser
     # Tensor networks to store 
-    ψ::MPS # Target state 
+    ϕ::MPS # Target state 
     circuit::Circuit
-    ϕ::MPS # Initial state 
+    ψ::MPS # Initial state 
     proj::ProjMPSCircuit
 
     # Update properties 

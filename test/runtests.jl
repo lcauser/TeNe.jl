@@ -44,4 +44,6 @@ end
     include("circuits/gates.jl")
     include("circuits/circuitlayers.jl")
     include("circuits/circuits.jl")
+    include("circuits/projmpscircuit.jl")
+    include("circuits/stateoptimiser.jl")
 end

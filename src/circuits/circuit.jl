@@ -79,3 +79,33 @@ function randombwcircuit(d::Int, N::Int, depth::Int, width::Int=2;
 
     return circuit
 end
+
+# Staircase circuit 
+export randomstaircasecircuit
+
+"""
+    randomstaircasecircuit(d::Int, N::Int, depth::Int, width::Int=2; kwargs...)
+
+Create a staircase circuit composed of random unitary gates for a lattice
+with physical dimension `d` and length `N`. The circuit has `depth` layers, and the gates
+span `width` qubits.
+
+# Optional Keyword Arguments
+    - `ϵ::Number=0.01`: Random gates are generated as gates close to identity; the ϵ 
+       is a paramater that controls how close to identity they are.
+       - `connector::CircuitConnectivity=CircuitMPS()`: Add a circuit connector of choice.
+       Default is CircuitMPS.
+"""
+function randomstaircasecircuit(d::Int, N::Int, depth::Int, width::Int=2;
+    ϵ::Number=0.01,
+    connector::CircuitConnectivity=CircuitMPS()
+)
+    circuit = Circuit(d, N, connector)
+    for m = Base.OneTo(depth)
+        for j = Base.OneTo(N+1-width)
+            add!(circuit, _unitary_close_to_id(d, width, ϵ), collect(Base.range(j, j+width-1)))
+        end
+    end
+
+    return circuit
+end
