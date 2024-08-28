@@ -6,7 +6,7 @@
 ### Unsafe QR 
 function _qr(x, dims; enforce_positive=false)
     # Permute and reshape 
-    y = _svd_reshape(x, dims)
+    y, sinners, souters = _svd_reshape(x, dims)
 
     # Do the QR using LinearAlgebra 
     Q, R = LinearAlgebra.qr(y)
