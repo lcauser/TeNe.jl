@@ -9,6 +9,8 @@ abstract type MPSUpdate end
 abstract type MPSObjective end
 abstract type MPSObserver end
 
+export MPSObserver, measure!
+
 mutable struct MPSOptimiser
     # Tensor networks to store 
     ψ::MPS
@@ -179,13 +181,51 @@ function update(::MPSUpdate, ::MPSOptimiser, A)
     return A
 end
 
+# A void updater 
+struct MPSUpdateVoid <: MPSUpdate end
+
 ### MPS Objective 
 function measure(::MPSObjective, ::MPSOptimiser)
     return 0.0
 end
 Base.eltype(::MPSObjective) = Number
 
+# A void objective 
+struct MPSObjectiveVoid <: MPSObjective end
+
 ### MPS Observer 
 function measure(::MPSObserver, ::MPSOptimiser)
     nothing
+end
+
+
+### Observers 
+# Taking measurements from operator lists
+mutable struct MPSObserverOpList <: MPSObserver
+    O::OpList 
+    measurements::Vector{<:AbstractArray}
+end
+export MPSObserverOpList
+
+function MPSObserver(O::OpList)
+    return MPSObserverOpList(O, Vector{eltype(O)}[])
+end
+
+function measure!(obs::MPSObserverOpList, ψ::MPS)
+    push!(obs.measurements, inner(ψ, obs.O, ψ))
+end
+
+# Taking measurements from an MPO 
+mutable struct MPSObserverMPO <: MPSObserver
+    O::MPO 
+    measurements::Vector{<:Number}
+end
+export MPSObserverMPO
+
+function MPSObserver(O::MPO)
+    return MPSObserverMPO(O, Number[])
+end
+
+function measure!(obs::MPSObserverMPO, ψ::MPS)
+    push!(obs.measurements, inner(ψ, obs.O, ψ))
 end
