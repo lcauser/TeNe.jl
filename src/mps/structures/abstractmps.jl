@@ -16,13 +16,13 @@ export issimilar
 
 # Traits for GMPS
 abstract type GMPSTrait <: AbstractMPS end
-Base.eltype(ψ::GMPSTrait) = Base.eltype(ψ.MPS)
+Base.eltype(ψ::GMPSTrait) = eltype(ψ.MPS)
 Base.length(ψ::GMPSTrait) = length(ψ.MPS)
 Base.getindex(ψ::GMPSTrait, i::Int) = ψ.MPS[i]
-Base.firstindex(ψ::GMPSTrait) = Base.firstindex(ψ.MPS)
-Base.lastindex(ψ::GMPSTrait) = Base.lastindex(ψ.MPS)
-Base.eachindex(ψ::GMPSTrait) = Base.eachindex(ψ.MPS)
-Base.setindex!(ψ::GMPSTrait, x, i::Int) = Base.setindex!(ψ.MPS, x, i)
+Base.firstindex(ψ::GMPSTrait) = firstindex(ψ.MPS)
+Base.lastindex(ψ::GMPSTrait) = lastindex(ψ.MPS)
+Base.eachindex(ψ::GMPSTrait) = eachindex(ψ.MPS)
+Base.setindex!(ψ::GMPSTrait, x, i::Int) = setindex!(ψ.MPS, x, i)
 dim(ψ::GMPSTrait) = dim(ψ.MPS)
 dim(ψ::GMPSTrait, i...) = dim(ψ.MPS, i...)
 dims(ψ::GMPSTrait, i::Int) = dims(ψ.MPS, i::Int)

@@ -43,8 +43,32 @@ function applygates!(ψ::Union{StateVector, StateOperator}, layer::CircuitLayer;
 end
 
 ### Multiplying by a circuit 
-function applygates!(circuit::Circuit, ψ::Union{TensorNetworkState, TensorNetworkOperator}; kwargs...)
+function applygates!(circuit::Circuit, ψ::Union{TensorNetworkVector, TensorNetworkOperator}; kwargs...)
     for m in eachindex(circuit.layers)
         applygates!(circuit.layers[m], ψ; kwargs...)
     end
+end
+
+### Applying gates and making a copy
+export applygates
+function applygates(
+    circuit::Union{Circuit, CircuitLayer},
+    ψ::Union{TensorNetworkVector, TensorNetworkOperator};
+    kwargs...
+    )
+    # Create a copy
+    ψ′ = deepcopy(ψ)
+    applygates!(circuit, ψ′; kwargs...)
+    return ψ′
+end
+
+function applygates(
+    ψ::Union{TensorNetworkVector, TensorNetworkOperator},
+    circuit::Union{Circuit, CircuitLayer};
+    kwargs...
+    )
+    # Create a copy
+    ψ′ = deepcopy(ψ)
+    applygates!(ψ′, circuit; kwargs...)
+    return ψ′
 end

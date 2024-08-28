@@ -148,3 +148,22 @@ end
     applygate!(ψ, U, 7)
     @test isapprox(ψ*ψ′, 1)
 end
+
+@testset "gate-manipulations" begin
+    # Test conjugate 
+    U = makeunitary(creategate(randn(ComplexF64, 2, 2, 2, 2)))
+    U2 = conj(U)
+    @test isapprox(conj(U.gate), U2.gate)
+
+    # Test transpose 
+    U = makeunitary(creategate(randn(ComplexF64, 2, 2, 2, 2)))
+    U2 = transpose(U)
+    @test isapprox(permutedims(U.gate, (2, 1, 4, 3)), U2.gate)
+
+    # Test adjoint 
+    U = makeunitary(creategate(randn(ComplexF64, 2, 2, 2, 2)))
+    U2 = adjoint(U)
+    U3 = conj(transpose(U))
+    @test isapprox(conj(permutedims(U.gate, (2, 1, 4, 3))), U2.gate)
+    @test isapprox(U3.gate, U2.gate)
+end

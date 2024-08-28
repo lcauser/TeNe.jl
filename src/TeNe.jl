@@ -92,6 +92,8 @@ include("mps/projections/projmps.jl")
 include("mps/projections/projmpssquared.jl")
 #include("mps/projections/projmpsprojector.jl") # Disabled for now due to unknown bug
 
+# Circuits 
+include("circuits/projections/projmpscircuit.jl")
 ### Tensor Network Operations 
 # State Tensors 
 include("statetensors/operations/applyso.jl")
@@ -115,4 +117,7 @@ include("circuits/operations/trotterization.jl")
 include("mps/optimisers/mpsoptimiser.jl")
 include("mps/optimisers/dmrg.jl")
 include("mps/optimisers/tebd.jl")
+
+# Circuits 
+include("circuits/optimisers/stateoptimiser.jl")
 end
