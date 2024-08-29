@@ -8,7 +8,6 @@ mutable struct Circuit{d}
     layers::Vector{CircuitLayer}
     con::CircuitConnectivity
 end
-Circuit(d::Int, N::Int) = Circuit{d}(N, CircuitLayer[])
 
 export Circuit
 Base.length(circuit::Circuit) = circuit.N 

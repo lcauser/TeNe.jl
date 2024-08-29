@@ -15,7 +15,8 @@ mutable struct StateOptimiser
     sweeps::Int
     tol::Float64
     dir::Bool
-    verbose::Int
+    verbose::Int 
+    costs::Vector{Float64}
 end
 
 export StateOptimiser
@@ -43,7 +44,7 @@ function StateOptimiser(
     verbose::Int=1
 )   
     proj = ProjMPSCircuit(ϕ, circuit, ψ; cutoff=cutoff, maxdim=maxdim)
-    optim = StateOptimiser(ϕ, circuit, ψ, proj, 0, tol, false, verbose)
+    optim = StateOptimiser(ϕ, circuit, ψ, proj, 0, tol, false, verbose, Float64[abs(product(proj))^2])
     sweep!(optim, maxsweeps; minsweeps=minsweeps)
     return optim
 end
@@ -55,7 +56,6 @@ function sweep!(optim::StateOptimiser, sweeps::Int=0; minsweeps::Int=1)
 
     # Sweep through 
     iters = 0
-    lastcost = product(proj)
     while true
         # Fetch the rows to sweep through
         rows = Base.range(firstindex(circuit.layers), lastindex(circuit.layers))
@@ -83,7 +83,8 @@ function sweep!(optim::StateOptimiser, sweeps::Int=0; minsweeps::Int=1)
         end
 
         # Check convergence
-        cost = product(proj)
+        cost = abs(product(proj))^2
+        push!(optim.costs, cost)
         iters += 1
         optim.sweeps += 1
 
@@ -95,10 +96,10 @@ function sweep!(optim::StateOptimiser, sweeps::Int=0; minsweeps::Int=1)
             if sweeps > 0 && iters >= sweeps
                 break
             end
+            lastcost = optim.costs[end-1]
             if 2*abs(cost - lastcost) / abs(cost + lastcost) < optim.tol
                 break
             end
         end
-        lastcost = cost
     end
 end
