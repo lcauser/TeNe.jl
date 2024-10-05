@@ -44,7 +44,8 @@ function update(updater::MPSUpdateTDVP, optim::MPSOptimiser, A)
     # Backwards evolution of center 
     if optim.nsites == 1
         if optim.dir == false
-        U, S, V = tsvd()
+        #U, S, V = tsvd()
+        end
     end
 
     return Anew
