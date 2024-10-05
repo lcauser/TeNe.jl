@@ -2,3 +2,4 @@
 .VSCodeCounter/
 docs/build/
 .vscode/settings.json
+*.cov
