@@ -38,13 +38,11 @@ jobs:
 
       - name: Store benchmark result
         uses: benchmark-action/github-action-benchmark@v1
-        if: github.event_name != 'pull_request'
         with:
           name: Julia benchmark result
           tool: 'julia'
           output-file-path: output.json
-          auto-push: false
-          # Show alert with commit comment on detecting possible performance regression
+          auto-push: true
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           alert-threshold: '120%'
           comment-on-alert: true
-          fail-on-alert: true
