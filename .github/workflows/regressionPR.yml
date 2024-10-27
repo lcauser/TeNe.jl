@@ -38,7 +38,6 @@ jobs:
 
       - name: Store benchmark result
         uses: benchmark-action/github-action-benchmark@v1
-        if: github.event_name != 'pull_request'
         with:
           name: Julia benchmark result
           tool: 'julia'
