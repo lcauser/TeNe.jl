@@ -5,7 +5,7 @@ include("benchmarks/stateoptimiser.jl")
 
 suite = BenchmarkGroup()
 suite["dmrg"] = @benchmarkable benchmark_dmrg()
-suite["state_optimiser"] = @benchmarkable benchmark_dmrg()
+suite["state_optimiser"] = @benchmarkable state_optimiser()
 
 tune!(suite)
 results = run(suite, verbose = true)
