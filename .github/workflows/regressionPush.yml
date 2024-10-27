@@ -3,9 +3,6 @@ on:
   push:
     branches:
       - main
-  pull_request:
-    branches:
-      - main
 
 permissions:
   contents: write
@@ -54,7 +51,7 @@ jobs:
         with:
           name: Julia benchmark result
           tool: 'julia'
-          output-file-path: examples/julia/output.json
+          output-file-path: output.json
           # Use personal access token instead of GITHUB_TOKEN due to https://github.community/t/github-action-not-triggering-gh-pages-upon-push/16096
           github-token: ${{ secrets.GITHUB_TOKEN }}
           auto-push: true
