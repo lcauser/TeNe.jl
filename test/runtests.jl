@@ -2,49 +2,56 @@ using TeNe
 using LinearAlgebra
 using Test
 
-# Tensors 
-@testset "Tensors" begin
-    include("tensors/contract.jl")
-    include("tensors/tensorproduct.jl")
-    include("tensors/trace.jl")
-    include("tensors/permutedim.jl")
-    include("tensors/combinedims.jl")
-    include("tensors/exp.jl")
-    include("tensors/svd.jl")
+### Unit tests: 
+@testset "Unit Tests" begin
+    # Tensors 
+    @testset "Tensors" begin
+        include("unit/tensors/contract.jl")
+        include("unit/tensors/tensorproduct.jl")
+        include("unit/tensors/trace.jl")
+        include("unit/tensors/permutedim.jl")
+        include("unit/tensors/combinedims.jl")
+        include("unit/tensors/exp.jl")
+        include("unit/tensors/svd.jl")
+    end
+
+    # Lattice types
+    @testset "Lattice Types" begin 
+        include("unit/latticetypes/qubits.jl")
+        #include("unit/latticetypes/oplist.jl")
+    end
+
+    # State vectors 
+    @testset "State vectors" begin 
+        include("unit/statetensors/structures/stateoperator.jl")
+        include("unit/statetensors/operations/applyso.jl")
+        include("unit/statetensors/operations/inner.jl")
+        include("unit/statetensors/operations/trace.jl")
+    end
+
+    # MPS 
+    @testset "MPS" begin 
+        include("unit/mps/structures/gmps.jl")
+        include("unit/mps/operations/applympo.jl")
+        include("unit/mps/operations/inner.jl")
+        include("unit/mps/operations/trace.jl")
+        include("unit/mps/operations/creatempo.jl")
+        include("unit/mps/projections/projmps.jl")
+    end
+
+    # Circuits 
+    @testset "Circuits" begin 
+        include("unit/circuits/qubitgates.jl")
+        include("unit/circuits/gates.jl")
+        include("unit/circuits/circuitlayers.jl")
+        include("unit/circuits/circuits.jl")
+        include("unit/circuits/projections/projmpscircuit.jl")
+        include("unit/circuits/operations/trotterization.jl")
+    end
 end
 
-# Lattice types
-@testset "Lattice Types" begin 
-    include("latticetypes/qubits.jl")
-    #include("latticetypes/oplist.jl")
-end
-
-# State vectors 
-@testset "State vectors" begin 
-    include("statetensors/stateoperator.jl")
-    include("statetensors/applyso.jl")
-    include("statetensors/inner.jl")
-    include("statetensors/trace.jl")
-end
-
-# MPS 
-@testset "MPS" begin 
-    include("mps/gmps.jl")
-    include("mps/applympo.jl")
-    include("mps/inner.jl")
-    include("mps/trace.jl")
-    include("mps/creatempo.jl")
-    include("mps/projmps.jl")
-    include("mps/dmrg.jl")
-end
-
-# Circuits 
-@testset "Circuits" begin 
-    include("circuits/qubitgates.jl")
-    include("circuits/gates.jl")
-    include("circuits/circuitlayers.jl")
-    include("circuits/circuits.jl")
-    include("circuits/projmpscircuit.jl")
-    include("circuits/stateoptimiser.jl")
-    include("circuits/trotterization.jl")
+### End-to-end testing
+@testset "End-to-end" begin 
+    include("end-to-end/mps/dmrg.jl")
+    include("end-to-end/mps/stateoptimiser.jl")
 end
