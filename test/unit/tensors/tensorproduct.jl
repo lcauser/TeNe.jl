@@ -11,6 +11,9 @@
         end
     end
     @test isapprox(C, D)
+    E = zeros(ComplexF64, 5, 3)
+    tensorproduct!(E, A, B)
+    @test isapprox(E, D)
 
     # Matrices
     A = randn(ComplexF64, 5, 6)

@@ -72,7 +72,6 @@ function tensorproduct(x, y, conjx::Bool=false, conjy::Bool=false;
     _tensorproduct_check_args(x, y)
 
     # Create the tensor to store the result 
-    t = Base.promote_op(*, eltype(x), eltype(y))
     dims = (size(x)...,  size(y)...)
     if tocache
         z = cache(dims, x, y; level=2, sublevel=sublevel)
@@ -107,7 +106,7 @@ function _tensorproduct_check_result(z, x, y)
     #if typeof(get_backend(x)) != typeof(get_backend(y) != typeof(get_backend(z)))
     #    throw(ArgumentError("Tensors are stored on different backends."))
     #end
-    if size(z) != (size(x)..., size(y))
+    if size(z) != (size(x)..., size(y)...)
         throw(ArgumentError("Destination tensor has the wrong dimensions."))
     end
 end
