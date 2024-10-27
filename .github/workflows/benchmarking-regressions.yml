@@ -1,4 +1,4 @@
-name: Julia Example with BenchmarkTools.jl
+name: Performance Regression Tests
 on:
   push:
     branches:
@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   benchmark:
-    name: Run julia benchmark example
+    name: Run benchmarks
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -43,7 +43,6 @@ jobs:
             ${{ runner.os }}-
       - name: Run benchmark
         run: |
-          cd examples/julia
           julia --project --color=yes -e '
             using Pkg;
             Pkg.instantiate();
