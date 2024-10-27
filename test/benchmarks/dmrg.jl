@@ -1,6 +1,6 @@
 function benchmark_dmrg()
     # Parameters for check 
-    N = 20
+    N = 100
     J = 0.9
     h = 1.0
 
