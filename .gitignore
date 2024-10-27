@@ -3,3 +3,4 @@
 docs/build/
 .vscode/settings.json
 *.cov
+output.json
