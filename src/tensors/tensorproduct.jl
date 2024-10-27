@@ -72,7 +72,6 @@ function tensorproduct(x, y, conjx::Bool=false, conjy::Bool=false;
     _tensorproduct_check_args(x, y)
 
     # Create the tensor to store the result 
-    t = Base.promote_op(*, eltype(x), eltype(y))
     dims = (size(x)...,  size(y)...)
     if tocache
         z = cache(dims, x, y; level=2, sublevel=sublevel)
