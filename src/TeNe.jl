@@ -46,6 +46,7 @@ include("tensors/svd.jl")
 include("latticetypes/latticetype.jl")
 include("latticetypes/qubits.jl")
 include("latticetypes/oplist.jl")
+include("latticetypes/bosons.jl")
 
 ### Tensor network states
 # State Tensors

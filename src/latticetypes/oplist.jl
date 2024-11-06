@@ -209,6 +209,8 @@ export sitetensor
     sitetensor(ops::OpList, idx::Int)
 
 Return the tensor for all operators starting at a site.
+
+# TODO: NEEDS FIXING.
 """
 function sitetensor(ops::OpList,  idx::Int)
     # Validate the idx
