@@ -44,6 +44,7 @@ include("tensors/svd.jl")
 
 ### LatticeTypes 
 include("latticetypes/latticetype.jl")
+include("latticetypes/liouvillewrapper.jl")
 include("latticetypes/qubits.jl")
 include("latticetypes/oplist.jl")
 include("latticetypes/bosons.jl")
