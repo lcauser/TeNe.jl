@@ -18,6 +18,7 @@ using Test
     # Lattice types
     @testset "Lattice Types" begin 
         include("unit/latticetypes/oplist.jl")
+        include("unit/latticetypes/liouvillewrapper.jl")
         include("unit/latticetypes/qubits.jl")
         include("unit/latticetypes/bosons.jl")
     end

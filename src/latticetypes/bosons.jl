@@ -7,6 +7,14 @@ export Bosons
     Bosons(dim::int)
 
 Create a lattice of truncated bosonic modes with maximum dimension `dim`.
+
+```jldoctest
+julia> bosons = Bosons(3)
+Lattice Type
+Dimension: 3
+States: ["0", "1", "2"]
+Operators: ["id", "n", "a", "adag"]
+```
 """
 function Bosons(dim::Int)
     # Create the sitetype
