@@ -7,9 +7,12 @@
             st = state(lt, name)
             @test state(lt2, name) == kron(st, st)
         end
-        for name in lt.opnames
-            oper = op(lt, name)
-            @test op(lt2, name) == kron(oper, transpose(oper))
+        for name1 in lt.opnames
+            for name2 in lt.opnames
+                oper1 = op(lt, name1)
+                oper2 = op(lt, name2)
+                @test op(lt2, name1*"_"*name2) == kron(oper1, transpose(oper2))
+            end
         end
     end
 end
