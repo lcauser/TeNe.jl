@@ -38,9 +38,11 @@ function LiouvilleWrapper(lt::LatticeTypes)
     end
 
     # Kronecker product of all operators 
-    for name in lt.opnames 
-        oper = kron(op(lt, name), transpose(op(lt, name)))
-        add!(new_lt, name, oper)
+    for name1 in lt.opnames 
+        for name2 in lt.opnames
+            oper = kron(op(lt, name1), transpose(op(lt, name2)))
+            add!(new_lt, name1*"_"*name2, oper)
+        end
     end
 
     return new_lt
