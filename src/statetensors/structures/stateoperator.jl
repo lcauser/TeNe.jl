@@ -163,22 +163,7 @@ julia> H = StateOperator(H);
 ```
 """
 function StateOperator(ops::OpList)
-    O = StateOperator(dim(ops.lt), ops.length; T=eltype(ops.lt))
-    for i in eachindex(ops.ops)
-        ten = ones(eltype(ops.lt), )
-        k = 1
-        for j = Base.OneTo(length(O))
-            if k <= length(ops.sites[i]) && ops.sites[i][k] == j
-                oper = ops.ops[i][k]
-                k += 1
-            else
-                oper = "id"
-            end
-            ten = tensorproduct(ten, op(ops.lt, oper))
-        end
-        tensor(O) .+= ten
-    end
-    return O
+    return GStateTensor(2, totensor(ops))
 end
 
 
