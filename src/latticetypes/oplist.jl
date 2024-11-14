@@ -204,6 +204,31 @@ function totensor(ops::OpList, idx::Int, paddingleft::Int=0, paddingright::Int=0
     return ops.coeffs[idx]*prod
 end
 
+
+"""
+    totensor(ops::OpList)
+
+Construct the tensor from an OpList.
+"""
+function totensor(ops::OpList)
+    O = zeros(Base.eltype(ops), [dim(ops.lt) for _ = Base.OneTo(2*ops.length)]...)
+    for i in eachindex(ops.ops)
+        ten = ones(eltype(ops.lt), )
+        k = 1
+        for j = Base.OneTo(ops.length)
+            if k <= length(ops.sites[i]) && ops.sites[i][k] == j
+                oper = ops.ops[i][k]
+                k += 1
+            else
+                oper = "id"
+            end
+            ten = tensorproduct(ten, op(ops.lt, oper))
+        end
+        O .+= ops.coeffs[i]*ten
+    end
+    return O
+end
+
 export sitetensor
 """
     sitetensor(ops::OpList, idx::Int)

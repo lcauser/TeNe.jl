@@ -44,6 +44,7 @@ function Bosons(dim::Int)
     end
     add!(lt, "a", a)
     add!(lt, "adag", adag)
+    add!(lt, "n2", adag*adag*a*a)
 
     return lt
 end
