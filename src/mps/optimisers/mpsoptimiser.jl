@@ -40,20 +40,51 @@ export MPSOptimiser
 
 ### Iniating an MPS optimiser 
 """
-    MPSOptimiser(ψ::MPS, projψs::Vector{<:MPSProjection}, update::MPSUpdate,
-        objective::MPSObjective, [observers::Vector{<:MPSObserver}])
+    function MPSOptimiser(
+        ψ::Union{GMPS, MPS, MPO},
+        projψs::Vector{<:MPSProjection},
+        update::MPSUpdate,
+        objective::MPSObjective,
+        observers::Vector{<:MPSObserver}=MPSObserver[];
+    )
 
 Create an optimiser for an MPS `ψ` with the projections `projψs` used in the optimisation.
 The `update` defines the type of local update done for the MPS, and the `objective` is the
 objective function.
 """
-function MPSOptimiser(ψ::MPS, projψs::Vector{<:MPSProjection}, update::MPSUpdate,
-    objective::MPSObjective, observers::Vector{<:MPSObserver}=MPSObserver[];
-    normalize::Bool=true, relativecheck::Bool=true, verbose::Bool=true, tol::Float64=1e-6,
-    nsites::Int=2, cutoff::Float64=_TeNe_cutoff, mindim::Int=0, maxdim::Int=0)
-    
-    optim = MPSOptimiser(ψ, projψs, update, false, 0, normalize, nsites, cutoff, mindim,
-        maxdim, tol, objective, eltype(objective)[], relativecheck, verbose, observers)
+function MPSOptimiser(
+    ψ::Union{GMPS, MPS, MPO},
+    projψs::Vector{<:MPSProjection},
+    update::MPSUpdate,
+    objective::MPSObjective,
+    observers::Vector{<:MPSObserver}=MPSObserver[];
+    normalize::Bool=true,
+    relativecheck::Bool=true,
+    verbose::Bool=true,
+    tol::Float64=1e-6,
+    nsites::Int=2,
+    cutoff::Float64=_TeNe_cutoff,
+    mindim::Int=0,
+    maxdim::Int=0
+)
+    optim = MPSOptimiser(
+        ψ,
+        projψs,
+        update,
+        false,
+        0,
+        normalize,
+        nsites,
+        cutoff,
+        mindim,
+        maxdim,
+        tol,
+        objective,
+        eltype(objective)[],
+        relativecheck,
+        verbose,
+        observers
+    )
     push!(optim.costs, measure(objective, optim))
     return optim
 end
