@@ -13,7 +13,7 @@ export MPSObserver, measure!
 
 mutable struct MPSOptimiser
     # Tensor networks to store 
-    ψ::MPS
+    ψ::Union{GMPS, MPS, MPO}
     projψs::Vector{<:MPSProjection}
 
     # The update 
