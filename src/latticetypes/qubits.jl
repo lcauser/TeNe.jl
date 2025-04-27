@@ -3,7 +3,7 @@
     of freedom.
 =#
 
-export Qubits 
+export Qubits
 """
     Qubits()
 
@@ -23,9 +23,9 @@ function Qubits()
 
     # Add the ltate
     add!(lt, "up", [1, 0])
-    add!(lt, "dn",[0, 1])
+    add!(lt, "dn", [0, 1])
     add!(lt, "1", [1, 0])
-    add!(lt, "0",[0, 1])
+    add!(lt, "0", [0, 1])
     add!(lt, "+", [0.5^0.5, 0.5^0.5])
     add!(lt, "-", [0.5^0.5, -0.5^0.5])
     add!(lt, "s", [0.5^0.5, 0.5^0.5])

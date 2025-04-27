@@ -20,13 +20,13 @@
     D = uncombinedims(B, key)
     @test isapprox(D, A)
 
-    B, key = combinedims(A, (3, 4); return_copy=true)
+    B, key = combinedims(A, (3, 4); return_copy = true)
     C = reshape(A, (4, 6, 6))
     @test isapprox(B, C)
     D = uncombinedims(B, key)
     @test isapprox(D, A)
 
-    B, key = combinedims(A, (3, 4); return_copy=false)
+    B, key = combinedims(A, (3, 4); return_copy = false)
     C = reshape(A, (4, 6, 6))
     @test isapprox(B, C)
     D = uncombinedims(B, key)

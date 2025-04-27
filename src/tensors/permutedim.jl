@@ -23,14 +23,16 @@ julia> size(x)
 (2, 4, 5, 3)
 ```
 """
-function permutedim(x, i::Int, j::Int; tocache::Bool=true, sublevel=:auto)
+function permutedim(x, i::Int, j::Int; tocache::Bool = true, sublevel = :auto)
     i == j && return copy(x)
-    if j==-1 j=ndims(x) end
+    if j==-1
+        j=ndims(x)
+    end
     _permutedim_checkbounds(x, i, j)
     order = _permutedim_ordering(x, i, j)
     dims = map(k->size(x, k), order)
     if tocache
-        z = cache(dims, x; level=2, sublevel=sublevel)
+        z = cache(dims, x; level = 2, sublevel = sublevel)
     else
         z = promote_tensor(dims, x)
     end
@@ -54,7 +56,9 @@ julia> permutedims!(z, x, 2, 4);
 """
 function permutedim!(z, x, i::Int, j::Int)
     i == j && return nothing
-    if j==-1 j=ndims(x) end
+    if j==-1
+        j=ndims(x)
+    end
     _permutedim_checkbounds(x, i, j)
     order = _permutedim_ordering(x, i, j)
     _permutedim_checkresult(z, x, order)
@@ -68,9 +72,9 @@ function _permutedim_ordering(x, i, j)
     order = collect(1:ndims(x))
     dir = j > i ? 1 : -1
     for k = 1:abs(i-j)
-        temp = order[i + dir*k]
-        order[i + dir*k] = order[i + dir*(k-1)]
-        order[i + dir*(k-1)] = temp
+        temp = order[i+dir*k]
+        order[i+dir*k] = order[i+dir*(k-1)]
+        order[i+dir*(k-1)] = temp
     end
 
     return tuple(order...)
@@ -80,10 +84,18 @@ end
 ### Checks 
 function _permutedim_checkbounds(x, i, j)
     if i < 1 || i > ndims(x)
-        throw(ArgumentError("Dimension $(i) is out of bounds for number of dimensions $(ndims(x))."))
+        throw(
+            ArgumentError(
+                "Dimension $(i) is out of bounds for number of dimensions $(ndims(x)).",
+            ),
+        )
     end
     if j < 1 || j > ndims(x)
-        throw(ArgumentError("Dimension $(j) is out of bounds for number of dimensions $(ndims(x))."))
+        throw(
+            ArgumentError(
+                "Dimension $(j) is out of bounds for number of dimensions $(ndims(x)).",
+            ),
+        )
     end
 end
 
@@ -95,9 +107,9 @@ end
 
 
 ### permutedims(...) with automatic allocation
-function _permutedims(x, order; sublevel=:auto)
+function _permutedims(x, order; sublevel = :auto)
     dims = map(k->size(x, k), order)
-    z = cache(dims, x; level=2, sublevel=sublevel)
+    z = cache(dims, x; level = 2, sublevel = sublevel)
     permutedims!(z, x, order)
     return z
 end

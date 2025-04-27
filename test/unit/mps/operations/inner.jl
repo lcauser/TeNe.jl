@@ -1,4 +1,4 @@
-@testset "mps-inner" begin 
+@testset "mps-inner" begin
     @test begin
         ψ = randommps(3, 21, 7)
         isapprox(ψ*ψ, 1)
@@ -31,7 +31,7 @@
         isapprox(inner(ϕ, adjoint(O), ψ), 0)
     end
 
-    @test begin 
+    @test begin
         lt = Qubits()
         O = productmpo(lt, ["x" for _ = 1:20])
         ψ = productmps(lt, ["up" for _ = 1:20])

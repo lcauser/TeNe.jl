@@ -25,7 +25,7 @@ end
 function _applygate!(U::AbstractGate, ψ::StateVector, sites)
     # Contraction indices
     ris = Tuple(setdiff(Base.OneTo(length(ψ)), sites)) # Remove allocations?
-    uis = Base.range(2, ndims(tensor(U)), step=2)
+    uis = Base.range(2, ndims(tensor(U)), step = 2)
 
     # Do the contraction
     ψ′ = contract(tensor(U), tensor(ψ), uis, sites, isconj(ψ), false)
@@ -35,7 +35,7 @@ end
 function _applygate!(ψ::StateVector, U::AbstractGate, sites)
     # Contraction indices
     ris = Tuple(setdiff(Base.OneTo(length(ψ)), sites)) # Remove allocations?
-    uis = Base.range(1, ndims(tensor(U)), step=2)
+    uis = Base.range(1, ndims(tensor(U)), step = 2)
 
     # Do the contraction
     ψ′ = contract(tensor(U), tensor(ψ), uis, sites, isconj(ψ), false)
@@ -66,7 +66,7 @@ function _applygate!(U::AbstractGate, O::StateOperator, sites)
     # Contraction indices
     Ois = Tuple(map(j->istranspose(O) ? outerind(O, j) : innerind(O, j), sites))
     ris = Tuple(setdiff(Base.OneTo(ndims(tensor(O))), Ois))
-    uis = Base.range(istranspose(O) ? 1 : 2, ndims(tensor(U)), step=2)
+    uis = Base.range(istranspose(O) ? 1 : 2, ndims(tensor(U)), step = 2)
 
     # Do the contraction 
     O′ = contract(tensor(U), tensor(O), uis, Ois, isconj(O), false)
@@ -77,7 +77,7 @@ function _applygate!(O::StateOperator, U::AbstractGate, sites)
     # Contraction indices
     Ois = Tuple(map(j->istranspose(O) ? innerind(O, j) : outerind(O, j), sites))
     ris = Tuple(setdiff(Base.OneTo(ndims(tensor(O))), Ois))
-    uis = Base.range(istranspose(O) ? 2 : 1, ndims(tensor(U)), step=2)
+    uis = Base.range(istranspose(O) ? 2 : 1, ndims(tensor(U)), step = 2)
 
     # Do the contraction 
     O′ = contract(tensor(O), tensor(U), Ois, uis, false, isconj(O))
@@ -94,23 +94,40 @@ Apply a circuit gate `U` to an MPS `ψ`. The bool `rev` specifies the sweeping d
 the MPS: `rev=false` for sweeping right, and `rev=true` for sweeping left.
 The first (or last for `rev=true`) site that the gate is applied to is `site`.
 """
-function applygate!(U::AbstractGate, ψ::MPS, site::Int, rev::Bool=false; kwargs...)
-    _gate_vec_validation(U, ψ, Tuple(rev ? Base.range(site+1-length(U), site) :
-        Base.range(site, site+length(U)-1)))
+function applygate!(U::AbstractGate, ψ::MPS, site::Int, rev::Bool = false; kwargs...)
+    _gate_vec_validation(
+        U,
+        ψ,
+        Tuple(
+            rev ? Base.range(site+1-length(U), site) : Base.range(site, site+length(U)-1),
+        ),
+    )
     _applygate!(U, ψ, site, rev; kwargs...)
 end
 
-function applygate!(ψ::MPS, U::AbstractGate, site::Int, rev::Bool=false; kwargs...)
-    _gate_vec_validation(U, ψ, Tuple(rev ? Base.range(site+1-length(U), site) :
-        Base.range(site, site+length(U)-1)))
+function applygate!(ψ::MPS, U::AbstractGate, site::Int, rev::Bool = false; kwargs...)
+    _gate_vec_validation(
+        U,
+        ψ,
+        Tuple(
+            rev ? Base.range(site+1-length(U), site) : Base.range(site, site+length(U)-1),
+        ),
+    )
     _applygate!(U, ψ, site, rev, true; kwargs...)
 end
 
 # Unsafe application 
-function _applygate!(U::AbstractGate, ψ::MPS, site::Int, rev::Bool=false, trans::Bool=false; kwargs...)
+function _applygate!(
+    U::AbstractGate,
+    ψ::MPS,
+    site::Int,
+    rev::Bool = false,
+    trans::Bool = false;
+    kwargs...,
+)
     # Properties 
     num_sites = length(U)
-    firstsite = rev ? site - num_sites + 1 : site 
+    firstsite = rev ? site - num_sites + 1 : site
     lastsite = rev ? site : site + num_sites - 1
 
     # Move the center 
@@ -119,18 +136,24 @@ function _applygate!(U::AbstractGate, ψ::MPS, site::Int, rev::Bool=false, trans
             movecenter!(ψ, firstsite)
         else
             movecenter!(ψ, lastsite)
-        end 
+        end
     end
 
     # Contract MPS tensors
     ten = ψ[firstsite]
-    for i = Base.range(firstsite+1, lastsite)
+    for i in Base.range(firstsite+1, lastsite)
         ten = contract(ten, ψ[i], ndims(ten), 1)
     end
 
     # Apply the gate 
-    ten = contract(ten, tensor(U), Base.range(2, 1+num_sites),
-        Base.range(trans ? 1 : 2, ndims(tensor(U)), step=2), false, isconj(ψ))
+    ten = contract(
+        ten,
+        tensor(U),
+        Base.range(2, 1+num_sites),
+        Base.range(trans ? 1 : 2, ndims(tensor(U)), step = 2),
+        false,
+        isconj(ψ),
+    )
     ten = permutedim(ten, 2, ndims(ten))
     replacesites!(ψ, ten, site, rev; kwargs...)
 end
@@ -144,23 +167,40 @@ Apply a circuit gate `U` to an MPO `O`. The bool `rev` specifies the sweeping di
 the MPO: `rev=false` for sweeping right, and `rev=true` for sweeping left.
 The first (or last for `rev=true`) site that the gate is applied to is `site`.
 """
-function applygate!(U::AbstractGate, O::MPO, site::Int, rev::Bool=false; kwargs...)
-    _gate_op_validation(U, O, Tuple(rev ? Base.range(site+1-length(U), site) :
-        Base.range(site, site+length(U)-1)))
+function applygate!(U::AbstractGate, O::MPO, site::Int, rev::Bool = false; kwargs...)
+    _gate_op_validation(
+        U,
+        O,
+        Tuple(
+            rev ? Base.range(site+1-length(U), site) : Base.range(site, site+length(U)-1),
+        ),
+    )
     _applygate!(U, O, site, rev; kwargs...)
 end
 
-function applygate!(O::MPO, U::AbstractGate, site::Int, rev::Bool=false; kwargs...)
-    _gate_op_validation(U, O, Tuple(rev ? Base.range(site+1-length(U), site) :
-        Base.range(site, site+length(U)-1)))
+function applygate!(O::MPO, U::AbstractGate, site::Int, rev::Bool = false; kwargs...)
+    _gate_op_validation(
+        U,
+        O,
+        Tuple(
+            rev ? Base.range(site+1-length(U), site) : Base.range(site, site+length(U)-1),
+        ),
+    )
     _applygate!(U, O, site, rev, true; kwargs...)
 end
 
 # Unsafe application 
-function _applygate!(U::AbstractGate, O::MPO, site::Int, rev::Bool=false, trans::Bool=false; kwargs...)
+function _applygate!(
+    U::AbstractGate,
+    O::MPO,
+    site::Int,
+    rev::Bool = false,
+    trans::Bool = false;
+    kwargs...,
+)
     # Properties 
     num_sites = length(U)
-    firstsite = rev ? site - num_sites + 1 : site 
+    firstsite = rev ? site - num_sites + 1 : site
     lastsite = rev ? site : site + num_sites - 1
 
     # Move the center 
@@ -169,24 +209,36 @@ function _applygate!(U::AbstractGate, O::MPO, site::Int, rev::Bool=false, trans:
             movecenter!(O, firstsite)
         else
             movecenter!(O, lastsite)
-        end 
+        end
     end
 
     # Contract MPS tensors
     ten = O[firstsite]
-    for i = Base.range(firstsite+1, lastsite)
+    for i in Base.range(firstsite+1, lastsite)
         ten = contract(ten, O[i], ndims(ten), 1)
     end
 
     # Apply the gate 
-    ten = contract(ten, tensor(U),
-        Base.range(trans ⊻ istranspose(O) ? 3 : 2, ndims(ten)-1, step=2),
-        Base.range(trans ? 1 : 2, ndims(tensor(U)), step=2),
-        false, isconj(O))
-    
+    ten = contract(
+        ten,
+        tensor(U),
+        Base.range(trans ⊻ istranspose(O) ? 3 : 2, ndims(ten)-1, step = 2),
+        Base.range(trans ? 1 : 2, ndims(tensor(U)), step = 2),
+        false,
+        isconj(O),
+    )
+
     # Permute the gates 
-    perms = (1, Tuple(map(j -> isodd(j) ? 2 + num_sites + cld(j, 2) : 1 + cld(j, 2),
-        Base.OneTo(2*num_sites)))..., 2+num_sites)
+    perms = (
+        1,
+        Tuple(
+            map(
+                j -> isodd(j) ? 2 + num_sites + cld(j, 2) : 1 + cld(j, 2),
+                Base.OneTo(2*num_sites),
+            ),
+        )...,
+        2+num_sites,
+    )
     ten = _permutedims(ten, perms)
     replacesites!(O, ten, site, rev; kwargs...)
 end

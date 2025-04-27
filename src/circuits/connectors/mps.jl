@@ -19,11 +19,15 @@ function add!(layer::CircuitLayer, U::AbstractGate, sites, con::CircuitMPS)
     # Check if assigned
     sitesfull = Tuple(Base.range(min(sites...), max(sites...)))
     if checkassigned(layer, sitesfull, con)
-        throw(ArgumentError("One or more of the sites $(sites) in the circuit layer are already used."))
+        throw(
+            ArgumentError(
+                "One or more of the sites $(sites) in the circuit layer are already used.",
+            ),
+        )
     end
 
     # Assign the sites
-    for site in sitesfull 
+    for site in sitesfull
         layer.assigned[site] = true
     end
 
@@ -32,13 +36,13 @@ function add!(layer::CircuitLayer, U::AbstractGate, sites, con::CircuitMPS)
 
     # Find the position to insert 
     idx = 1
-    for s in layer.sites 
+    for s in layer.sites
         if s[begin] > sitesfull[end]
             break
         end
         idx += 1
     end
-    
+
     # Insert the gate
     insert!(layer.gates, idx, U)
     insert!(layer.sites, idx, Tuple(sites))

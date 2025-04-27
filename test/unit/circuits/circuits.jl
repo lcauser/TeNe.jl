@@ -16,5 +16,5 @@
         circuit = randombwcircuit(2, 20, 4)
         @test length(circuit.layers) == 4
     end
-    
+
 end

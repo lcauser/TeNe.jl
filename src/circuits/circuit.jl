@@ -10,7 +10,7 @@ mutable struct Circuit{d}
 end
 
 export Circuit
-Base.length(circuit::Circuit) = circuit.N 
+Base.length(circuit::Circuit) = circuit.N
 dim(::Circuit{d}) where {d} = d
 depth(circuit::Circuit) = length(circuit.layers)
 Base.eltype(circuit::Circuit) = _promote_tensor_eltype(circuit.layers...)
@@ -46,7 +46,7 @@ end
 export CircuitMPS, randombwcircuit
 
 # Empty circuit 
-function Circuit(d::Int, N::Int, connector::CircuitConnectivity=CircuitAll())
+function Circuit(d::Int, N::Int, connector::CircuitConnectivity = CircuitAll())
     return Circuit{d}(N, [], connector)
 end
 
@@ -65,15 +65,23 @@ span `width` qubits.
        - `connector::CircuitConnectivity=CircuitMPS()`: Add a circuit connector of choice.
        Default is CircuitMPS.
 """
-function randombwcircuit(d::Int, N::Int, depth::Int, width::Int=2;
-    ϵ::Number=0.01,
-    connector::CircuitConnectivity=CircuitMPS()
+function randombwcircuit(
+    d::Int,
+    N::Int,
+    depth::Int,
+    width::Int = 2;
+    ϵ::Number = 0.01,
+    connector::CircuitConnectivity = CircuitMPS(),
 )
     circuit = Circuit(d, N, connector)
-    for m = Base.OneTo(depth)
+    for m in Base.OneTo(depth)
         start = 1 + (m - 1) % 3
-        for j = Base.range(start, N+1-width, step=width)
-            add!(circuit, _unitary_close_to_id(d, width, ϵ), collect(Base.range(j, j+width-1)))
+        for j in Base.range(start, N+1-width, step = width)
+            add!(
+                circuit,
+                _unitary_close_to_id(d, width, ϵ),
+                collect(Base.range(j, j+width-1)),
+            )
         end
     end
 
@@ -96,14 +104,22 @@ span `width` qubits.
        - `connector::CircuitConnectivity=CircuitMPS()`: Add a circuit connector of choice.
        Default is CircuitMPS.
 """
-function randomstaircasecircuit(d::Int, N::Int, depth::Int, width::Int=2;
-    ϵ::Number=0.01,
-    connector::CircuitConnectivity=CircuitMPS()
+function randomstaircasecircuit(
+    d::Int,
+    N::Int,
+    depth::Int,
+    width::Int = 2;
+    ϵ::Number = 0.01,
+    connector::CircuitConnectivity = CircuitMPS(),
 )
     circuit = Circuit(d, N, connector)
-    for m = Base.OneTo(depth)
-        for j = Base.OneTo(N+1-width)
-            add!(circuit, _unitary_close_to_id(d, width, ϵ), collect(Base.range(j, j+width-1)))
+    for m in Base.OneTo(depth)
+        for j in Base.OneTo(N+1-width)
+            add!(
+                circuit,
+                _unitary_close_to_id(d, width, ϵ),
+                collect(Base.range(j, j+width-1)),
+            )
         end
     end
 

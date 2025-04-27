@@ -1,4 +1,4 @@
-@testset "gmps" begin 
+@testset "gmps" begin
     @test begin
         ψ = randomgmps(1, 2, 30, 16)
         movecenter!(ψ, 30)
@@ -8,7 +8,7 @@
 
     @test begin
         ψ = randomgmps(2, 2, 30, 16)
-        truncate!(ψ; maxdim=8)
+        truncate!(ψ; maxdim = 8)
         maxbonddim(ψ) == 8
     end
 
@@ -18,7 +18,7 @@
         maxbonddim(ψ) == 32
     end
 
-    @test begin 
+    @test begin
         ψ = randomgmps(2, 2, 30, 16)
         ψconj = conj(ψ)
         Base.mightalias(ψconj[10], ψ[10])
@@ -32,10 +32,10 @@
         range = 3
         movecenter!(ψ, site)
         ten = ψ[site]
-        for i = 1:range-1
+        for i = 1:(range-1)
             ten = contract(ten, ψ[site+i], ndims(ten), 1)
         end
-        TeNe.replacesites!(ψ, ten, site; cutoff=1e-16)
+        TeNe.replacesites!(ψ, ten, site; cutoff = 1e-16)
         isapprox(inner(ψ, ψ2), 1.0)
     end
 
@@ -46,10 +46,10 @@
         range = 4
         movecenter!(ψ, site)
         ten = ψ[site-3]
-        for i = 1:range-1
+        for i = 1:(range-1)
             ten = contract(ten, ψ[site-3+i], ndims(ten), 1)
         end
-        TeNe.replacesites!(ψ, ten, site, true; cutoff=1e-16)
+        TeNe.replacesites!(ψ, ten, site, true; cutoff = 1e-16)
         isapprox(inner(ψ, ψ2), 1.0)
     end
 
@@ -60,10 +60,10 @@
         range = 3
         movecenter!(ψ, site)
         ten = ψ[site]
-        for i = 1:range-1
+        for i = 1:(range-1)
             ten = contract(ten, ψ[site+i], ndims(ten), 1)
         end
-        TeNe.replacesites!(ψ, ten, site; cutoff=1e-16)
+        TeNe.replacesites!(ψ, ten, site; cutoff = 1e-16)
         isapprox(trace(ψ), trace(ψ2))
     end
 
@@ -74,10 +74,10 @@
         range = 4
         movecenter!(ψ, site)
         ten = ψ[site-3]
-        for i = 1:range-1
+        for i = 1:(range-1)
             ten = contract(ten, ψ[site-3+i], ndims(ten), 1)
         end
-        TeNe.replacesites!(ψ, ten, site, true; cutoff=1e-16)
+        TeNe.replacesites!(ψ, ten, site, true; cutoff = 1e-16)
         isapprox(trace(ψ), trace(ψ2))
     end
 

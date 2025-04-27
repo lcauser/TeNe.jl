@@ -2,7 +2,7 @@
     Inner products with MPS and MPOs 
 =#
 
-export dot, inner 
+export dot, inner
 
 ### Inner product of MPS 
 """
@@ -31,7 +31,7 @@ dot(ψ::MPS, ϕ::MPS) = inner(ψ, ϕ)
 
 function _mps_mps_product(ψ::MPS, ϕ::MPS)
     # Type info...
-    T= _promote_tensor_eltype(ψ, ϕ)
+    T = _promote_tensor_eltype(ψ, ϕ)
 
     # Contract the network...
     block = cache(T, (size(ψ[begin], 1), size(ϕ[begin], 1)), 2, 1) .= 1
@@ -62,11 +62,11 @@ end
 
 Calculate the expectation of a string of operators `Os` with respect to MPSs `ψ` and `ϕ`.
 """
-function inner(ψ::MPS, ϕs::Union{MPS, MPO}...)
+function inner(ψ::MPS, ϕs::Union{MPS,MPO}...)
     # Checks 
     _inner_validation(ψ, ϕs...)
-    _vec_op_vec_validation(ψ, ϕs[end], ϕs[begin:end-1]...)
-    return _mps_mpo_mps_product(ψ, ϕs[end], ϕs[begin:end-1]...)
+    _vec_op_vec_validation(ψ, ϕs[end], ϕs[begin:(end-1)]...)
+    return _mps_mpo_mps_product(ψ, ϕs[end], ϕs[begin:(end-1)]...)
 end
 
 function _mps_mpo_mps_product(ψ::MPS, ϕ::MPS, Os::MPO...)
@@ -79,7 +79,14 @@ function _mps_mpo_mps_product(ψ::MPS, ϕ::MPS, Os::MPO...)
     for i in eachindex(ψ)
         block = contract(block, ψ[i], 1, 1, false, !isconj(ψ))
         for j in eachindex(Os)
-            block = contract(block, Os[j][i], (1, ndims(block)-1), (1, innerind(Os[j])), false, isconj(Os[j]))
+            block = contract(
+                block,
+                Os[j][i],
+                (1, ndims(block)-1),
+                (1, innerind(Os[j])),
+                false,
+                isconj(Os[j]),
+            )
         end
         block = contract(block, ϕ[i], (1, ndims(block)-1), (1, 2), false, isconj(ϕ))
     end
@@ -88,18 +95,18 @@ function _mps_mpo_mps_product(ψ::MPS, ϕ::MPS, Os::MPO...)
 end
 
 ### Inner products of MPSs with both/either MPSProjectors and MPOs 
-function inner(ψ::MPS, ϕs::Union{MPS, MPO, MPSProjector}...)
+function inner(ψ::MPS, ϕs::Union{MPS,MPO,MPSProjector}...)
     # Checks 
     _inner_validation(ψ, ϕs...)
-    _vec_op_vec_validation(ψ, ϕs[end], ϕs[begin:end-1]...)
+    _vec_op_vec_validation(ψ, ϕs[end], ϕs[begin:(end-1)]...)
 
     prod = 1.0
-    prod_string = Union{MPS, MPO}[ψ]
+    prod_string = Union{MPS,MPO}[ψ]
     for ϕ in ϕs
         if ismpsprojector(ϕ)
             push!(prod_string, ϕ.ψ)
             prod *= ϕ.λ * inner(prod_string...)
-            prod_string = Union{MPS, MPO}[ϕ.ϕ]
+            prod_string = Union{MPS,MPO}[ϕ.ϕ]
         else
             push!(prod_string, ϕ)
         end
@@ -117,16 +124,20 @@ end
 
 Calculate the expectation of a string of operators `Os` with respect to StateVectors `ψ` and `ϕ`.
 """
-function inner(ψ::StateVector, ϕs::Union{StateVector, MPO}...)
+function inner(ψ::StateVector, ϕs::Union{StateVector,MPO}...)
     # Checks 
     _inner_validation(ψ, ϕs...)
-    _vec_op_vec_validation(ψ, ϕs[end], ϕs[begin:end-1]...)
-    return _sv_mpo_sv_product(ψ, ϕs[end], ϕs[begin:end-1]...)
+    _vec_op_vec_validation(ψ, ϕs[end], ϕs[begin:(end-1)]...)
+    return _sv_mpo_sv_product(ψ, ϕs[end], ϕs[begin:(end-1)]...)
 end
 
 function _sv_mpo_sv_product(ψ::StateVector, ϕ::StateVector, Os::MPO...)
     for i in reverse(eachindex(Os))
-        ϕ′ = GStateTensor(1, dim(ψ), cache(innerdims(Os[i]), tensor(ψ), tensor(ϕ), Os[i][begin]))
+        ϕ′ = GStateTensor(
+            1,
+            dim(ψ),
+            cache(innerdims(Os[i]), tensor(ψ), tensor(ϕ), Os[i][begin]),
+        )
         _mpo_sv_product!(ϕ′, Os[i], ϕ)
         ϕ = ϕ′
     end
@@ -164,13 +175,27 @@ function _inner(proj::ProjMPS, lt::LatticeTypes, ops::Vector{String}, sites::Vec
     # Contract with the center sites and the relavent operator 
     ctr = 1
     for i in Base.range(sites[begin], sites[end])
-        left = contract(left, proj.objects[begin][i], 1, 1, false, !isconj(proj.objects[begin]))
+        left = contract(
+            left,
+            proj.objects[begin][i],
+            1,
+            1,
+            false,
+            !isconj(proj.objects[begin]),
+        )
         if ctr <= length(sites) && i == sites[ctr]
             left = contract(left, op(lt, ops[ctr]), 2, 1)
             left = permutedim(left, 3, 2)
             ctr += 1
         end
-        left = contract(left, proj.objects[end][i], (1, 2), (1, 2), false, isconj(proj.objects[end]))
+        left = contract(
+            left,
+            proj.objects[end][i],
+            (1, 2),
+            (1, 2),
+            false,
+            isconj(proj.objects[end]),
+        )
     end
     return contract(left, right, (1, 2), (1, 2))[]
 end

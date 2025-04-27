@@ -18,11 +18,11 @@ julia> ψ = O * ψ;
 """
 function applympo(O::MPSProjector, ψ::MPS)
     _op_vec_validation(O, ψ)
-    return (O.λ * inner(O.ϕ, ψ)) * O.ψ 
+    return (O.λ * inner(O.ϕ, ψ)) * O.ψ
 end
 function applympo(ψ::MPS, O::MPSProjector)
     _op_vec_validation(adjoint(O), ψ)
-    return (O.λ * inner(ψ, O.ψ)) * O.ϕ 
+    return (O.λ * inner(ψ, O.ψ)) * O.ϕ
 end
 *(O::MPSProjector, ψ::MPS) = applympo(O, ψ)
 *(ψ::MPS, O::MPSProjector) = applympo(ψ, O)
@@ -77,5 +77,5 @@ function applympo(O1::MPO, O2::MPSProjector; kwargs...)
     ψ = applympo(O1, O2.ψ; kwargs...)
     return MPSProjector(ψ, O2.ϕ, false, O2.λ)
 end
-*(O1::MPSProjector, O2::MPO) = applympo(O1, O2; cutoff=_TeNe_cutoff)
-*(O1::MPO, O2::MPSProjector) = applympo(O1, O2; cutoff=_TeNe_cutoff)
+*(O1::MPSProjector, O2::MPO) = applympo(O1, O2; cutoff = _TeNe_cutoff)
+*(O1::MPO, O2::MPSProjector) = applympo(O1, O2; cutoff = _TeNe_cutoff)

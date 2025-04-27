@@ -1,4 +1,4 @@
-abstract type MPSProjection end 
+abstract type MPSProjection end
 
 ### Properties of projections
 export center, leftblock, rightblock, block
@@ -25,7 +25,9 @@ center(proj::MPSProjection) = proj.center
 Return the left edge block for a projection.
 """
 function leftedge(proj::MPSProjection)
-    return cache_ones(Tuple(map(j->size(proj.objects[j][1], 1), Base.eachindex(proj.objects))))
+    return cache_ones(
+        Tuple(map(j->size(proj.objects[j][1], 1), Base.eachindex(proj.objects))),
+    )
 end
 
 
@@ -35,8 +37,14 @@ end
 Return the right edge block for a projection.
 """
 function rightedge(proj::MPSProjection)
-    return cache_ones(Tuple(map(j->size(proj.objects[j][end], ndims(proj.objects[j][end])),
-        Base.eachindex(proj.objects))))
+    return cache_ones(
+        Tuple(
+            map(
+                j->size(proj.objects[j][end], ndims(proj.objects[j][end])),
+                Base.eachindex(proj.objects),
+            ),
+        ),
+    )
 end
 
 """
@@ -77,10 +85,14 @@ Fetch the block at a given site.
 function block(proj::MPSProjection, idx::Int)
     if idx > proj.center
         return rightblock(proj, idx)
-    elseif idx < proj.center 
+    elseif idx < proj.center
         return leftblock(proj, idx)
     else
-        throw(ArgumentError("There is ambiguity in indexing at the centre of the projection. Use `leftblock` or `rightblock`."))
+        throw(
+            ArgumentError(
+                "There is ambiguity in indexing at the centre of the projection. Use `leftblock` or `rightblock`.",
+            ),
+        )
     end
 end
 
@@ -102,7 +114,7 @@ function movecenter!(proj::MPSProjection, idx::Int)
         for i in Base.OneTo(idx-1)
             buildleft!(proj, i)
         end
-        for i in Base.range(length(proj), idx+1, step=-1)
+        for i in Base.range(length(proj), idx+1, step = -1)
             buildright!(proj, i)
         end
     else
@@ -111,7 +123,7 @@ function movecenter!(proj::MPSProjection, idx::Int)
                 buildleft!(proj, i)
             end
         elseif idx < center(proj)
-            for i = Base.range(center(proj), idx+1, step=-1)
+            for i in Base.range(center(proj), idx+1, step = -1)
                 buildright!(proj, i)
             end
         end

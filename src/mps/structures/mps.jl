@@ -4,8 +4,8 @@
     degrees of freedom.
 =#
 
-const MPS = Union{GMPS{1}, ConjGMPS{1}}
-export MPS 
+const MPS = Union{GMPS{1},ConjGMPS{1}}
+export MPS
 
 export ismps
 """
@@ -70,23 +70,28 @@ Create a product MPS of size `N`, composed of array `A`.
     - `T::Type=ComplexF64`: The element type for the tensors.
     - `normalise::Bool=false`: Normalise the MPS after creating it?
 """
-function productmps(N::Int, A::Q; T::Type=ComplexF64, normalize::Bool=false) where {Q<:AbstractArray}
+function productmps(
+    N::Int,
+    A::Q;
+    T::Type = ComplexF64,
+    normalize::Bool = false,
+) where {Q<:AbstractArray}
     if ndims(A) == 1
-        ψ = MPS(length(A), N; T=T)
-        for i = Base.OneTo(N)
+        ψ = MPS(length(A), N; T = T)
+        for i in Base.OneTo(N)
             ψ[i] = reshape(copy(A), (1, length(A), 1))
         end
     elseif ndims(A) == 3
-        ψ = MPS(size(A, 2), N; T=T)
+        ψ = MPS(size(A, 2), N; T = T)
         ψ[1] = A[1:1, :, :]
-        for i = Base.range(1+firstindex(ψ), lastindex(ψ))
+        for i in Base.range(1+firstindex(ψ), lastindex(ψ))
             ψ[i] = copy(A)
         end
         ψ[N] = A[:, :, end:end]
     else
         throw(ArgumentError("You must provide an array with just one or three dimensions."))
     end
-    if normalize 
+    if normalize
         movecenter!(ψ, firstindex(ψ))
         normalize!(ψ)
     end
@@ -106,7 +111,7 @@ julia> ψ = productmps(lt, ["up" for _ = 1:20]);
 ```
 """
 function productmps(lt::LatticeTypes, states::AbstractVector{String})
-    ψ = MPS(dim(lt), length(states); T=eltype(lt))
+    ψ = MPS(dim(lt), length(states); T = eltype(lt))
     for i in eachindex(states)
         ψ[i][1, :, 1] .= state(lt, states[i])
     end
