@@ -1,7 +1,6 @@
 name: Format suggestions
 on:
   pull_request:
-    # this argument is not required if you don't use the `suggestion-label` input
     types: [ opened, reopened, synchronize, labeled, unlabeled ]
 permissions:
   contents: read
@@ -12,5 +11,4 @@ jobs:
     steps:
       - uses: julia-actions/julia-format@v4
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
           version: '2.1.2'
