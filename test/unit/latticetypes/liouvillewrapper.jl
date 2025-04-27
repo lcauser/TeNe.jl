@@ -1,4 +1,4 @@
-@testset "latticesites-liouvillewrapper" begin 
+@testset "latticesites-liouvillewrapper" begin
     for lt in [Qubits(), Bosons(3)]
         lt2 = LiouvilleWrapper(lt)
         @test dim(lt2) == dim(lt)^2

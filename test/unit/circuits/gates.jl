@@ -1,7 +1,11 @@
 @testset "circuitgate" begin
     # Test the validation 
-    @test_throws ArgumentError("The gates must have an even number of dimensions.") creategate(rand(4, 4, 4, 4, 4))
-    @test_throws ArgumentError("The gate must have the same dimensions sizes.") creategate(rand(4, 4, 4, 2))
+    @test_throws ArgumentError("The gates must have an even number of dimensions.") creategate(
+        rand(4, 4, 4, 4, 4),
+    )
+    @test_throws ArgumentError("The gate must have the same dimensions sizes.") creategate(
+        rand(4, 4, 4, 2),
+    )
 
     # Test the polar decomposition
     U = creategate(randn(ComplexF64, 2, 2))
@@ -27,9 +31,17 @@ end
     # Test the validation 
     ψ = randomsv(2, 10)
     U = makeunitary(creategate(randn(ComplexF64, 3, 3, 3, 3)))
-    @test_throws DomainError("The length of sites does not match the length of the gate.") applygate!(ψ, U, (1, 2, 3))
-    @test_throws DomainError("The list of sites (2, 11) does not fall between 1 and $(length(ψ)).") applygate!(ψ, U, (2, 11))
-    @test_throws ArgumentError("The $(typeof(ψ)) and $(typeof(U)) have incomptible dimensions.") applygate!(ψ, U, (2, 9))
+    @test_throws DomainError("The length of sites does not match the length of the gate.") applygate!(
+        ψ,
+        U,
+        (1, 2, 3),
+    )
+    @test_throws DomainError(
+        "The list of sites (2, 11) does not fall between 1 and $(length(ψ)).",
+    ) applygate!(ψ, U, (2, 11))
+    @test_throws ArgumentError(
+        "The $(typeof(ψ)) and $(typeof(U)) have incomptible dimensions.",
+    ) applygate!(ψ, U, (2, 9))
 
     # Test application 
     ψ = randomsv(2, 10)
@@ -66,12 +78,28 @@ end
     # Test the validation 
     O = randomso(2, 10)
     U = makeunitary(creategate(randn(ComplexF64, 3, 3, 3, 3)))
-    @test_throws DomainError("The length of sites does not match the length of the gate.") applygate!(O, U, (1, 2, 3))
-    @test_throws DomainError("The list of sites (2, 11) does not fall between 1 and $(length(O)).") applygate!(O, U, (2, 11))
-    @test_throws ArgumentError("The $(typeof(O)) and $(typeof(U)) have incomptible dimensions.") applygate!(O, U, (2, 9))
-    @test_throws DomainError("The length of sites does not match the length of the gate.") applygate!(U, O, (1, 2, 3))
-    @test_throws DomainError("The list of sites (2, 11) does not fall between 1 and $(length(O)).") applygate!(U, O, (2, 11))
-    @test_throws ArgumentError("The $(typeof(O)) and $(typeof(U)) have incomptible dimensions.") applygate!(U, O, (2, 9))
+    @test_throws DomainError("The length of sites does not match the length of the gate.") applygate!(
+        O,
+        U,
+        (1, 2, 3),
+    )
+    @test_throws DomainError(
+        "The list of sites (2, 11) does not fall between 1 and $(length(O)).",
+    ) applygate!(O, U, (2, 11))
+    @test_throws ArgumentError(
+        "The $(typeof(O)) and $(typeof(U)) have incomptible dimensions.",
+    ) applygate!(O, U, (2, 9))
+    @test_throws DomainError("The length of sites does not match the length of the gate.") applygate!(
+        U,
+        O,
+        (1, 2, 3),
+    )
+    @test_throws DomainError(
+        "The list of sites (2, 11) does not fall between 1 and $(length(O)).",
+    ) applygate!(U, O, (2, 11))
+    @test_throws ArgumentError(
+        "The $(typeof(O)) and $(typeof(U)) have incomptible dimensions.",
+    ) applygate!(U, O, (2, 9))
 
     # Test the application
     O = randomso(2, 10)
@@ -109,14 +137,22 @@ end
     @test isapprox(tensor(O), tensor(O′))
 end
 
-@testset "applygate-mps" begin 
+@testset "applygate-mps" begin
     # Test the validation 
     ψ = randommps(2, 20, 3)
     U = makeunitary(creategate(randn(ComplexF64, 3, 3, 3, 3)))
-    @test_throws DomainError("The list of sites (20, 21) does not fall between 1 and $(length(ψ)).") applygate!(U, ψ, 20)
-    @test_throws ArgumentError("The $(typeof(ψ)) and $(typeof(U)) have incomptible dimensions.") applygate!(U, ψ, 5)
-    @test_throws DomainError("The list of sites (20, 21) does not fall between 1 and $(length(ψ)).") applygate!(U, ψ, 21, true)
-    @test_throws ArgumentError("The $(typeof(ψ)) and $(typeof(U)) have incomptible dimensions.") applygate!(U, ψ, 5, true)
+    @test_throws DomainError(
+        "The list of sites (20, 21) does not fall between 1 and $(length(ψ)).",
+    ) applygate!(U, ψ, 20)
+    @test_throws ArgumentError(
+        "The $(typeof(ψ)) and $(typeof(U)) have incomptible dimensions.",
+    ) applygate!(U, ψ, 5)
+    @test_throws DomainError(
+        "The list of sites (20, 21) does not fall between 1 and $(length(ψ)).",
+    ) applygate!(U, ψ, 21, true)
+    @test_throws ArgumentError(
+        "The $(typeof(ψ)) and $(typeof(U)) have incomptible dimensions.",
+    ) applygate!(U, ψ, 5, true)
 
     # Test the application 
     ψ = randommps(2, 20, 3)

@@ -19,15 +19,15 @@ Create the projection O = |ψ><ϕ| from two MPSs `ψ` and `ϕ`.
 
 The key word argument λ can be specified to give O = λ|ψ><ϕ|
 """
-function MPSProjector(ψ::MPS, ϕ::MPS; λ::Number=1.0)
+function MPSProjector(ψ::MPS, ϕ::MPS; λ::Number = 1.0)
     if length(ψ) != length(ϕ)
         throw(ArgumentError("MPSs must have the same length."))
     end
     return MPSProjector(ψ, ϕ, false, λ)
 end
-MPSProjector(ψ::MPS; λ::Number=1.0) = MPSProjector(ψ, ψ, true, λ)
+MPSProjector(ψ::MPS; λ::Number = 1.0) = MPSProjector(ψ, ψ, true, λ)
 
-ismpsprojector(O::MPSProjector) = true 
+ismpsprojector(O::MPSProjector) = true
 ismpsprojector(O) = false
 
 

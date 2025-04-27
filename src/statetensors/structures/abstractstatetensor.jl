@@ -1,4 +1,4 @@
-abstract type AbstractStateTensor <: TensorNetworkState  end 
+abstract type AbstractStateTensor <: TensorNetworkState end
 
 # Maybe for later: genalise to more general tensor network states?
 """
@@ -7,8 +7,8 @@ abstract type AbstractStateTensor <: TensorNetworkState  end
 Check to see if state tensors share the same properties.
 """
 function issimilar(ψs::AbstractStateTensor...)
-    for i = Base.range(2, length(ψs))
-        length(ψs[i]) != length(ψs[1]) && return false 
+    for i in Base.range(2, length(ψs))
+        length(ψs[i]) != length(ψs[1]) && return false
         dim(ψs[1]) != dim(ψs[i]) && return false
     end
     return true

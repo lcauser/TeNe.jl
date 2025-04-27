@@ -24,7 +24,7 @@ julia> ϕ = O * ψ;
 function applyso(O::StateOperator, ψ::StateVector)
     _op_vec_validation(O, ψ)
     ϕ = GStateTensor(1, promote_tensor(innerdims(O), tensor(O), tensor(ψ)))
-    _so_sv_product!(ϕ, O ,ψ)
+    _so_sv_product!(ϕ, O, ψ)
     return ϕ
 end
 applyso(ψ::StateVector, O::StateOperator) = applyso(transpose(O), ψ)
@@ -54,9 +54,15 @@ applyso!(ϕ::StateVector, ψ::StateVector, O::StateOperator) = applyso!(ϕ, tran
 
 
 function _so_sv_product!(ϕ::StateVector, O::StateOperator, ψ::StateVector)
-    contract!(tensor(ϕ), tensor(O), tensor(ψ),
-        outerinds(O), Tuple(1:ndims(tensor(ψ))),
-        isconj(ϕ) ? !isconj(O) : isconj(O), isconj(ϕ) ? !isconj(ψ) : isconj(ψ) )
+    contract!(
+        tensor(ϕ),
+        tensor(O),
+        tensor(ψ),
+        outerinds(O),
+        Tuple(1:ndims(tensor(ψ))),
+        isconj(ϕ) ? !isconj(O) : isconj(O),
+        isconj(ϕ) ? !isconj(ψ) : isconj(ψ),
+    )
 end
 
 function _so_sv_product_dims(O::StateOperator)
@@ -119,7 +125,12 @@ end
 
 function _so_so_product_dims(O1::StateOperator, O2::StateOperator)
     ### Remove allocations??
-    return Tuple(map(j->isodd(j) ? innerdim(O1, cld(j, 2)) : outerdim(O2, fld(j, 2)), Base.OneTo(2*length(O1))))
+    return Tuple(
+        map(
+            j->isodd(j) ? innerdim(O1, cld(j, 2)) : outerdim(O2, fld(j, 2)),
+            Base.OneTo(2*length(O1)),
+        ),
+    )
 end
 
 function _so_so_product_perms(N::Int)

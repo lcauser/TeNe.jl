@@ -144,7 +144,7 @@ Calculate the maximum bond dimension within an GMPS.
 """
 function maxbonddim(ψ::GMPS)
     D = 0
-    for i = Base.OneTo(length(ψ)-1)
+    for i in Base.OneTo(length(ψ)-1)
         D = max(D, bonddim(ψ, i))
     end
     return D
@@ -187,7 +187,7 @@ function _moveleft!(ψ::GMPS, idx::Int; kwargs...)
         U, S, V = tsvd(ψ[idx], Base.range(2, ndims(ψ[idx])); kwargs...)
         U = contract(U, S, 2, 1)
         ψ[idx] = V
-        ψ[idx-1] = contract(ψ[idx-1], U, 2+rank(ψ), 1; tocache=false)
+        ψ[idx-1] = contract(ψ[idx-1], U, 2+rank(ψ), 1; tocache = false)
     end
 end
 
@@ -197,7 +197,7 @@ function _moveright!(ψ::GMPS, idx; kwargs...)
         U, S, V = tsvd(ψ[idx], 2+rank(ψ); kwargs...)
         V = contract(S, V, 2, 1)
         ψ[idx] = U
-        ψ[idx+1] = contract(V, ψ[idx+1], 2, 1; tocache=false)
+        ψ[idx+1] = contract(V, ψ[idx+1], 2, 1; tocache = false)
     end
 end
 
@@ -219,22 +219,22 @@ function movecenter!(ψ::GMPS, idx::Int; kwargs...)
     if idx < 1 || idx > length(ψ)
         throw(BoundsError("Center index is out of bounds."))
     end
-    
+
     # Move center
     if center(ψ) == 0
-        for i = Base.range(firstindex(ψ), idx-1)
+        for i in Base.range(firstindex(ψ), idx-1)
             _moveright!(ψ, i; kwargs...)
         end
-        for i = Base.range(lastindex(ψ), idx+1, step=-1)
+        for i in Base.range(lastindex(ψ), idx+1, step = -1)
             _moveleft!(ψ, i; kwargs...)
         end
     else
         if idx > center(ψ)
-            for i = Base.range(center(ψ), idx-1)
+            for i in Base.range(center(ψ), idx-1)
                 _moveright!(ψ, i; kwargs...)
             end
         elseif idx < center(ψ)
-            for i = Base.range(center(ψ), idx+1, step=-1)
+            for i in Base.range(center(ψ), idx+1, step = -1)
                 _moveleft!(ψ, i; kwargs...)
             end
         end
@@ -264,8 +264,14 @@ Replace the tensors over a small range of sites in a GMPS.
     - `maxdim::Int=0`: Maximum bond dimension for truncation. Set to 0 to have
       no limit.
 """
-function replacesites!(ψ::GMPS, A::AbstractArray, site::Int, direction::Bool=false;
-        normalize::Bool=false, kwargs...)
+function replacesites!(
+    ψ::GMPS,
+    A::AbstractArray,
+    site::Int,
+    direction::Bool = false;
+    normalize::Bool = false,
+    kwargs...,
+)
     # Determine the number of sites
     nsites = fld((ndims(A) - 2), rank(ψ))
 
@@ -279,20 +285,20 @@ function replacesites!(ψ::GMPS, A::AbstractArray, site::Int, direction::Bool=fa
     else
         # Have to restore MPS form using SVDs
         U = A
-        for i = Base.OneTo(nsites-1)
-            if direction 
+        for i in Base.OneTo(nsites-1)
+            if direction
                 # Sweeping left
                 U, S, V = tsvd(U, Tuple(Base.range(ndims(U)-rank(ψ), ndims(U))); kwargs...)
-                ψ[site - i + 1] = V
+                ψ[site-i+1] = V
                 U = contract(U, S, ndims(U), 1)
             else
                 # Sweeping right 
                 V, S, U = tsvd(U, Tuple(Base.range(2+rank(ψ), ndims(U))); kwargs...)
-                ψ[site + i - 1] = V 
-                U = contract(S, U, 2, 1) 
+                ψ[site+i-1] = V
+                U = contract(S, U, 2, 1)
             end
         end
-        lastsite = direction ? site + 1 - nsites : site - 1 + nsites 
+        lastsite = direction ? site + 1 - nsites : site - 1 + nsites
         if size(ψ[lastsite]) == size(U)
             ψ[lastsite] .= U
         else
@@ -326,18 +332,18 @@ function +(ψ::GMPS{r}, ϕ::GMPS{r}) where {r}
     _vec_vec_validation(ψ, ϕ)
     movecenter!(ψ, firstindex(ψ))
     movecenter!(ϕ, firstindex(ϕ))
-    return _add_exact(ψ, ϕ, false; cutoff=_TeNe_cutoff)
+    return _add_exact(ψ, ϕ, false; cutoff = _TeNe_cutoff)
 end
 
 function -(ψ::GMPS{r}, ϕ::GMPS{r}) where {r}
     _vec_vec_validation(ψ, ϕ)
     movecenter!(ψ, firstindex(ψ))
     movecenter!(ϕ, firstindex(ϕ))
-    return _add_exact(ψ, ϕ, true; cutoff=_TeNe_cutoff)
+    return _add_exact(ψ, ϕ, true; cutoff = _TeNe_cutoff)
 end
 
-function _add_exact(ψ::GMPS{r}, ϕ::GMPS{r}, subtract::Bool=false; kwargs...) where {r}
-    Ψ = GMPS(r, dim(ψ), length(ψ); T=_promote_tensor_eltype(ψ, ϕ))
+function _add_exact(ψ::GMPS{r}, ϕ::GMPS{r}, subtract::Bool = false; kwargs...) where {r}
+    Ψ = GMPS(r, dim(ψ), length(ψ); T = _promote_tensor_eltype(ψ, ϕ))
     Ψ.center = firstindex(Ψ)
     for i in eachindex(Ψ)
         # Create the tensor 
@@ -345,13 +351,19 @@ function _add_exact(ψ::GMPS{r}, ϕ::GMPS{r}, subtract::Bool=false; kwargs...) w
         dim2 = i == length(Ψ) ? 1 : size(ψ[i], 2+r)+size(ϕ[i], 2+r)
         dims_phys = map(j->size(ψ[i], 1+j), Base.OneTo(rank(ψ)))
         tensor = zeros(eltype(Ψ), dim1, dims_phys..., dim2)
-        
+
         # Find the dimensions of the tensors 
         dims_phys = map(j->1:size(tensor, 1+j), Base.OneTo(rank(ψ)))
-        dims1 = (i == 1 ? Base.OneTo(1) : axes(ψ[i], 1), dims_phys..., 
-                 i == length(ψ) ? Base.OneTo(1) : axes(ψ[i], 2+r))
-        dims2 = (i == 1 ? Base.OneTo(1) : range(size(ψ[i], 1)+1, size(tensor, 1)), dims_phys..., 
-                 i == length(ψ) ? Base.OneTo(1) :  range(size(ψ[i], 2+r)+1, size(tensor, 2+r)))
+        dims1 = (
+            i == 1 ? Base.OneTo(1) : axes(ψ[i], 1),
+            dims_phys...,
+            i == length(ψ) ? Base.OneTo(1) : axes(ψ[i], 2+r),
+        )
+        dims2 = (
+            i == 1 ? Base.OneTo(1) : range(size(ψ[i], 1)+1, size(tensor, 1)),
+            dims_phys...,
+            i == length(ψ) ? Base.OneTo(1) : range(size(ψ[i], 2+r)+1, size(tensor, 2+r)),
+        )
 
         # Create the tensor
         tensor[dims1...] .= ψ[i]
@@ -394,12 +406,14 @@ end
 Increase the bond dimension of a GMPS `ψ` to `bonddim`. 
 Optionally, make the new parameters noisy, with strength `noise`.
 """
-function expand!(ψ::GMPS, bonddim::Int, noise=0)
+function expand!(ψ::GMPS, bonddim::Int, noise = 0)
     movecenter!(ψ, firstindex(ψ))
     for i in eachindex(ψ)
-        D1 = i == firstindex(ψ) ? 1 : bonddim 
+        D1 = i == firstindex(ψ) ? 1 : bonddim
         D2 = i == lastindex(ψ) ? 1 : bonddim
-        tensor = noise .* randn(eltype(ψ[i]), D1, map(j -> size(ψ[i], j), 2:ndims(ψ[i])-1)..., D2)
+        tensor =
+            noise .*
+            randn(eltype(ψ[i]), D1, map(j -> size(ψ[i], j), 2:(ndims(ψ[i])-1))..., D2)
         tensor[map(j->Base.OneTo(size(ψ[i], j)), Base.OneTo(ndims(ψ[i])))...] .= ψ[i]
         ψ[i] = tensor
         if i > firstindex(ψ)
@@ -413,8 +427,8 @@ end
 
 ### Initialising GMPS 
 export randomgmps
-function GMPS(rank::Int, d::Int, N::Int; T::Type=ComplexF64)
-    tensors = [zeros(T, (1, [d for __ = Base.OneTo(rank)]..., 1)) for _ = Base.OneTo(N)]
+function GMPS(rank::Int, d::Int, N::Int; T::Type = ComplexF64)
+    tensors = [zeros(T, (1, [d for __ in Base.OneTo(rank)]..., 1)) for _ in Base.OneTo(N)]
     return GMPS{rank}(tensors, 0)
 end
 
@@ -427,10 +441,10 @@ Create a GMPS with random entries.
 
     - `T::Type=ComplexF64`: The element type for the tensors.
 """
-function randomgmps(rank::Int, dim::Int, length::Int, bonddim::Int; T::Type=ComplexF64)
+function randomgmps(rank::Int, dim::Int, length::Int, bonddim::Int; T::Type = ComplexF64)
     # Create the GMPS
-    ψ = GMPS(rank, dim, length; T=T)
-    for i = Base.OneTo(length)
+    ψ = GMPS(rank, dim, length; T = T)
+    for i in Base.OneTo(length)
         D1 = i == firstindex(ψ) ? 1 : bonddim
         D2 = i == lastindex(ψ) ? 1 : bonddim
         idxs = (D1, ntuple(i->dim, rank)..., D2)
@@ -465,11 +479,11 @@ julia> ψ = GMPS(ψ; cutoff=1e-12);
 ```
 """
 function GMPS(ψ::GStateTensor; kwargs...)
-    ψmps = GMPS(rank(ψ), dim(ψ), length(ψ); T=eltype(ψ))
+    ψmps = GMPS(rank(ψ), dim(ψ), length(ψ); T = eltype(ψ))
     ten = reshape(tensor(ψ), 1, size(tensor(ψ))..., 1)
-    for i = Base.OneTo(length(ψ)-1)
-        U, S, ten = tsvd(ten, Tuple(2+rank(ψ):ndims(ten)); kwargs...)
-        ψmps[i] = U 
+    for i in Base.OneTo(length(ψ)-1)
+        U, S, ten = tsvd(ten, Tuple((2+rank(ψ)):ndims(ten)); kwargs...)
+        ψmps[i] = U
         ten = contract(S, ten, 2, 1)
     end
     ψmps[end] = ten
@@ -480,7 +494,7 @@ end
 ### Information
 function Base.show(io::IO, ψ::GMPS)
     println(io, "$(typeof(ψ))")
-    for i = Base.OneTo(Base.length(ψ))
+    for i in Base.OneTo(Base.length(ψ))
         println(io, "[$(i)] $(Base.size(ψ[i]))")
     end
 end
@@ -491,8 +505,11 @@ Base.deepcopy(ψ::GMPS) = typeof(ψ)(Base.deepcopy(ψ.tensors), Base.deepcopy(ce
 
 
 ### Save and write
-function HDF5.write(parent::Union{HDF5.File, HDF5.Group}, name::AbstractString,
-                    M::GMPS{r}) where {r}
+function HDF5.write(
+    parent::Union{HDF5.File,HDF5.Group},
+    name::AbstractString,
+    M::GMPS{r},
+) where {r}
     g = create_group(parent, name)
     attributes(g)["type"] = "MPS"
     attributes(g)["version"] = 1
@@ -505,15 +522,14 @@ function HDF5.write(parent::Union{HDF5.File, HDF5.Group}, name::AbstractString,
 end
 
 
-function HDF5.read(parent::Union{HDF5.File, HDF5.Group}, name::AbstractString,
-                    ::Type{GMPS})
+function HDF5.read(parent::Union{HDF5.File,HDF5.Group}, name::AbstractString, ::Type{GMPS})
     g = open_group(parent, name)
     if read(attributes(g)["type"]) != "MPS"
         error("HDF5 group of file does not contain MPS data.")
     end
     N = read(g, "length")
     center = read(g, "center")
-    tensors = [read(g, "MPS[$(i)]") for i=Base.OneTo(N)]
+    tensors = [read(g, "MPS[$(i)]") for i in Base.OneTo(N)]
     rank = read(g, "rank")
     return GMPS{rank}(tensors, center)
 end
@@ -536,10 +552,16 @@ function Base.collect(ψ::ConjGMPS)
 end
 
 # Manipulations
-function replacesites!(ψ::GMPSTrait, A::AbstractArray, site::Int, direction::Bool=false;
-    normalize::Bool=false, kwargs...)
+function replacesites!(
+    ψ::GMPSTrait,
+    A::AbstractArray,
+    site::Int,
+    direction::Bool = false;
+    normalize::Bool = false,
+    kwargs...,
+)
     replacesites!(ψ.MPS, A, site, direction; normalize, kwargs...)
 end
 TeNe.normalize!(ψ::GMPSTrait) = normalize!(ψ.MPS)
 truncate!(ψ::GMPSTrait; kwargs...) = truncate!(ψ.MPS; kwargs...)
-expand!(ψ::GMPSTrait, bonddim::Int, noise=0.0) = expand!(ψ.MPS, bonddim, noise)
+expand!(ψ::GMPSTrait, bonddim::Int, noise = 0.0) = expand!(ψ.MPS, bonddim, noise)

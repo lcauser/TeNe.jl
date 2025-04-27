@@ -16,7 +16,7 @@ using Test
     end
 
     # Lattice types
-    @testset "Lattice Types" begin 
+    @testset "Lattice Types" begin
         include("unit/latticetypes/oplist.jl")
         include("unit/latticetypes/liouvillewrapper.jl")
         include("unit/latticetypes/qubits.jl")
@@ -24,7 +24,7 @@ using Test
     end
 
     # State vectors 
-    @testset "State vectors" begin 
+    @testset "State vectors" begin
         include("unit/statetensors/structures/stateoperator.jl")
         include("unit/statetensors/operations/applyso.jl")
         include("unit/statetensors/operations/inner.jl")
@@ -32,7 +32,7 @@ using Test
     end
 
     # MPS 
-    @testset "MPS" begin 
+    @testset "MPS" begin
         include("unit/mps/structures/gmps.jl")
         include("unit/mps/operations/applympo.jl")
         include("unit/mps/operations/inner.jl")
@@ -42,7 +42,7 @@ using Test
     end
 
     # Circuits 
-    @testset "Circuits" begin 
+    @testset "Circuits" begin
         include("unit/circuits/qubitgates.jl")
         include("unit/circuits/gates.jl")
         include("unit/circuits/circuitlayers.jl")
@@ -53,7 +53,7 @@ using Test
 end
 
 ### End-to-end testing
-@testset "End-to-end" begin 
+@testset "End-to-end" begin
     include("end-to-end/mps/dmrg.jl")
     include("end-to-end/mps/stateoptimiser.jl")
 end

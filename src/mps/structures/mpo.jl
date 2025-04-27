@@ -32,8 +32,8 @@ TeNe.adjoint(O::ConjGMPS{2}) = TransposeMPO(O.MPS)
 TeNe.adjoint(O::TransposeMPO) = ConjGMPS(O.MPS)
 
 
-const MPO = Union{GMPS{2}, ConjGMPS{2}, TransposeMPO, AdjointMPO}
-export MPO 
+const MPO = Union{GMPS{2},ConjGMPS{2},TransposeMPO,AdjointMPO}
+export MPO
 
 
 export ismpo
@@ -47,21 +47,21 @@ function ismpo(O)
 end
 
 # Get the size of physical dimensions
-export innerdim, outerdim 
-innerdim(O::Union{GMPS{2}, ConjGMPS{2}}, site::Int) = size(O[site], 2)
-innerdim(O::Union{AdjointMPO, TransposeMPO}, site::Int) = size(O[site], 3)
-outerdim(O::Union{GMPS{2}, ConjGMPS{2}}, site::Int) = size(O[site], 3)
-outerdim(O::Union{AdjointMPO, TransposeMPO}, site::Int) = size(O[site], 2)
-innerdims(O::Union{GMPS{2}, ConjGMPS{2}}) = dims(O, 1)
-innerdims(O::Union{AdjointMPO, TransposeMPO}) = dims(O, 2)
-outerdims(O::Union{GMPS{2}, ConjGMPS{2}}) = dims(O, 2)
-outerdims(O::Union{AdjointMPO, TransposeMPO}) = dims(O, 1)
+export innerdim, outerdim
+innerdim(O::Union{GMPS{2},ConjGMPS{2}}, site::Int) = size(O[site], 2)
+innerdim(O::Union{AdjointMPO,TransposeMPO}, site::Int) = size(O[site], 3)
+outerdim(O::Union{GMPS{2},ConjGMPS{2}}, site::Int) = size(O[site], 3)
+outerdim(O::Union{AdjointMPO,TransposeMPO}, site::Int) = size(O[site], 2)
+innerdims(O::Union{GMPS{2},ConjGMPS{2}}) = dims(O, 1)
+innerdims(O::Union{AdjointMPO,TransposeMPO}) = dims(O, 2)
+outerdims(O::Union{GMPS{2},ConjGMPS{2}}) = dims(O, 2)
+outerdims(O::Union{AdjointMPO,TransposeMPO}) = dims(O, 1)
 
 # Return the correct indices
-innerind(::Union{GMPS{2}, ConjGMPS{2}}, ::Int=0) = 2
-innerind(::Union{AdjointMPO, TransposeMPO}, ::Int=0) = 3
-outerind(::Union{GMPS{2}, ConjGMPS{2}}, ::Int=0) = 3
-outerind(::Union{AdjointMPO, TransposeMPO}, ::Int=0) = 2
+innerind(::Union{GMPS{2},ConjGMPS{2}}, ::Int = 0) = 2
+innerind(::Union{AdjointMPO,TransposeMPO}, ::Int = 0) = 3
+outerind(::Union{GMPS{2},ConjGMPS{2}}, ::Int = 0) = 3
+outerind(::Union{AdjointMPO,TransposeMPO}, ::Int = 0) = 2
 
 ### Initalising MPOs 
 export randommpo, productmpo
@@ -104,25 +104,25 @@ Create a product MPO of size `N`, composed of array `A`.
 
     - `T::Type=ComplexF64`: The element type for the tensors.
 """
-function productmpo(N::Int, A::AbstractArray; T::Type=ComplexF64)
+function productmpo(N::Int, A::AbstractArray; T::Type = ComplexF64)
     if ndims(A) == 2
-        if size(A, 1) != size(A, 2) 
+        if size(A, 1) != size(A, 2)
             throw(ArgumentError("A must be a square matrix!"))
         end
-        O = MPO(size(A, 1), N; T=T)
-        for i = Base.OneTo(N)
+        O = MPO(size(A, 1), N; T = T)
+        for i in Base.OneTo(N)
             O[i] = reshape(copy(A), (1, size(A)..., 1))
         end
     elseif ndims(A) == 4
-        if size(A, 2) != size(A, 3) 
+        if size(A, 2) != size(A, 3)
             throw(ArgumentError("Array must have physical dimensions of the same length!"))
         end
-        if size(A, 1) != size(A, 4) 
+        if size(A, 1) != size(A, 4)
             throw(ArgumentError("Array must have equal bond dimensions!"))
         end
-        O = MPO(size(A, 2), N; T=T)
+        O = MPO(size(A, 2), N; T = T)
         O[1] = A[1:1, :, :, :]
-        for i = Base.range(1+firstindex(O), lastindex(O))
+        for i in Base.range(1+firstindex(O), lastindex(O))
             O[i] = copy(A)
         end
         O[lastindex(O)] = A[:, :, :, end:end]
@@ -145,7 +145,7 @@ julia> O = productmpo(lt, ["x" for _ = 1:20]);
 ```
 """
 function productmpo(lt::LatticeTypes, ops::AbstractVector{String})
-    O = MPO(dim(lt), length(ops); T=eltype(lt))
+    O = MPO(dim(lt), length(ops); T = eltype(lt))
     for i in eachindex(ops)
         O[i][1, :, :, 1] .= op(lt, ops[i])
     end

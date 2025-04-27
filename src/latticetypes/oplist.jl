@@ -54,8 +54,12 @@ export add!
 
 Add an operator to the list defined by local operators at given sites.
 """
-function add!(ops::OpList, opers::Vector{String}, sites::Vector{Int},
-              coeff::Q = 1.0) where {Q<:Number}
+function add!(
+    ops::OpList,
+    opers::Vector{String},
+    sites::Vector{Int},
+    coeff::Q = 1.0,
+) where {Q<:Number}
     # Validate the data
     if length(opers) != length(sites)
         throw(ArgumentError("Mismatch in the length of opers and sites."))
@@ -182,7 +186,13 @@ Use `paddingleft` and `paddingright` to add identity paddings to either side.
 
     - `tocache::Bool=false`: Store the result in the cache?
 """
-function totensor(ops::OpList, idx::Int, paddingleft::Int=0, paddingright::Int=0; tocache::Bool=false)
+function totensor(
+    ops::OpList,
+    idx::Int,
+    paddingleft::Int = 0,
+    paddingright::Int = 0;
+    tocache::Bool = false,
+)
     # Fetch the relevent information
     opers = ops.ops[idx]
     sites = ops.sites[idx]
@@ -190,16 +200,20 @@ function totensor(ops::OpList, idx::Int, paddingleft::Int=0, paddingright::Int=0
     rng = sites[end] - sites[begin] + 1
 
     # Create the tensor through a tensor product
-    prod = ones(eltype(ops.lt), )
+    prod = ones(eltype(ops.lt))
     i = 1
-    for site = Base.range(1-paddingleft, rng+paddingright)
+    for site in Base.range(1-paddingleft, rng+paddingright)
         if i <= sites[end] && site > 0 && site <= rng && (sites[i] == sites[1] + site - 1)
             oper = opers[i]
             i += 1
         else
             oper = "id"
         end
-        prod = tensorproduct(prod, op(ops.lt, oper); tocache = site==rng+paddingright ? tocache : true)
+        prod = tensorproduct(
+            prod,
+            op(ops.lt, oper);
+            tocache = site==rng+paddingright ? tocache : true,
+        )
     end
     return ops.coeffs[idx]*prod
 end
@@ -211,11 +225,11 @@ end
 Construct the tensor from an OpList.
 """
 function totensor(ops::OpList)
-    O = zeros(Base.eltype(ops), [dim(ops.lt) for _ = Base.OneTo(2*ops.length)]...)
+    O = zeros(Base.eltype(ops), [dim(ops.lt) for _ in Base.OneTo(2*ops.length)]...)
     for i in eachindex(ops.ops)
-        ten = ones(eltype(ops.lt), )
+        ten = ones(eltype(ops.lt))
         k = 1
-        for j = Base.OneTo(ops.length)
+        for j in Base.OneTo(ops.length)
             if k <= length(ops.sites[i]) && ops.sites[i][k] == j
                 oper = ops.ops[i][k]
                 k += 1
@@ -237,7 +251,7 @@ Return the tensor for all operators starting at a site.
 
 # TODO: NEEDS FIXING.
 """
-function sitetensor(ops::OpList,  idx::Int)
+function sitetensor(ops::OpList, idx::Int)
     # Validate the idx
     (idx < 0 || idx > ops.length) && error("Site index is out of range.")
 

@@ -19,7 +19,7 @@ Create a projection for the inner product of a string of GMPSs, including MPSSqu
     - `center::Int=0`: Initalise the projection at some center. By default, it defaults to 
     the center of the MPS `ψ` (`center=0`).
 """
-function ProjMPSSquared(ψ::MPS, args::MPS...; λ::Number=1.0, center::Int=0)
+function ProjMPSSquared(ψ::MPS, args::MPS...; λ::Number = 1.0, center::Int = 0)
     # Validation 
     _inner_validation(ψ, args...)
     _vec_op_vec_validation(ψ, args...)
@@ -42,23 +42,28 @@ function inner(projψ::ProjMPSSquared)
     return projψ.λ * abs(inner(projψ.ProjMPS))^2
 end
 
-function inner(projψ::ProjMPSSquared, A::AbstractArray, dir::Bool=false)
+function inner(projψ::ProjMPSSquared, A::AbstractArray, dir::Bool = false)
     return projψ.λ * abs(inner(projψ.ProjMPS, A, dir))^2
 end
 
 ### Gradients 
 export gradient
-function gradient(projψ::ProjMPSSquared, A::AbstractArray, dir::Bool=false)
+function gradient(projψ::ProjMPSSquared, A::AbstractArray, dir::Bool = false)
     g = gradient(projψ.ProjMPS, A, dir)
     g .*= conj(inner(projψ.ProjMPS, A, dir)) * projψ.λ
     return g
 end
 
 ### Products with the tensor 
-function product(projψ::ProjMPSSquared, A::AbstractArray, dir::Bool=false; tocache::Bool=true)
+function product(
+    projψ::ProjMPSSquared,
+    A::AbstractArray,
+    dir::Bool = false;
+    tocache::Bool = true,
+)
     g = gradient(projψ, A, dir)
     g .= conj.(g)
-    if !tocache 
+    if !tocache
         g = copy(g)
     end
     return g

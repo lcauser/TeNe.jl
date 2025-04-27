@@ -3,12 +3,12 @@
         # The first test will create a state and apply a circuit.
         # It will test that the projection creates the correct MPSs.
         ψ = randommps(2, 10, 1)
-        U = randombwcircuit(2, 10, 5; ϵ=1.0)
+        U = randombwcircuit(2, 10, 5; ϵ = 1.0)
         ϕ = randommps(2, 10, 1)
         ϕ′ = deepcopy(ϕ)
         ψ′ = applygates(U, ψ)
         ol1 = inner(ϕ, ψ′)
-        projU = ProjMPSCircuit(ϕ, U, ψ; cutoff=0.0)
+        projU = ProjMPSCircuit(ϕ, U, ψ; cutoff = 0.0)
         ol2s = []
         for i = 2:5
             movecenter!(projU, i)
@@ -22,7 +22,7 @@
         for i = 1:5
             movecenter!(projU, i)
             left = ones(Float64, 1, 1)
-            for j = 1:length(U.layers[end+1-i].sites)+1
+            for j = 1:(length(U.layers[end+1-i].sites)+1)
                 left = copy(TeNe._buildleft(projU, j, left))
             end
             push!(ol2s, left[])
@@ -52,14 +52,14 @@
         @test all(isapprox.(ol2s, ol1))
 
         # Test projection 
-        projU = ProjMPSCircuit(ψ′, U, ψ; cutoff=0.0)
+        projU = ProjMPSCircuit(ψ′, U, ψ; cutoff = 0.0)
         checks = []
         for i = 1:5
             for j = 1:length(U.layers[end+1-i].sites)
                 movecenter!(projU, i, j)
                 gate = creategate(conj(TeNe.project(projU)))
                 makeunitary!(gate)
-                gate2 = U.layers[end+1-i].gates[j]             
+                gate2 = U.layers[end+1-i].gates[j]
                 U.layers[end+1-i].gates[j] = gate
                 push!(checks, isapprox(1.0, product(projU)))
             end
@@ -71,12 +71,12 @@
         # The first test will create a state and apply a circuit.
         # It will test that the projection creates the correct MPSs.
         ψ = randommps(2, 10, 1)
-        U = randombwcircuit(2, 10, 6, 3; ϵ=1.0)
+        U = randombwcircuit(2, 10, 6, 3; ϵ = 1.0)
         ϕ = randommps(2, 10, 4)
         ϕ′ = deepcopy(ϕ)
         ψ′ = applygates(U, ψ)
         ol1 = inner(ϕ, ψ′)
-        projU = ProjMPSCircuit(ϕ, U, ψ; cutoff=0.0)
+        projU = ProjMPSCircuit(ϕ, U, ψ; cutoff = 0.0)
         ol2s = []
         for i = 2:6
             movecenter!(projU, i)
@@ -90,7 +90,7 @@
         for i = 1:6
             movecenter!(projU, i)
             left = ones(Float64, 1, 1)
-            for j = 1:length(U.layers[end+1-i].sites)+1
+            for j = 1:(length(U.layers[end+1-i].sites)+1)
                 left = copy(TeNe._buildleft(projU, j, left))
             end
             push!(ol2s, left[])
@@ -120,14 +120,14 @@
         @test all(isapprox.(ol2s, ol1))
 
         # Test projection 
-        projU = ProjMPSCircuit(ψ′, U, ψ; cutoff=0.0)
+        projU = ProjMPSCircuit(ψ′, U, ψ; cutoff = 0.0)
         checks = []
         for i = 1:6
             for j = 1:length(U.layers[end+1-i].sites)
                 movecenter!(projU, i, j)
                 gate = creategate(conj(TeNe.project(projU)))
                 makeunitary!(gate)
-                gate2 = U.layers[end+1-i].gates[j]             
+                gate2 = U.layers[end+1-i].gates[j]
                 U.layers[end+1-i].gates[j] = gate
                 push!(checks, isapprox(1.0, product(projU)))
             end
@@ -139,12 +139,12 @@
         # The first test will create a state and apply a circuit.
         # It will test that the projection creates the correct MPSs.
         ψ = randommps(2, 10, 1)
-        U = randomstaircasecircuit(2, 10, 3, 3; ϵ=1.0)
+        U = randomstaircasecircuit(2, 10, 3, 3; ϵ = 1.0)
         ϕ = randommps(2, 10, 4)
         ϕ′ = deepcopy(ϕ)
         ψ′ = applygates(U, ψ)
         ol1 = inner(ϕ, ψ′)
-        projU = ProjMPSCircuit(ϕ, U, ψ; cutoff=0.0)
+        projU = ProjMPSCircuit(ϕ, U, ψ; cutoff = 0.0)
         ol2s = []
         for i = 2:14
             movecenter!(projU, i)
@@ -158,7 +158,7 @@
         for i = 1:14
             movecenter!(projU, i)
             left = ones(Float64, 1, 1)
-            for j = 1:length(U.layers[end+1-i].sites)+1
+            for j = 1:(length(U.layers[end+1-i].sites)+1)
                 left = copy(TeNe._buildleft(projU, j, left))
             end
             push!(ol2s, left[])
@@ -188,14 +188,14 @@
         @test all(isapprox.(ol2s, ol1))
 
         # Test projection 
-        projU = ProjMPSCircuit(ψ′, U, ψ; cutoff=0.0)
+        projU = ProjMPSCircuit(ψ′, U, ψ; cutoff = 0.0)
         checks = []
         for i = 1:14
             for j = 1:length(U.layers[end+1-i].sites)
                 movecenter!(projU, i, j)
                 gate = creategate(conj(TeNe.project(projU)))
                 makeunitary!(gate)
-                gate2 = U.layers[end+1-i].gates[j]             
+                gate2 = U.layers[end+1-i].gates[j]
                 U.layers[end+1-i].gates[j] = gate
                 push!(checks, isapprox(1.0, product(projU)))
             end

@@ -29,16 +29,16 @@ Operators: ["id_id", "id", "id_x", "id_y", "id_z", "id_pu", "id_pd", "id_n", "id
 function LiouvilleWrapper(lt::LatticeTypes)
     d = dim(lt)^2
     T = Base.promote_type(Base.eltype(lt), ComplexF64)
-    new_lt = LatticeTypes(d; T=T)
+    new_lt = LatticeTypes(d; T = T)
 
     # Kronecker product of all states
-    for name in lt.statenames 
+    for name in lt.statenames
         st = kron(state(lt, name), state(lt, name))
         add!(new_lt, name, st)
     end
 
     # Kronecker product of all operators 
-    for name1 in lt.opnames 
+    for name1 in lt.opnames
         for name2 in lt.opnames
             oper = kron(op(lt, name1), transpose(op(lt, name2)))
             name = name1*"_"*name2

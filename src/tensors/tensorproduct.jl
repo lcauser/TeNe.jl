@@ -30,7 +30,7 @@ julia> z = similar(x, (2, 3, 4, 5));
 julia> tensorproduct!(z, x, y);
 ```
 """
-function tensorproduct!(z, x, y, conjx::Bool=false, conjy::Bool=false)
+function tensorproduct!(z, x, y, conjx::Bool = false, conjy::Bool = false)
     # Checks on args 
     _tensorproduct_check_result(z, x, y)
     _tensorproduct!(z, x, y, conjx, conjy)
@@ -66,15 +66,21 @@ julia> size(z)
 (2, 3, 4, 5)
 ```
 """
-function tensorproduct(x, y, conjx::Bool=false, conjy::Bool=false;
-                       tocache::Bool=true, sublevel=:auto)
+function tensorproduct(
+    x,
+    y,
+    conjx::Bool = false,
+    conjy::Bool = false;
+    tocache::Bool = true,
+    sublevel = :auto,
+)
     # Checks on arguments 
     _tensorproduct_check_args(x, y)
 
     # Create the tensor to store the result 
-    dims = (size(x)...,  size(y)...)
+    dims = (size(x)..., size(y)...)
     if tocache
-        z = cache(dims, x, y; level=2, sublevel=sublevel)
+        z = cache(dims, x, y; level = 2, sublevel = sublevel)
     else
         z = promote_tensor(dims, x, y)
     end
@@ -86,13 +92,19 @@ end
 ### Unsafe tensor product
 function _tensorproduct!(z, x, y, conjx::Bool, conjy::Bool)
     # Take the conjugates?
-    if conjx x = cache(x, 1) .= conj.(x) end
-    if conjy y = cache(y, 1, length(x) == length(y) ? 2 : 1) .= conj(y) end 
+    if conjx
+        x = cache(x, 1) .= conj.(x)
+    end
+    if conjy
+        y = cache(y, 1, length(x) == length(y) ? 2 : 1) .= conj(y)
+    end
 
     # Tensor product 
-    mul!(reshape(z, (prod(size(x)), prod(size(y)))),
-         reshape(x, (prod(size(x)), 1)),
-         reshape(y, (1, prod(size(y)))))
+    mul!(
+        reshape(z, (prod(size(x)), prod(size(y)))),
+        reshape(x, (prod(size(x)), 1)),
+        reshape(y, (1, prod(size(y)))),
+    )
 end
 
 ### Checks 

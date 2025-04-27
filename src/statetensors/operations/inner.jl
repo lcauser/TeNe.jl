@@ -20,9 +20,14 @@ dot(ψ::StateVector, ϕ::StateVector) = inner(ψ, ϕ)
 *(ψ::StateVector, ϕ::StateVector) = inner(ψ, ϕ)
 
 function _sv_sv_product(ψ::StateVector, ϕ::StateVector)
-    return contract(reshape(tensor(ψ), length(tensor(ψ))),
-             reshape(tensor(ϕ), length(tensor(ϕ))),
-             1, 1, !isconj(ψ), isconj(ϕ))[]
+    return contract(
+        reshape(tensor(ψ), length(tensor(ψ))),
+        reshape(tensor(ϕ), length(tensor(ϕ))),
+        1,
+        1,
+        !isconj(ψ),
+        isconj(ϕ),
+    )[]
 end
 
 ### Inner products with StateOperators
@@ -41,17 +46,17 @@ julia> inner(ψ, O, O, ψ)
 1.0 + 0.0im
 ```
 """
-function inner(ψ::StateVector, ϕs::Union{StateVector, StateOperator}...)
+function inner(ψ::StateVector, ϕs::Union{StateVector,StateOperator}...)
     # Checks 
     _inner_validation(ψ, ϕs...)
-    _vec_op_vec_validation(ψ, ϕs[end], ϕs[begin:end-1]...)
+    _vec_op_vec_validation(ψ, ϕs[end], ϕs[begin:(end-1)]...)
 
     # Create a StateVector from the cache 
     ϕ = GStateTensor(1, cache(outerdims(ϕs[end-1]), tensor(ϕs[end-1]), tensor(ϕs[end])))
 
     # Contraction
     applyso!(ϕ, ϕs[end-1], ϕs[end])
-    for i = Base.range(length(ϕs)-2, 1, step=-1)
+    for i in Base.range(length(ϕs)-2, 1, step = -1)
         ϕnew = GStateTensor(1, cache(outerdims(ϕs[i]), tensor(ϕs[i])))
         _so_sv_product!(ϕnew, ϕs[i], ϕ)
         ϕ = ϕnew

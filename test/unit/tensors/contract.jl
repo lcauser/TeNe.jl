@@ -2,15 +2,24 @@
     ### Test matrix-vector multiplication
     A = randn(ComplexF64, 5, 5)
     B = randn(ComplexF64, 4)
-    try C = contract(A, B, 1, 2) catch e  @test (e isa ArgumentError) end
-    try C = contract(A, B, 1, 1) catch e  @test (e isa ArgumentError) end
+    try
+        C = contract(A, B, 1, 2)
+    catch e
+        @test (e isa ArgumentError)
+    end
+    try
+        C = contract(A, B, 1, 1)
+    catch e
+        @test (e isa ArgumentError)
+    end
 
     A = randn(ComplexF64, 5, 4)
     check = false
     try
         C = contract(A, B, 2, 1)
         check = true
-    catch e end
+    catch e
+    end
     @test check
 
     A = randn(ComplexF64, 4, 4)
@@ -24,15 +33,24 @@ end
     ### Test matrix-matrix multiplications
     A = randn(ComplexF64, 5, 5)
     B = randn(ComplexF64, 4, 4)
-    try C = contract(A, B, 1, 3) catch e  @test (e isa ArgumentError) end
-    try C = contract(A, B, 1, 1) catch e  @test (e isa ArgumentError) end
+    try
+        C = contract(A, B, 1, 3)
+    catch e
+        @test (e isa ArgumentError)
+    end
+    try
+        C = contract(A, B, 1, 1)
+    catch e
+        @test (e isa ArgumentError)
+    end
 
     B = randn(ComplexF64, 5, 4)
     check = false
     try
         C = contract(A, B, 2, 1)
         check = true
-    catch e end
+    catch e
+    end
     @test check
 
     A = randn(ComplexF64, 3, 4)
@@ -52,8 +70,16 @@ end
     B = rand(ComplexF64, 3, 6, 5)
     @test size(contract(A, B, 2, 3)) == (4, 6, 3, 6)
     @test size(contract(A, B, (2, 3), (3, 2))) == (4, 3)
-    try C = contract(A, B, 1, 1) catch e  @test (e isa ArgumentError) end
-    try C = contract(A, B, [1, 3], [1, 2]) catch e  @test (e isa ArgumentError) end
+    try
+        C = contract(A, B, 1, 1)
+    catch e
+        @test (e isa ArgumentError)
+    end
+    try
+        C = contract(A, B, [1, 3], [1, 2])
+    catch e
+        @test (e isa ArgumentError)
+    end
 
     A = rand(ComplexF64, 2, 3, 4, 5)
     B = rand(ComplexF64, 4, 5, 6, 7)

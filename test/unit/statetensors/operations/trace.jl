@@ -1,4 +1,4 @@
-@testset "statetensor-trace" begin 
+@testset "statetensor-trace" begin
     @test begin
         O1 = randomso(8, 3)
         O2 = randomso(8, 3)

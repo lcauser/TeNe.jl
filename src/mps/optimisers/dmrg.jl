@@ -27,35 +27,39 @@ Run the DMRG algorithm to find extremal eigenvalues of the sum of operators `Hs`
     - `krylovtol::Float=1e-14`: The tolerance for the Krylov iterator.
     - `verbose::Boo=true`: Output the information during optimisation?
 """
-function dmrg(ψ::MPS, Hs::Union{MPO, MPS, MPSProjector}...; kwargs...)
+function dmrg(ψ::MPS, Hs::Union{MPO,MPS,MPSProjector}...; kwargs...)
     # Construct the projections 
     projψs = MPSProjection[]
     λproj::Number = get(kwargs, :λproj, 100.0)
     for H in Hs
         if ismpo(H) || ismpsprojector(H)
-            push!(projψs, ProjMPS(ψ, H, ψ; sym=true))
+            push!(projψs, ProjMPS(ψ, H, ψ; sym = true))
         else
-            push!(projψs, ProjMPSSquared(H, ψ; λ=λproj))
-        end            
+            push!(projψs, ProjMPSSquared(H, ψ; λ = λproj))
+        end
     end
 
     # Create the updater 
     update = MPSUpdateDMRG(;
-        which=get(kwargs, :which, :SR),
-        ishermitian=get(kwargs, :ishermitian, true),
-        krylovtol=Float64(get(kwargs, :krylovtol, 1e-14)),
-        kryloviters=get(kwargs, :kryloviters, 2),
-        krylovdim=get(kwargs, :krylovdim, 3)
+        which = get(kwargs, :which, :SR),
+        ishermitian = get(kwargs, :ishermitian, true),
+        krylovtol = Float64(get(kwargs, :krylovtol, 1e-14)),
+        kryloviters = get(kwargs, :kryloviters, 2),
+        krylovdim = get(kwargs, :krylovdim, 3),
     )
 
     # Create the optimiser 
-    optim = MPSOptimiser(ψ, projψs, update, MPSObjectiveDMRG();
-        nsites=get(kwargs, :nsites, 2),
-        verbose=get(kwargs, :verbose, true),
-        cutoff=Float64(get(kwargs, :cutoff, _TeNe_cutoff)),
-        mindim=get(kwargs, :mindim, 0),
-        maxdim=get(kwargs, :maxdim, 0),
-        tol=Float64(get(kwargs, :tol, 1e-8))
+    optim = MPSOptimiser(
+        ψ,
+        projψs,
+        update,
+        MPSObjectiveDMRG();
+        nsites = get(kwargs, :nsites, 2),
+        verbose = get(kwargs, :verbose, true),
+        cutoff = Float64(get(kwargs, :cutoff, _TeNe_cutoff)),
+        mindim = get(kwargs, :mindim, 0),
+        maxdim = get(kwargs, :maxdim, 0),
+        tol = Float64(get(kwargs, :tol, 1e-8)),
     )
 
     # Run the optimiser 
@@ -69,20 +73,33 @@ end
 struct MPSUpdateDMRG <: MPSUpdate
     kryloviters::Int
     krylovdim::Int
-    ishermitian::Bool 
+    ishermitian::Bool
     tol::Float64
     which::Symbol
 end
 
-function MPSUpdateDMRG(;which::Symbol=:SR, kryloviters::Int=2, krylovdim::Int=3,
-    ishermitian::Bool=false, krylovtol::Float64=1e-14)
+function MPSUpdateDMRG(;
+    which::Symbol = :SR,
+    kryloviters::Int = 2,
+    krylovdim::Int = 3,
+    ishermitian::Bool = false,
+    krylovtol::Float64 = 1e-14,
+)
     return MPSUpdateDMRG(kryloviters, krylovdim, ishermitian, krylovtol, which)
 end
 
 function update(updater::MPSUpdateDMRG, optim::MPSOptimiser, A)
     f(x) = _dmrg_applyH(optim, x)
-    _, vecs = eigsolve(f, A, 1, updater.which, maxiter=updater.kryloviters,
-        krylovdim=updater.krylovdim, ishermitian=updater.ishermitian, tol=updater.tol)
+    _, vecs = eigsolve(
+        f,
+        A,
+        1,
+        updater.which,
+        maxiter = updater.kryloviters,
+        krylovdim = updater.krylovdim,
+        ishermitian = updater.ishermitian,
+        tol = updater.tol,
+    )
     return vecs[1]
 end
 

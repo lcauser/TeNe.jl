@@ -13,7 +13,7 @@ export MPSObserver, measure!
 
 mutable struct MPSOptimiser
     # Tensor networks to store 
-    ψ::Union{GMPS, MPS, MPO}
+    ψ::Union{GMPS,MPS,MPO}
     projψs::Vector{<:MPSProjection}
 
     # The update 
@@ -22,9 +22,9 @@ mutable struct MPSOptimiser
     sweeps::Int
     normalize::Bool
     nsites::Int
-    cutoff::Float64 
+    cutoff::Float64
     mindim::Int
-    maxdim::Int 
+    maxdim::Int
     tol::Float64
 
     # Objective function 
@@ -36,7 +36,7 @@ mutable struct MPSOptimiser
     # Observers 
     observers::Vector{<:MPSObserver}
 end
-export MPSOptimiser 
+export MPSOptimiser
 
 ### Iniating an MPS optimiser 
 """
@@ -53,19 +53,19 @@ The `update` defines the type of local update done for the MPS, and the `objecti
 objective function.
 """
 function MPSOptimiser(
-    ψ::Union{GMPS, MPS, MPO},
+    ψ::Union{GMPS,MPS,MPO},
     projψs::Vector{<:MPSProjection},
     update::MPSUpdate,
     objective::MPSObjective,
-    observers::Vector{<:MPSObserver}=MPSObserver[];
-    normalize::Bool=true,
-    relativecheck::Bool=true,
-    verbose::Bool=true,
-    tol::Float64=1e-6,
-    nsites::Int=2,
-    cutoff::Float64=_TeNe_cutoff,
-    mindim::Int=0,
-    maxdim::Int=0
+    observers::Vector{<:MPSObserver} = MPSObserver[];
+    normalize::Bool = true,
+    relativecheck::Bool = true,
+    verbose::Bool = true,
+    tol::Float64 = 1e-6,
+    nsites::Int = 2,
+    cutoff::Float64 = _TeNe_cutoff,
+    mindim::Int = 0,
+    maxdim::Int = 0,
 )
     optim = MPSOptimiser(
         ψ,
@@ -83,7 +83,7 @@ function MPSOptimiser(
         eltype(objective)[],
         relativecheck,
         verbose,
-        observers
+        observers,
     )
     push!(optim.costs, measure(objective, optim))
     return optim
@@ -91,8 +91,13 @@ end
 
 
 ### Updating the hyperparamters 
-function update_hyperparameters(optim::MPSOptimiser; nsites=nothing, mindim=nothing,
-    maxdim=nothing, cutoff=nothing)
+function update_hyperparameters(
+    optim::MPSOptimiser;
+    nsites = nothing,
+    mindim = nothing,
+    maxdim = nothing,
+    cutoff = nothing,
+)
 
     if !isnothing(nsites)
         optim.nsites = nsites
@@ -139,11 +144,24 @@ but can be changed using keyword arguments.
     - `maxdim=nothing`: Maximum bond dimension for truncation. Set to 0 to have
       no limit.
 """
-function sweep!(optim::MPSOptimiser, sweeps::Int=1, tol::Float64=1e-6; nsites=nothing,
-    mindim=nothing, maxdim=nothing, cutoff=nothing, minsweeps::Int=0)
+function sweep!(
+    optim::MPSOptimiser,
+    sweeps::Int = 1,
+    tol::Float64 = 1e-6;
+    nsites = nothing,
+    mindim = nothing,
+    maxdim = nothing,
+    cutoff = nothing,
+    minsweeps::Int = 0,
+)
     # Update hyperparameters
-    nsites, mindim, maxdim, cutoff = update_hyperparameters(optim; nsites=nsites,
-        mindim=mindim, maxdim=maxdim, cutoff=cutoff)
+    nsites, mindim, maxdim, cutoff = update_hyperparameters(
+        optim;
+        nsites = nsites,
+        mindim = mindim,
+        maxdim = maxdim,
+        cutoff = cutoff,
+    )
 
     # Loop through the number of sweeps 
     iters = 0
@@ -151,7 +169,9 @@ function sweep!(optim::MPSOptimiser, sweeps::Int=1, tol::Float64=1e-6; nsites=no
     movecenter!(optim, optim.dir ? lastindex(optim.ψ) : firstindex(optim.ψ))
     while true
         # Loop through the sites & update
-        sites = optim.dir ? Base.range(lastindex(optim.ψ), firstindex(optim.ψ) + nsites - 1, step = -1) :
+        sites =
+            optim.dir ?
+            Base.range(lastindex(optim.ψ), firstindex(optim.ψ) + nsites - 1, step = -1) :
             Base.range(firstindex(optim.ψ), lastindex(optim.ψ) + 1 - nsites)
         for site in sites
             # Move the canonical center 
@@ -162,15 +182,23 @@ function sweep!(optim::MPSOptimiser, sweeps::Int=1, tol::Float64=1e-6; nsites=no
             lastsite = optim.dir ? site : site + nsites - 1
             A = optim.ψ[firstsite]
             for i in Base.range(firstsite+1, lastsite)
-                A = contract(A, optim.ψ[i], ndims(A), 1; tocache=!(i==lastsite))
+                A = contract(A, optim.ψ[i], ndims(A), 1; tocache = !(i==lastsite))
             end
 
             # Find the updated composite tensor 
             A = update(optim.update, optim, A)
 
             # Restore the MPS 
-            replacesites!(optim.ψ, A, site, optim.dir; normalize=optim.normalize, cutoff=cutoff,
-                maxdim=maxdim, mindim=mindim)
+            replacesites!(
+                optim.ψ,
+                A,
+                site,
+                optim.dir;
+                normalize = optim.normalize,
+                cutoff = cutoff,
+                maxdim = maxdim,
+                mindim = mindim,
+            )
         end
         movecenter!(optim, optim.dir ? firstindex(optim.ψ) : lastindex(optim.ψ))
         optim.dir = !optim.dir
@@ -182,13 +210,17 @@ function sweep!(optim::MPSOptimiser, sweeps::Int=1, tol::Float64=1e-6; nsites=no
         # Output information
         iters += 1
         optim.sweeps += 1 # Increment an internal counter 
-        if optim.verbose 
-            @printf("iter=%d, objective=%.8E, maxbonddim=%d \n", optim.sweeps,
-                   real(cost), maxbonddim(optim.ψ))
+        if optim.verbose
+            @printf(
+                "iter=%d, objective=%.8E, maxbonddim=%d \n",
+                optim.sweeps,
+                real(cost),
+                maxbonddim(optim.ψ)
+            )
         end
 
         # Check for convergence 
-        if iters >= minsweeps 
+        if iters >= minsweeps
             # Check sweeps 
             if sweeps != 0 && iters >= sweeps
                 break
@@ -200,7 +232,7 @@ function sweep!(optim::MPSOptimiser, sweeps::Int=1, tol::Float64=1e-6; nsites=no
                 diff = 2*diff / (abs(optim.costs[end]) + abs(optim.costs[end-1]))
             end
             if diff < tol && mbd == maxbonddim(optim.ψ)
-                break 
+                break
             end
             mbd = maxbonddim(optim.ψ)
         end
@@ -233,7 +265,7 @@ end
 ### Observers 
 # Taking measurements from operator lists
 mutable struct MPSObserverOpList <: MPSObserver
-    O::OpList 
+    O::OpList
     measurements::Vector{<:AbstractArray}
 end
 export MPSObserverOpList
@@ -248,7 +280,7 @@ end
 
 # Taking measurements from an MPO 
 mutable struct MPSObserverMPO <: MPSObserver
-    O::MPO 
+    O::MPO
     measurements::Vector{<:Number}
 end
 export MPSObserverMPO

@@ -24,37 +24,42 @@ Computer a singular value decomposition of tensor `x`. Seperates the dimensions
       no limit.
     
 """
-function tsvd(x, dims; cutoff::Float64=0.0, mindim::Int=1, maxdim::Int=0)
+function tsvd(x, dims; cutoff::Float64 = 0.0, mindim::Int = 1, maxdim::Int = 0)
     _svd_checkdims(x, dims)
     return _svd(x, dims; cutoff, mindim, maxdim)
 end
 
 function tsvd(x, dim::Int; kwargs...)
-    if dim == -1 dim = ndims(x) end 
+    if dim == -1
+        dim = ndims(x)
+    end
     return tsvd(x, Tuple(dim); kwargs...)
 end
 
 ### Unsafe SVD 
-function _svd(x, dims; cutoff::Float64=0.0, mindim::Int=1, maxdim::Int=0)
+function _svd(x, dims; cutoff::Float64 = 0.0, mindim::Int = 1, maxdim::Int = 0)
     # Permute and reshape 
     y, sinners, souters = _svd_reshape(x, dims)
-    
+
     # Do the SVD using LinearAlgebra 
     local t
     try
-        t = LinearAlgebra.svd(y, alg=LinearAlgebra.DivideAndConquer())
+        t = LinearAlgebra.svd(y, alg = LinearAlgebra.DivideAndConquer())
     catch e
-        t = LinearAlgebra.svd(y, alg=LinearAlgebra.QRIteration())
+        t = LinearAlgebra.svd(y, alg = LinearAlgebra.QRIteration())
     end
 
     # Truncatation criteria 
     idx = findfirst(t.S .== 0)
-    maxdim = max(min(maxdim == 0 ? length(t.S) : maxdim, isnothing(idx) ? length(t.S) : idx-1), 1) 
+    maxdim = max(
+        min(maxdim == 0 ? length(t.S) : maxdim, isnothing(idx) ? length(t.S) : idx-1),
+        1,
+    )
     mindim = min(mindim, length(t.S))
     if cutoff != 0.0
         S2 = t.S .^ 2
         S2cum = reverse(cumsum(reverse(S2))) ./ sum(S2)
-        idxs = findlast([x > cutoff for x = S2cum])
+        idxs = findlast([x > cutoff for x in S2cum])
         idxs = isnothing(idxs) ? 1 : idxs
         maxdim = min(maxdim, idxs)
     end
@@ -77,7 +82,7 @@ function _svd_reshape(x, dims)
     if !all(i->pixs[i]==i, 1:ndims(x))
         y = cache(x, (sinners..., souters...))
         permutedims!(y, x, pixs)
-    else 
+    else
         y = x
     end
     y = reshape(y, (prod(sinners), prod(souters)))
@@ -97,10 +102,12 @@ function _svd_checkdims(x, dims)
     if ndims(x) < length(dims)
         throw(ArgumentError("The number of dimensions given exceed that of the tensor."))
     end
-    if !all(i -> isinteger(i) , dims)
+    if !all(i -> isinteger(i), dims)
         throw(ArgumentError("Dimensions $(dims) are not integers."))
     end
-    if !all(i -> ( i > 0 && i <= ndims(x)), dims)
-        throw(ArgumentError("Dimensions $(dims) exceed the size of the tensor: $(ndims(x))."))
+    if !all(i -> (i > 0 && i <= ndims(x)), dims)
+        throw(
+            ArgumentError("Dimensions $(dims) exceed the size of the tensor: $(ndims(x))."),
+        )
     end
 end

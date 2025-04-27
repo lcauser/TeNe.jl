@@ -12,11 +12,11 @@
             for i in eachindex(layer.sites)
                 if layer.sites[i][1] != j
                     check = false
-                end 
+                end
                 j += 2
             end
             check == true
         end
     end
-    
+
 end

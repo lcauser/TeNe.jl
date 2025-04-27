@@ -7,7 +7,7 @@
 mutable struct CircuitLayer{d}
     gates::Vector{<:AbstractGate}
     sites::Vector{Tuple{Vararg{Int}}}
-    assigned::Vector{Bool} 
+    assigned::Vector{Bool}
 end
 
 export CircuitLayer
@@ -36,7 +36,7 @@ export checkassigned, add!
 
 Check if the lattice sites `sites` are already used in a CircuitLayer.
 """
-function checkassigned(layer::CircuitLayer, sites, ::CircuitConnectivity=CircuitAll())
+function checkassigned(layer::CircuitLayer, sites, ::CircuitConnectivity = CircuitAll())
     for site in sites
         if layer.assigned[site]
             return true
@@ -54,11 +54,15 @@ can be specified.
 function add!(layer::CircuitLayer, U::AbstractGate, sites, con::CircuitConnectivity)
     _validate_gate_layer(layer, U, sites)
     if checkassigned(layer, sites, con)
-        throw(ArgumentError("One or more of the sites $(sites) in the circuit layer are already used."))
+        throw(
+            ArgumentError(
+                "One or more of the sites $(sites) in the circuit layer are already used.",
+            ),
+        )
     end
     push!(layer.gates, U)
     push!(layer.sites, Tuple(sites))
-    for site in sites 
+    for site in sites
         layer.assigned[site] = true
     end
 end
@@ -69,9 +73,13 @@ function _validate_gate_layer(layer::CircuitLayer, gate::AbstractGate, sites)
         throw(ArgumentError("The length of the gate and sites do not match."))
     end
     if dim(layer) != dim(gate)
-        throw(ArgumentError("The circuit layer and gate have contradicting physical dimensions."))
+        throw(
+            ArgumentError(
+                "The circuit layer and gate have contradicting physical dimensions.",
+            ),
+        )
     end
-    for site in sites 
+    for site in sites
         if site <= 0 || site > length(layer)
             throw(DomainError("Site $(site) is out of range."))
         end

@@ -6,7 +6,7 @@
     can be found seperately.
 =#
 
-mutable struct GStateTensor{r, T<:AbstractArray} <: AbstractStateTensor
+mutable struct GStateTensor{r,T<:AbstractArray} <: AbstractStateTensor
     tensor::T
 end
 export GStateTensor
@@ -18,7 +18,7 @@ Base.lastindex(ψ::GStateTensor) = Base.lastindex(ψ.tensor)
 Base.eachindex(ψ::GStateTensor) = Base.eachindex(ψ.tensor)
 
 ### State tensor properties
-export rank 
+export rank
 """
     Base.eltype(::GStateTensor)
 
@@ -61,7 +61,7 @@ end
 Return the indices of the tensor for dimension `which` at each site.
 """
 function inds(ψ::GStateTensor{r}, which::Int) where {r}
-    return Tuple(which:r:r*length(ψ))
+    return Tuple(which:r:(r*length(ψ)))
 end
 
 """
@@ -154,24 +154,24 @@ Base.copy(ψ::GStateTensor) = typeof(ψ)(ψ.tensor)
 Base.deepcopy(ψ::GStateTensor) = typeof(ψ)(Base.copy(ψ.tensor))
 
 ### Initalising 
-function GStateTensor(rank::Int, dim::Int, length::Int; T::Type=ComplexF64)
+function GStateTensor(rank::Int, dim::Int, length::Int; T::Type = ComplexF64)
     tensor = zeros(T, map(j->dim, Base.OneTo(rank*length))...)
-    return GStateTensor{rank, typeof(tensor)}(tensor)
+    return GStateTensor{rank,typeof(tensor)}(tensor)
 end
 
 function GStateTensor(rank::Int, tensor::Q) where {Q<:AbstractArray}
-    return GStateTensor{rank, typeof(tensor)}(tensor)
+    return GStateTensor{rank,typeof(tensor)}(tensor)
 end
 
-function randomgst(rank::Int, d::Int, N::Int; T::Type=ComplexF64)
+function randomgst(rank::Int, d::Int, N::Int; T::Type = ComplexF64)
     ψ = GStateTensor(rank, randn(T, map(j->d, Base.OneTo(rank*N))...))
     normalize!(ψ)
     return ψ
 end
 
-function productgst(N::Int, A::AbstractArray; T::Type=ComplexF64)
-    tensor = ones(T, )
-    for i = Base.OneTo(N)
+function productgst(N::Int, A::AbstractArray; T::Type = ComplexF64)
+    tensor = ones(T)
+    for i in Base.OneTo(N)
         tensor = tensorproduct(tensor, A; tocache = i!=N)
     end
     return GStateTensor(ndims(A), tensor)
@@ -179,8 +179,11 @@ end
 
 
 ### Save and write 
-function HDF5.write(parent::Union{HDF5.File, HDF5.Group}, name::AbstractString,
-                    M::GStateTensor{r}) where {r}
+function HDF5.write(
+    parent::Union{HDF5.File,HDF5.Group},
+    name::AbstractString,
+    M::GStateTensor{r},
+) where {r}
     g = create_group(parent, name)
     attributes(g)["type"] = "StateTensor"
     attributes(g)["version"] = 1
@@ -189,8 +192,11 @@ function HDF5.write(parent::Union{HDF5.File, HDF5.Group}, name::AbstractString,
 end
 
 
-function HDF5.read(parent::Union{HDF5.File, HDF5.Group}, name::AbstractString,
-                   ::Type{GStateTensor})
+function HDF5.read(
+    parent::Union{HDF5.File,HDF5.Group},
+    name::AbstractString,
+    ::Type{GStateTensor},
+)
     g = open_group(parent, name)
     if read(attributes(g)["type"]) != "StateTensor"
         error("HDF5 group of file does not contain State Tensor data.")
@@ -202,9 +208,9 @@ end
 
 
 ### Conjugation 
-export conj, isconj 
-struct ConjGStateTensor{r, T} <: GStateTensorTrait where {r, T}
-    StateTensor::GStateTensor{r, T}
+export conj, isconj
+struct ConjGStateTensor{r,T} <: GStateTensorTrait where {r,T}
+    StateTensor::GStateTensor{r,T}
 end
 TeNe.conj(ψ::GStateTensor) = ConjGStateTensor(ψ)
 TeNe.conj(ψ::ConjGStateTensor) = ψ.StateTensor

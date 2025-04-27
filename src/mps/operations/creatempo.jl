@@ -3,7 +3,7 @@
     but exact, MPOs.
 =#
 
-export MPO 
+export MPO
 """
     MPO(H::OpList; kwargs...)
 
@@ -26,8 +26,8 @@ julia> for i = 1:19 add!(H, ["z", "z"], [i, i+1]) end;
 julia> H = MPO(H);
 ```
 """
-function MPO(H::OpList; cutoff::Float64=_TeNe_cutoff, maxdim::Int=0, mindim::Int=1)
-    return creatempo(H; cutoff=cutoff, maxdim=maxdim, mindim=mindim)
+function MPO(H::OpList; cutoff::Float64 = _TeNe_cutoff, maxdim::Int = 0, mindim::Int = 1)
+    return creatempo(H; cutoff = cutoff, maxdim = maxdim, mindim = mindim)
 end
 
 function creatempo(H::OpList; kwargs...)
@@ -41,7 +41,7 @@ function creatempo(H::OpList; kwargs...)
     ten[2, :, :, 2] = op(H.lt, "id")
     O = GMPS(2, d, N)
     O[1] = deepcopy(ten[1:1, :, :, 1:2])
-    for i = 2:N-1
+    for i = 2:(N-1)
         O[i] = deepcopy(ten[1:2, :, :, 1:2])
     end
     O[N] = deepcopy(ten[1:2, :, :, 2:2])
@@ -57,15 +57,15 @@ function creatempo(H::OpList; kwargs...)
     # Loop through all the possible ranges of interactions
     for i = 1:maxrng
         # Loop through sites
-        nextterms = [[] for _=1:i]
-        coeffs = [[] for _=1:i]
-        ingoings = [[] for _=1:i]
-        outgoings = [[] for _=1:i]
+        nextterms = [[] for _ = 1:i]
+        coeffs = [[] for _ = 1:i]
+        ingoings = [[] for _ = 1:i]
+        outgoings = [[] for _ = 1:i]
 
-        for site = Base.OneTo(N)
+        for site in Base.OneTo(N)
             # Find all the terms which H.ltart at the site
             idxs = []
-            for j = rngs[i]
+            for j in rngs[i]
                 if H.sites[j][1] == site
                     push!(idxs, j)
                 end
@@ -78,24 +78,26 @@ function creatempo(H::OpList; kwargs...)
                 end
             else
                 # Add new terms H.ltarting at this site
-                for j = eachindex(idxs)
+                for j in eachindex(idxs)
                     # Fetch operator information
                     ops = H.ops[idxs[j]]
                     sites = H.sites[idxs[j]]
 
                     # Loop through each site in the operator
                     outgoing = 0
-                    for k = Base.OneTo(i)
+                    for k in Base.OneTo(i)
                         # Decide ingoing and outgoing idxs
                         ingoing = outgoing
-                        for l = Base.OneTo(length(outgoings[k])+1)
+                        for l in Base.OneTo(length(outgoings[k])+1)
                             outgoing = l
                             !(outgoing in outgoings[k]) && break
                         end
                         outgoing = k == i ? 0 : outgoing
 
                         # Determine what the operator is
-                        op =  site+k-1 in sites ? ops[argmax([s == site+k-1 for s = sites])] : "id"
+                        op =
+                            site+k-1 in sites ? ops[argmax([s == site+k-1 for s in sites
+    ])] : "id"
 
                         # Add to liH.lt
                         push!(nextterms[k], op)
@@ -110,7 +112,7 @@ function creatempo(H::OpList; kwargs...)
                 ins = ingoings[1]
                 outs = outgoings[1]
                 cos = coeffs[1]
-                for j = 1:i-1
+                for j = 1:(i-1)
                     nextterms[j] = nextterms[j+1]
                     ingoings[j] = ingoings[j+1]
                     outgoings[j] = outgoings[j+1]
@@ -130,10 +132,12 @@ function creatempo(H::OpList; kwargs...)
                     O[site] = _creatempo_expand(O[site], ingoinglen, outgoinglen)
 
                     # Add the terms to the tensor
-                    for j = eachindex(terms)
+                    for j in eachindex(terms)
                         # Find the idxs of each
                         x = ins[j] == 0 ? 1 : ingoingsrt + ins[j]
-                        y = outs[j] == 0 ? outgoingsrt + 1 + outgoinglen : outgoingsrt + outs[j]
+                        y =
+                            outs[j] == 0 ? outgoingsrt + 1 + outgoinglen :
+                            outgoingsrt + outs[j]
 
                         # Set the tensor
                         O[site][x, :, :, y] = cos[j] * op(H.lt, terms[j])
@@ -144,20 +148,20 @@ function creatempo(H::OpList; kwargs...)
     end
 
     # Apply SVD in an attempt to reduce the bond dimension
-    for site = Base.range(firstindex(O), lastindex(O)-1)
+    for site in Base.range(firstindex(O), lastindex(O)-1)
         M = O[site]
         U, S, V = tsvd(M, 4; kwargs...)
-        M = contract(U, S, 4, 1; tocache=false)
+        M = contract(U, S, 4, 1; tocache = false)
         O[site] = M
-        O[site+1] = contract(V, O[site+1], 2, 1; tocache=false)
+        O[site+1] = contract(V, O[site+1], 2, 1; tocache = false)
     end
 
-    for site = Base.range(lastindex(O), firstindex(O)+1, step=-1)
+    for site in Base.range(lastindex(O), firstindex(O)+1, step = -1)
         M = O[site]
         U, S, V = tsvd(M, (2, 3, 4); kwargs...)
-        M = contract(S, V, 2, 1; tocache=false)
+        M = contract(S, V, 2, 1; tocache = false)
         O[site] = M
-        O[site-1] = contract(O[site-1], U, 4, 1; tocache=false)
+        O[site-1] = contract(O[site-1], U, 4, 1; tocache = false)
     end
     return O
 end
@@ -166,7 +170,7 @@ function _creatempo_expand(O, D1, D2)
     dims = size(O)
     newO = zeros(ComplexF64, (dims[1]+D1, dims[2], dims[3], dims[4]+D2))
     d1 = dims[1] == 1 ? 1 : dims[1]-1
-    newO[1:d1, :, :, 1:dims[4]-1] .= O[1:d1, :, :, 1:dims[4]-1]
+    newO[1:d1, :, :, 1:(dims[4]-1)] .= O[1:d1, :, :, 1:(dims[4]-1)]
     newO[1:d1, :, :, end] .= O[1:d1, :, :, end]
     newO[dims[1]+D1, :, :, dims[4]+D2] .= O[dims[1], :, :, dims[4]]
     return newO
