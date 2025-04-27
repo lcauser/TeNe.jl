@@ -11,7 +11,7 @@
             for name2 in lt.opnames
                 oper1 = op(lt, name1)
                 oper2 = op(lt, name2)
-                @test op(lt2, name1*"_" *name2) == kron(oper1, transpose(oper2))
+                @test op(lt2, name1 * "_" * name2) == kron(oper1, transpose(oper2))
             end
         end
     end
