@@ -14,3 +14,11 @@ A list of some of the features it current includes are
 
 This will remain in development until all the matrix product states functionality is concluded, along with support for CUDA.
 At that point we will release v1.0.0, and then add functionality for other tensor network methods, such as uniform matrix product states, tree tensor networks and projected-entangled pair states.
+
+
+Developing
+--------------
+If you wish to contribute to TeNe, then your contribution is welcome! TeNe uses JuliaFormatter.jl to ensure it is 
+compliant with the Julia guidelines. PRs that are not will be blocked - we use a pre-commit hook to check and 
+perform formatting on commits. To use this, please first make sure pre-commit is installed, and run
+`pre-commit install`. 

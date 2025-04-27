@@ -96,8 +96,8 @@ function creatempo(H::OpList; kwargs...)
 
                         # Determine what the operator is
                         op =
-                            site+k-1 in sites ? ops[argmax([s == site+k-1 for s in sites
-    ])] : "id"
+                            site+k-1 in sites ?
+                            ops[argmax([s == site+k-1 for s in sites])] : "id"
 
                         # Add to liH.lt
                         push!(nextterms[k], op)
