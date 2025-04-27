@@ -1,6 +1,6 @@
 @testset "oplist" begin
     lt = Qubits()
-    @test begin 
+    @test begin
         ops = OpList(lt, 20)
         true
     end

@@ -13,7 +13,11 @@ function _op_trace_validation(Os::TensorNetworkOperator...)
         inners = innerdims(Os[i == lastindex(Os) ? firstindex(Os) : i+1])
         check = inners .== outers
         if !all(check)
-            throw(ArgumentError("Dimensions mistmatch for contraction number $(i) in the inner product."))
+            throw(
+                ArgumentError(
+                    "Dimensions mistmatch for contraction number $(i) in the inner product.",
+                ),
+            )
         end
     end
     return true

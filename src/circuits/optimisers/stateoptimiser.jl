@@ -15,7 +15,7 @@ mutable struct StateOptimiser
     sweeps::Int
     tol::Float64
     dir::Bool
-    verbose::Int 
+    verbose::Int
     costs::Vector{Float64}
 end
 
@@ -35,21 +35,33 @@ Optimise a unitary circuit that evolves `ψ` to `ϕ`.
     - `verbose::Int=1`: Output optimisation information? Set to 0 for no, 1 for after each sweep, 2 after each row.
 """
 function StateOptimiser(
-    ϕ::MPS, circuit::Circuit, ψ::MPS;
-    minsweeps::Int=1,
-    maxsweeps::Int=0,
-    tol::Float64=1e-8,
-    cutoff::Float64=_TeNe_cutoff,
-    maxdim::Int=0,
-    verbose::Int=1
-)   
-    proj = ProjMPSCircuit(ϕ, circuit, ψ; cutoff=cutoff, maxdim=maxdim)
-    optim = StateOptimiser(ϕ, circuit, ψ, proj, 0, tol, false, verbose, Float64[abs(product(proj))^2])
-    sweep!(optim, maxsweeps; minsweeps=minsweeps)
+    ϕ::MPS,
+    circuit::Circuit,
+    ψ::MPS;
+    minsweeps::Int = 1,
+    maxsweeps::Int = 0,
+    tol::Float64 = 1e-8,
+    cutoff::Float64 = _TeNe_cutoff,
+    maxdim::Int = 0,
+    verbose::Int = 1,
+)
+    proj = ProjMPSCircuit(ϕ, circuit, ψ; cutoff = cutoff, maxdim = maxdim)
+    optim = StateOptimiser(
+        ϕ,
+        circuit,
+        ψ,
+        proj,
+        0,
+        tol,
+        false,
+        verbose,
+        Float64[abs(product(proj))^2],
+    )
+    sweep!(optim, maxsweeps; minsweeps = minsweeps)
     return optim
 end
 
-function sweep!(optim::StateOptimiser, sweeps::Int=0; minsweeps::Int=1)
+function sweep!(optim::StateOptimiser, sweeps::Int = 0; minsweeps::Int = 1)
     # Fetch properties 
     circuit = optim.circuit
     proj = optim.proj
@@ -60,8 +72,8 @@ function sweep!(optim::StateOptimiser, sweeps::Int=0; minsweeps::Int=1)
         # Fetch the rows to sweep through
         rows = Base.range(firstindex(circuit.layers), lastindex(circuit.layers))
         rows = optim.dir ? reverse(rows) : rows
-        
-        for row in rows 
+
+        for row in rows
             # Move the center to the correct row 
             movecenter!(proj, row)
 
@@ -77,7 +89,7 @@ function sweep!(optim::StateOptimiser, sweeps::Int=0; minsweeps::Int=1)
                 layer.gates[g].gate .= gate.gate
             end
             if optim.verbose == 2
-                cost = product(proj) 
+                cost = product(proj)
                 @printf("iter=%d, row=%d overlap=%.8E \n", optim.sweeps+1, row, real(cost))
             end
         end

@@ -43,23 +43,40 @@ julia> size(z)
 (3, 4, 6, 7)
 ```
 """
-function contract(x, y, cix, ciy, conjx::Bool=false, conjy::Bool=false; tocache::Bool=true, sublevel=:auto)
+function contract(
+    x,
+    y,
+    cix,
+    ciy,
+    conjx::Bool = false,
+    conjy::Bool = false;
+    tocache::Bool = true,
+    sublevel = :auto,
+)
     # Dimensions of the problem
     _contract_checkdims(x, y, cix, ciy)
     sx, sy, rix, riy, pix, piy = _contract_permuted_dimensions(x, y, cix, ciy)
 
     # Create new matrix to store result 
-    dims = (_contract_dims(sx, rix)...,  _contract_dims(sy, riy)...)
+    dims = (_contract_dims(sx, rix)..., _contract_dims(sy, riy)...)
     if tocache
-        z = cache(dims, x, y; level=2, sublevel=sublevel)
+        z = cache(dims, x, y; level = 2, sublevel = sublevel)
     else
         z = promote_tensor(dims, x, y)
     end
-    _contract!(z, x, y, sx, sy, cix, ciy, rix, riy, pix, piy, conjx, conjy)  
+    _contract!(z, x, y, sx, sy, cix, ciy, rix, riy, pix, piy, conjx, conjy)
     return z
 end
 
-function contract(x, y, cix::Int, ciy::Int, conjx::Bool=false, conjy::Bool=false; kwargs...)
+function contract(
+    x,
+    y,
+    cix::Int,
+    ciy::Int,
+    conjx::Bool = false,
+    conjy::Bool = false;
+    kwargs...,
+)
     return contract(x, y, (cix,), (ciy,), conjx, conjy; kwargs...)
 end
 
@@ -89,64 +106,119 @@ julia> z = similar(x, (2, 4, 5, 6));
 julia> contract!(z, x, y, 2, 1)
 ```
 """
-function contract!(z, x, y, cix, ciy, conjx::Bool=false, conjy::Bool=false)
+function contract!(z, x, y, cix, ciy, conjx::Bool = false, conjy::Bool = false)
     _contract_checkdims(x, y, cix, ciy)
-    sx, sy, rix, riy, pix, piy= _contract_permuted_dimensions(x, y, cix, ciy)
+    sx, sy, rix, riy, pix, piy = _contract_permuted_dimensions(x, y, cix, ciy)
     _contract_checkreturn(z, sx, sy, rix, riy)
-    _contract!(z, x, y, sx, sy, cix, ciy, rix, riy, pix, piy, conjx, conjy)  
+    _contract!(z, x, y, sx, sy, cix, ciy, rix, riy, pix, piy, conjx, conjy)
 end
 
-function contract!(z, x, y, cix::Int, ciy::Int, conjx::Bool=false, conjy::Bool=false)
+function contract!(z, x, y, cix::Int, ciy::Int, conjx::Bool = false, conjy::Bool = false)
     contract!(z, x, y, (cix,), (ciy,), conjx, conjy)
 end
 
 
 ### Matrix-vector contractions to reduce overhead 
-function contract!(z, x::S, y::T, cix::Int=2, ciy::Int=1,conjx::Bool=false,
-    conjy::Bool=false) where {S<:AbstractArray{<:Number, 2}, T<:AbstractArray{<:Number, 1}}
+function contract!(
+    z,
+    x::S,
+    y::T,
+    cix::Int = 2,
+    ciy::Int = 1,
+    conjx::Bool = false,
+    conjy::Bool = false,
+) where {S<:AbstractArray{<:Number,2},T<:AbstractArray{<:Number,1}}
     _contract_checkdims(x, y, cix, ciy)
     if (ndims(z) != 1) || length(z) != size(x, cix == 1 ? 2 : 1)
         throw(ArgumentError("Destination tensor has the wrong dimensions."))
     end
-    if conjx x = (cache(eltype(x), size(x), 1) .= conj.(x)) end
-    if conjy y = cache(eltype(y), size(y), 1, (!conjx || (length(x) != length(y))) ? 1 : 2) .= conj.(y) end
+    if conjx
+        x = (cache(eltype(x), size(x), 1) .= conj.(x))
+    end
+    if conjy
+        y =
+            cache(eltype(y), size(y), 1, (!conjx || (length(x) != length(y))) ? 1 : 2) .=
+                conj.(y)
+    end
     mul!(z, cix == 2 ? x : transpose(x), y)
 end
 
-function contract!(z, x::S, y::T, cix::Int=1, ciy::Int=1, conjx::Bool=false,
-    conjy::Bool=false) where {S<:AbstractArray{<:Number, 1}, T<:AbstractArray{<:Number, 2}}
+function contract!(
+    z,
+    x::S,
+    y::T,
+    cix::Int = 1,
+    ciy::Int = 1,
+    conjx::Bool = false,
+    conjy::Bool = false,
+) where {S<:AbstractArray{<:Number,1},T<:AbstractArray{<:Number,2}}
     contract!(z, y, x, ciy, cix, conjx, conjy)
 end
 
-function contract(x::S, y::T, cix::Int=2, ciy::Int=1, conjx::Bool=false,
-    conjy::Bool=false) where {S<:AbstractArray{<:Number, 2}, T<:AbstractArray{<:Number, 1}}
+function contract(
+    x::S,
+    y::T,
+    cix::Int = 2,
+    ciy::Int = 1,
+    conjx::Bool = false,
+    conjy::Bool = false,
+) where {S<:AbstractArray{<:Number,2},T<:AbstractArray{<:Number,1}}
     z = zeros(Base.promote_op(*, eltype(x), eltype(y)), size(x, cix == 2 ? 1 : 2))
     contract!(z, x, y, cix, ciy, conjx, conjy)
     return z
 end
 
-function contract(x::S, y::T, cix::Int=1, ciy::Int=1, conjx::Bool=false,
-    conjy::Bool=false) where {S<:AbstractArray{<:Number, 1}, T<:AbstractArray{<:Number, 2}}
+function contract(
+    x::S,
+    y::T,
+    cix::Int = 1,
+    ciy::Int = 1,
+    conjx::Bool = false,
+    conjy::Bool = false,
+) where {S<:AbstractArray{<:Number,1},T<:AbstractArray{<:Number,2}}
     z = zeros(Base.promote_op(*, eltype(x), eltype(y)), size(y, ciy == 2 ? 1 : 2))
     contract!(z, x, y, cix, ciy, conjx, conjy)
     return z
 end
 
 ### Matrix-matrix multiplications to reduce overhead
-function contract!(z, x::S, y::T, cix::Int=2, ciy::Int=1, conjx::Bool=false,
-    conjy::Bool=false) where {S<:AbstractArray{<:Number, 2}, T<:AbstractArray{<:Number, 2}}
+function contract!(
+    z,
+    x::S,
+    y::T,
+    cix::Int = 2,
+    ciy::Int = 1,
+    conjx::Bool = false,
+    conjy::Bool = false,
+) where {S<:AbstractArray{<:Number,2},T<:AbstractArray{<:Number,2}}
     _contract_checkdims(x, y, cix, ciy)
-    if (ndims(z) != 2) || (size(z, 1) != size(x, cix == 1 ? 2 : 1)) || (size(z, 2) != size(y, ciy == 1 ? 2 : 1))
+    if (ndims(z) != 2) ||
+       (size(z, 1) != size(x, cix == 1 ? 2 : 1)) ||
+       (size(z, 2) != size(y, ciy == 1 ? 2 : 1))
         throw(ArgumentError("Destination tensor has the wrong dimensions."))
     end
-    if conjx x = (cache(x, 1, 1) .= conj.(x)) end
-    if conjy y = cache(y, 1, (!conjx || (length(x) != length(y))) ? 1 : 2) .= conj.(y) end
+    if conjx
+        x = (cache(x, 1, 1) .= conj.(x))
+    end
+    if conjy
+        y = cache(y, 1, (!conjx || (length(x) != length(y))) ? 1 : 2) .= conj.(y)
+    end
     mul!(z, cix == 2 ? x : transpose(x), ciy == 1 ? y : transpose(y))
 end
 
-function contract(x::S, y::T, cix::Int=2, ciy::Int=1, conjx::Bool=false,
-    conjy::Bool=false) where {S<:AbstractArray{<:Number, 2}, T<:AbstractArray{<:Number, 2}}
-    z = zeros(Base.promote_op(*, eltype(x), eltype(y)), size(x, cix == 2 ? 1 : 2), size(y, ciy == 2 ? 1 : 2))
+function contract(
+    x::S,
+    y::T,
+    cix::Int = 2,
+    ciy::Int = 1,
+    conjx::Bool = false,
+    conjy::Bool = false,
+) where {S<:AbstractArray{<:Number,2},T<:AbstractArray{<:Number,2}}
+    z = zeros(
+        Base.promote_op(*, eltype(x), eltype(y)),
+        size(x, cix == 2 ? 1 : 2),
+        size(y, ciy == 2 ? 1 : 2),
+    )
     contract!(z, x, y, cix, ciy, conjx, conjy)
     return z
 end
@@ -157,17 +229,26 @@ end
 function _contract!(z, x, y, sx, sy, cix, ciy, rix, riy, pix, piy, conjx, conjy)
     # Permute tensors
     px = permutedims!(cache(x, _contract_dims(sx, pix)), x, pix)
-    py = permutedims!(cache(y, _contract_dims(sy, piy), 1,
-                      length(x) == length(y) ? 2 : 1),y, piy)
+    py = permutedims!(
+        cache(y, _contract_dims(sy, piy), 1, length(x) == length(y) ? 2 : 1),
+        y,
+        piy,
+    )
 
     # Conjugations 
-    if conjx px .= conj.(px) end
-    if conjy py .= conj.(py) end
+    if conjx
+        px .= conj.(px)
+    end
+    if conjy
+        py .= conj.(py)
+    end
 
     # Contract
-    mul!(reshape(z, (prod(_contract_dims(sx, rix)), prod(_contract_dims(sy, riy)))),
-         reshape(px, (prod(_contract_dims(sx, rix)), prod(_contract_dims(sx, cix)))),
-         reshape(py, (prod(_contract_dims(sy, ciy)), prod(_contract_dims(sy, riy)))))
+    mul!(
+        reshape(z, (prod(_contract_dims(sx, rix)), prod(_contract_dims(sy, riy)))),
+        reshape(px, (prod(_contract_dims(sx, rix)), prod(_contract_dims(sx, cix)))),
+        reshape(py, (prod(_contract_dims(sy, ciy)), prod(_contract_dims(sy, riy)))),
+    )
 end
 
 

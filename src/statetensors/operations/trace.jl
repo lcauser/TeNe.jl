@@ -30,7 +30,7 @@ function trace(Os::StateOperator...)
     end
 
     # Create a tensor from the cache
-    T = _promote_tensor_eltype(Os...) 
+    T = _promote_tensor_eltype(Os...)
     perms = tuple(map(j->isodd(j) ? j + 1 : j - 1, Base.OneTo(ndims(tensor(Os[1]))))...)
     if istranspose(Os[1])
         dims = map(j->size(tensor(Os[1]), j), perms)
@@ -43,13 +43,18 @@ function trace(Os::StateOperator...)
     if isconj(Os[1])
         ten .= conj.(ten)
     end
-    
+
     # Contract with center operators 
     perms2 = _so_so_product_perms(length(Os[1]))
     for i in range(2, length(Os)-1)
-        ten = contract(ten, tensor(Os[i]), collect(2:2:ndims(ten)),
+        ten = contract(
+            ten,
+            tensor(Os[i]),
+            collect(2:2:ndims(ten)),
             collect((istranspose(Os[i]) ? 2 : 1):2:ndims(tensor(Os[i]))),
-            false, isconj(Os[i]))
+            false,
+            isconj(Os[i]),
+        )
         ten = permutedims(ten, perms2)
     end
 

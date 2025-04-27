@@ -2,13 +2,23 @@
     The time-evolving block decimation method for an MPS ansatz.
 =#
 
-export tebd 
+export tebd
 
-function tebd(ψ::MPS, H::OpList, δt::Number, Δt::Number, t::Number, observers::MPSObserver...; kwargs...)
+function tebd(
+    ψ::MPS,
+    H::OpList,
+    δt::Number,
+    Δt::Number,
+    t::Number,
+    observers::MPSObserver...;
+    kwargs...,
+)
     # Create the gates 
-    U = trotterize(H, δt;
-        order=get(kwargs, :order, 2),
-        type=get(kwargs, :type, :compressed)
+    U = trotterize(
+        H,
+        δt;
+        order = get(kwargs, :order, 2),
+        type = get(kwargs, :type, :compressed),
     )
 
     # Keyword arguments for truncation
@@ -41,24 +51,37 @@ function tebd(ψ::MPS, H::OpList, δt::Number, Δt::Number, t::Number, observers
     verbose::Bool = get(kwargs, :verbose, true)
     for i = 1:num_large
         # Apply gates multiple times
-        for _ = 1:num_small 
-            applygates!(U, ψ; cutoff=cutoff, maxdim=maxdim, mindim=mindim, normalize=normalize)
+        for _ = 1:num_small
+            applygates!(
+                U,
+                ψ;
+                cutoff = cutoff,
+                maxdim = maxdim,
+                mindim = mindim,
+                normalize = normalize,
+            )
         end
 
         # Take measurements
         _tebd_measurements!(ψ, observers...)
-        
+
         # Output
         E = sum(inner(ψ, H, ψ))
-        if verbose 
-            @printf("time=%.4E/%.4E, maxbonddim=%d, energy=%.6E \n", Δt*i, t, maxbonddim(ψ), real(E))
+        if verbose
+            @printf(
+                "time=%.4E/%.4E, maxbonddim=%d, energy=%.6E \n",
+                Δt*i,
+                t,
+                maxbonddim(ψ),
+                real(E)
+            )
         end
 
         # Check convergence 
         if energycheck
             diff = abs(E) > 1e-10 ? 2*abs(lastE-E)/abs(lastE+E) : abs(lastE-E)
-            if diff < energytol 
-                break 
+            if diff < energytol
+                break
             end
             lastE = E
         end
@@ -67,6 +90,6 @@ end
 
 function _tebd_measurements!(ψ::MPS, observers::MPSObserver...)
     for observer in observers
-        measure!(observer, ψ) 
+        measure!(observer, ψ)
     end
 end

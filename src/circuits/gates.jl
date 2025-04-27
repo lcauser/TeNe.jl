@@ -1,7 +1,7 @@
 abstract type AbstractGate end
 
 ### A customizable gate 
-mutable struct CircuitGate{d, n, T} <: AbstractGate where {d, n, T<:AbstractArray}
+mutable struct CircuitGate{d,n,T} <: AbstractGate where {d,n,T<:AbstractArray}
     gate::T
 end
 export creategate, makeunitary!, makeunitary
@@ -21,14 +21,14 @@ function creategate(gate::AbstractArray)
         throw(ArgumentError("The gate must have the same dimensions sizes."))
     end
     # 
-    return CircuitGate{sz[1], num_qubits, typeof(gate)}(gate)
+    return CircuitGate{sz[1],num_qubits,typeof(gate)}(gate)
 end
 
 # Properties 
 export tensor, dim, qubits
 tensor(gate::CircuitGate) = gate.gate
-dim(::CircuitGate{d}) where {d} = d 
-Base.length(::CircuitGate{d, n}) where {d, n} = n
+dim(::CircuitGate{d}) where {d} = d
+Base.length(::CircuitGate{d,n}) where {d,n} = n
 Base.eltype(gate::CircuitGate) = eltype(gate.gate)
 
 
@@ -39,7 +39,7 @@ Base.eltype(gate::CircuitGate) = eltype(gate.gate)
 Find the complex conjugate of a gate.
 """
 function TeNe.conj(gate::CircuitGate)
-    return CircuitGate{dim(gate), length(gate), typeof(gate.gate)}(conj(gate.gate))
+    return CircuitGate{dim(gate),length(gate),typeof(gate.gate)}(conj(gate.gate))
 end
 
 
@@ -51,7 +51,7 @@ Find the adjoint of a gate.
 function TeNe.adjoint(gate::CircuitGate)
     idxs = map(j->isodd(j) ? j+1 : j-1, Base.OneTo(ndims(gate.gate)))
     new_gate = conj.(permutedims(gate.gate, idxs))
-    return CircuitGate{dim(gate), length(gate), typeof(gate.gate)}(new_gate)
+    return CircuitGate{dim(gate),length(gate),typeof(gate.gate)}(new_gate)
 end
 
 
@@ -63,7 +63,7 @@ Find the transpose of a gate.
 function TeNe.transpose(gate::CircuitGate)
     idxs = map(j->isodd(j) ? j+1 : j-1, Base.OneTo(ndims(gate.gate)))
     new_gate = permutedims(gate.gate, idxs)
-    return CircuitGate{dim(gate), length(gate), typeof(gate.gate)}(new_gate)
+    return CircuitGate{dim(gate),length(gate),typeof(gate.gate)}(new_gate)
 end
 
 
@@ -82,10 +82,14 @@ julia> makeunitary!(U)
 ```
 """
 function makeunitary!(gate::CircuitGate)
-    dims = Base.range(2, 2*length(gate), step=2)
-    U, _, V = tsvd(tensor(gate), dims; mindim=prod(map(j->size(tensor(gate), j), dims)))
+    dims = Base.range(2, 2*length(gate), step = 2)
+    U, _, V = tsvd(tensor(gate), dims; mindim = prod(map(j->size(tensor(gate), j), dims)))
     ten = contract(U, V, ndims(U), 1)
-    permutedims!(tensor(gate), ten, map(j->isodd(j) ? cld(j, 2) : length(gate)+fld(j, 2), Base.OneTo(2*length(gate))))
+    permutedims!(
+        tensor(gate),
+        ten,
+        map(j->isodd(j) ? cld(j, 2) : length(gate)+fld(j, 2), Base.OneTo(2*length(gate))),
+    )
 end
 
 """
@@ -109,16 +113,16 @@ end
 
 
 ### Making random unitaries 
-function _unitary_close_to_id(d::Int, N::Int, ϵ::Number=1e-1)
+function _unitary_close_to_id(d::Int, N::Int, ϵ::Number = 1e-1)
     ### Change to e^{-iϵH}?
     # identity
     id = LinearAlgebra.diagm(ones(ComplexF64, d))
-    H = ones(ComplexF64, )
+    H = ones(ComplexF64)
     for i = 1:N
-        H = tensorproduct(H, id; tocache=!(i==N))
+        H = tensorproduct(H, id; tocache = !(i==N))
     end
-    
-    H .+= ϵ*randn(ComplexF64, [d for _ = 1:2*N]...)
+
+    H .+= ϵ*randn(ComplexF64, [d for _ = 1:(2*N)]...)
     U = creategate(H)
     makeunitary!(U)
     return U

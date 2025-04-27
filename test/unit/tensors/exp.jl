@@ -1,6 +1,6 @@
 @testset "exp" begin
     A = rand(ComplexF64, 4, 3, 3, 4, 3, 3)
-    B = TeNe.exp(A, (1, 5, 6), prefactor=-1im)
+    B = TeNe.exp(A, (1, 5, 6), prefactor = -1im)
     C = -1im * permutedims(A, (2, 3, 4, 1, 5, 6))
     C = LinearAlgebra.exp(reshape(C, (36, 36)))
     C = reshape(C, (3, 3, 4, 4, 3, 3))
@@ -12,7 +12,7 @@
     @test isapprox(B, C)
 
     A = rand(ComplexF64, 5, 5)
-    B = TeNe.exp(A, 2, prefactor=-1im)
+    B = TeNe.exp(A, 2, prefactor = -1im)
     C = exp(-1im*A)
     @test isapprox(B, C)
 end

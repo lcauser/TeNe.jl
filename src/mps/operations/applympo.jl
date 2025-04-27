@@ -26,17 +26,17 @@ Apply MPO `O` to MPS `ψ`.
     - `maxdim::Int=0`: Maximum bond dimension for truncation. Set to 0 to have
       no limit.
 """
-function applympo(O::MPO, ψ::MPS; alg=:naive, kwargs...)
+function applympo(O::MPO, ψ::MPS; alg = :naive, kwargs...)
     # Checks on the arguments
     _op_vec_validation(O, ψ)
 
     # Create a new MPS to store the result 
-    ϕ = MPS(dim(ψ), length(ψ); T=_promote_tensor_eltype(O, ψ))
+    ϕ = MPS(dim(ψ), length(ψ); T = _promote_tensor_eltype(O, ψ))
 
     # Run the algorithm
     if alg==:naive
         _mpo_mps_naive!(ϕ, O, ψ; kwargs...)
-    elseif alg==:zipup 
+    elseif alg==:zipup
         _mpo_mps_zipup!(ϕ, O, ψ; kwargs...)
     else
         throw(ArgumentError("The algorithm $(alg) is unknown."))
@@ -44,8 +44,8 @@ function applympo(O::MPO, ψ::MPS; alg=:naive, kwargs...)
     return ϕ
 end
 applympo(ψ::MPS, O::MPO; kwargs...) = applympo(transpose(O), ψ; kwargs...)
-*(O::MPO, ψ::MPS) = applympo(O, ψ; cutoff=_TeNe_cutoff)
-*(ψ::MPS, O::MPO) = applympo(ψ, O; cutoff=_TeNe_cutoff)
+*(O::MPO, ψ::MPS) = applympo(O, ψ; cutoff = _TeNe_cutoff)
+*(ψ::MPS, O::MPO) = applympo(ψ, O; cutoff = _TeNe_cutoff)
 
 # Naive method; do the contraction exactly and then truncate
 function _mpo_mps_naive!(ϕ::MPS, O::MPO, ψ::MPS; kwargs...)
@@ -58,7 +58,14 @@ function _mpo_mps_naive!(ϕ::MPS, O::MPO, ψ::MPS; kwargs...)
     for i in eachindex(ϕ)
         tensor = contract(O[i], ψ[i], outerind(O), 2, isconj(O), isconj(ψ))
         tensor = _permutedims(tensor, (1, 4, 2, 3, 5))
-        tensor = reshape(tensor, (size(tensor, 1)*size(tensor, 2), size(tensor, 3), size(tensor, 4)*size(tensor, 5)))
+        tensor = reshape(
+            tensor,
+            (
+                size(tensor, 1)*size(tensor, 2),
+                size(tensor, 3),
+                size(tensor, 4)*size(tensor, 5),
+            ),
+        )
         ϕ[i] = copy(tensor)
         movecenter!(ϕ, i; kwargs...)
     end
@@ -75,7 +82,7 @@ function _mpo_mps_zipup!(ϕ::MPS, O::MPO, ψ::MPS; kwargs...)
     block = cache(eltype(ϕ), (1, size(O[begin], 1), size(ψ[begin], 1)), 2, 1) .= 1
     for i in eachindex(O)
         block = contract(block, O[i], 2, 1, false, isconj(O))
-        block = contract(block, ψ[i], (2, 1 + outerind(O)), (1, 2), false, isconj(ψ)) 
+        block = contract(block, ψ[i], (2, 1 + outerind(O)), (1, 2), false, isconj(ψ))
         if i < length(O)
             U, S, block = tsvd(block, (3, 4); kwargs...)
             block = contract(S, block, 2, 1)
@@ -108,24 +115,24 @@ Apply MPO `O1` to MPO `O2`.
     - `maxdim::Int=0`: Maximum bond dimension for truncation. Set to 0 to have
       no limit.
 """
-function applympo(O1::MPO, O2::MPO; alg=:naive, kwargs...)
+function applympo(O1::MPO, O2::MPO; alg = :naive, kwargs...)
     # Checks on the arguments
     _op_op_validation(O1, O2)
 
     # Create MPO to store the result 
-    O = MPO(dim(O1), length(O2); T=_promote_tensor_eltype(O1, O2))
+    O = MPO(dim(O1), length(O2); T = _promote_tensor_eltype(O1, O2))
 
     # Run the algorithm
     if alg==:naive
         _mpo_mpo_naive!(O, O1, O2; kwargs...)
-    elseif alg==:zipup 
+    elseif alg==:zipup
         _mpo_mpo_zipup!(O, O1, O2; kwargs...)
     else
         throw(ArgumentError("The algorithm $(alg) is unknown."))
     end
     return O
 end
-*(O1::MPO, O2::MPO) = applympo(O1, O2; cutoff=_TeNe_cutoff)
+*(O1::MPO, O2::MPO) = applympo(O1, O2; cutoff = _TeNe_cutoff)
 
 function _mpo_mpo_naive!(O::MPO, O1::MPO, O2::MPO; kwargs...)
     # Move canonical centre of both to the first site 
@@ -137,8 +144,15 @@ function _mpo_mpo_naive!(O::MPO, O1::MPO, O2::MPO; kwargs...)
     for i in eachindex(O)
         tensor = contract(O1[i], O2[i], outerind(O1), innerind(O2), isconj(O1), isconj(O2))
         tensor = _permutedims(tensor, (1, 4, 2, 5, 3, 6))
-        tensor = reshape(tensor, (size(tensor, 1)*size(tensor, 2), size(tensor, 3), size(tensor, 4),
-                                  size(tensor, 5)*size(tensor, 6)))
+        tensor = reshape(
+            tensor,
+            (
+                size(tensor, 1)*size(tensor, 2),
+                size(tensor, 3),
+                size(tensor, 4),
+                size(tensor, 5)*size(tensor, 6),
+            ),
+        )
         O[i] = copy(tensor)
         movecenter!(O, i; kwargs...)
     end
@@ -154,7 +168,14 @@ function _mpo_mpo_zipup!(O::MPO, O1::MPO, O2::MPO; kwargs...)
     block = cache(eltype(O), (1, size(O1[begin], 1), size(O2[begin], 1)), 2, 1) .= 1
     for i in eachindex(O)
         block = contract(block, O1[i], 2, 1, false, isconj(O1))
-        block = contract(block, O2[i], (2, 1 + outerind(O1)), (1, innerind(O2)), false, isconj(O2))
+        block = contract(
+            block,
+            O2[i],
+            (2, 1 + outerind(O1)),
+            (1, innerind(O2)),
+            false,
+            isconj(O2),
+        )
         if i < length(O)
             U, S, block = tsvd(block, (3, 5); kwargs...)
             block = contract(S, block, 2, 1)
@@ -224,7 +245,7 @@ function _mpo_sv_product!(ϕ::StateVector, O::MPO, ψ::StateVector)
     for i in range(firstindex(O)+1, lastindex(O))
         ten = contract(ten, O[i], (ndims(ten), 1), (1, outerind(O)), false, isconj(O))
     end
-    ten = reshape(ten, size(ten)[begin:end-1])
+    ten = reshape(ten, size(ten)[begin:(end-1)])
     tensor(ϕ) .= isconj(ϕ) ? conj.(ten) : ten
 end
 
@@ -245,7 +266,7 @@ end
 function applympo(O1::StateOperator, O2::MPO)
     _op_op_validation(O1, O2)
     O = GStateTensor(2, dim(O2), promote_tensor(_mpo_so_dims(O1, O2, true), O1, O2))
-    _mpo_so_product!(O, O2, O1; tp=true)
+    _mpo_so_product!(O, O2, O1; tp = true)
     return O
 end
 *(O1::MPO, O2::StateOperator) = applympo(O1, O2)
@@ -264,26 +285,38 @@ end
 
 function applympo!(O::StateOperator, O1::StateOperator, O2::MPO)
     _op_op_validation(O, O1, O2)
-    _mpo_so_product!(O, transpose(O2), transpose(O1); tp=true)
+    _mpo_so_product!(O, transpose(O2), transpose(O1); tp = true)
 end
 
-function _mpo_so_product!(O::StateOperator, O1::MPO, O2::StateOperator; tp::Bool=false)
+function _mpo_so_product!(O::StateOperator, O1::MPO, O2::StateOperator; tp::Bool = false)
     # Apply the first tensor 
     ten = reshape(tensor(O2), (size(tensor(O2))..., 1))
-    ten = contract(ten, O1[1], (ndims(ten), istranspose(O2) ? 2 : 1),
-        (1, istranspose(O1) ? 2 : 3), isconj(O2), isconj(O1))
+    ten = contract(
+        ten,
+        O1[1],
+        (ndims(ten), istranspose(O2) ? 2 : 1),
+        (1, istranspose(O1) ? 2 : 3),
+        isconj(O2),
+        isconj(O1),
+    )
 
     # Apply intermediate tensors
     # Loop through the remaining tensors 
     for i in range(firstindex(O1)+1, lastindex(O1))
-        ten = contract(ten, O1[i], (ndims(ten), istranspose(O2) ? i+1 : i),
-            (1, istranspose(O1) ? 2 : 3), false, isconj(O1))
+        ten = contract(
+            ten,
+            O1[i],
+            (ndims(ten), istranspose(O2) ? i+1 : i),
+            (1, istranspose(O1) ? 2 : 3),
+            false,
+            isconj(O1),
+        )
     end
 
     # Manipulate to fit O
-    ten = reshape(ten, size(ten)[begin:end-1])
+    ten = reshape(ten, size(ten)[begin:(end-1)])
     perms = _applyso_perm_dims(length(O))
-    if istranspose(O) != tp 
+    if istranspose(O) != tp
         perms = Tuple(map(j->isodd(j) ? perms[j+1] : perms[j-1], Base.eachindex(perms)))
     end
     permutedims!(tensor(O), ten, perms)
@@ -292,13 +325,23 @@ function _mpo_so_product!(O::StateOperator, O1::MPO, O2::StateOperator; tp::Bool
     end
 end
 
-function _mpo_so_dims(O1::MPO, O2::StateOperator, reverse::Bool=false)
+function _mpo_so_dims(O1::MPO, O2::StateOperator, reverse::Bool = false)
     if reverse
-        dims = Tuple(map(j->isodd(j) ? size(tensor(O2), istranspose(O2) ? j+1 : j) :
-            size(O1[cld(j, 2)], outerind(O1)), Base.OneTo(2*length(O1))))
+        dims = Tuple(
+            map(
+                j->isodd(j) ? size(tensor(O2), istranspose(O2) ? j+1 : j) :
+                   size(O1[cld(j, 2)], outerind(O1)),
+                Base.OneTo(2*length(O1)),
+            ),
+        )
     else
-        dims = Tuple(map(j->isodd(j) ? size(O1[cld(j, 2)], innerind(O1)) :
-            size(tensor(O2), istranspose(O2) ? j-1 : j), Base.OneTo(2*length(O1))))
+        dims = Tuple(
+            map(
+                j->isodd(j) ? size(O1[cld(j, 2)], innerind(O1)) :
+                   size(tensor(O2), istranspose(O2) ? j-1 : j),
+                Base.OneTo(2*length(O1)),
+            ),
+        )
     end
     return dims
 end

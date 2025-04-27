@@ -6,8 +6,8 @@ abstract type AbstractMPS <: TensorNetworkState end
 Check to see if MPSs share the same properties.
 """
 function issimilar(ψs::AbstractMPS...)
-    for i = Base.range(2, length(ψs))
-        length(ψs[i]) != length(ψs[1]) && return false 
+    for i in Base.range(2, length(ψs))
+        length(ψs[i]) != length(ψs[1]) && return false
         dim(ψs[1]) != dim(ψs[i]) && return false
     end
     return true
@@ -34,5 +34,5 @@ maxbonddim(ψ::GMPSTrait) = maxbonddim(ψ.MPS)
 TeNe.norm(ψ::GMPSTrait) = TeNe.norm(ψ.MPS)
 
 # Default properties to false, but override later for true...
-isconj(ψ) = false 
+isconj(ψ) = false
 istranspose(ψ) = false

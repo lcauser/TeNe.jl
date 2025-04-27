@@ -1,4 +1,4 @@
-@testset "mps-trace" begin 
+@testset "mps-trace" begin
     @test begin
         O1 = randommpo(30, 3, 4)
         O2 = randommpo(30, 3, 5)

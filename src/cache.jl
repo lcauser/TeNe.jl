@@ -8,8 +8,14 @@
 =#
 
 # Returning & allocation memory from / to the cache given the data type and size(s)
-function cache(T::DataType, length::Int, level::Int, sublevel::Int, threadid::Int;
-               backend::DataType=CPU)
+function cache(
+    T::DataType,
+    length::Int,
+    level::Int,
+    sublevel::Int,
+    threadid::Int;
+    backend::DataType = CPU,
+)
     if !haskey(_CACHE, (T, length, level, sublevel, threadid))
         _CACHE[(T, length, level, sublevel, threadid)] = zeros(T, length)
     end
@@ -24,7 +30,7 @@ function cache(T::DataType, dims, level::Int, sublevel::Int, threadid::Int; kwar
     return reshape(cache(T, prod(dims), level, sublevel, threadid; kwargs...), dims)
 end
 
-function cache(T::DataType, length, level::Int=1, sublevel::Int=1; kwargs...) 
+function cache(T::DataType, length, level::Int = 1, sublevel::Int = 1; kwargs...)
     return cache(T, length, level, sublevel, Threads.threadid())
 end
 
@@ -32,18 +38,24 @@ end
 function cache(x::Q, level::Int, sublevel::Int, threadid::Int) where {Q<:AbstractArray}
     #backend = typeof(get_backend(x)) # Disabled for now...
     backend = CPU
-    return cache(eltype(x), size(x), level, sublevel, threadid; backend=backend)
+    return cache(eltype(x), size(x), level, sublevel, threadid; backend = backend)
 end
 
-function cache(x::Q, level::Int=1, sublevel::Int=1) where {Q<:AbstractArray}
+function cache(x::Q, level::Int = 1, sublevel::Int = 1) where {Q<:AbstractArray}
     return cache(x, level, sublevel, Threads.threadid())
 end
 
-function cache(x::Q, dims, level::Int, sublevel::Int, threadid::Int) where {Q<:AbstractArray}
+function cache(
+    x::Q,
+    dims,
+    level::Int,
+    sublevel::Int,
+    threadid::Int,
+) where {Q<:AbstractArray}
     return reshape(cache(x, level, sublevel, threadid), dims)
 end
 
-function cache(x::Q, dims, level::Int=1, sublevel::Int=1) where {Q<:AbstractArray}
+function cache(x::Q, dims, level::Int = 1, sublevel::Int = 1) where {Q<:AbstractArray}
     return reshape(cache(x, level, sublevel, Threads.threadid()), dims)
 end
 
@@ -53,24 +65,24 @@ function deletecache!(T::DataType, length::Int, level::Int, sublevel::Int, threa
     _CACHE[(T, length, level, sublevel, threadid)] = nothing
 end
 
-function deletecache!(T::DataType, length::Int, level::Int=1, sublevel::Int=1) 
+function deletecache!(T::DataType, length::Int, level::Int = 1, sublevel::Int = 1)
     deletecache!(T, length, level, sublevel, Threads.threadid())
 end
 
 
 # Non-alaising memory 
-function cache_non_alias(dims, args...; level::Int=2)
+function cache_non_alias(dims, args...; level::Int = 2)
     # Type and checks 
     T = _promote_tensor_eltype(args...)
     checks = map(tensor -> prod(dims) == prod(size(tensor)), args)
 
     # Find non-aliased tensors 
     sublevel = 0
-    aliased = true 
-    while aliased 
+    aliased = true
+    while aliased
         sublevel += 1
         z = cache(T, dims, level, sublevel)
-        aliased = false 
+        aliased = false
         for i in eachindex(args)
             if checks[i] && Base.mightalias(args[i], z)
                 aliased = true
@@ -84,11 +96,11 @@ function _promote_tensor_eltype(args...)
     return Base.promote_type(eltype.(args)...)
 end
 
-function cache(dims, args...; level::Int=2, sublevel=:auto)
+function cache(dims, args...; level::Int = 2, sublevel = :auto)
     if sublevel==:auto
-        return cache_non_alias(dims, args...; level=level)
+        return cache_non_alias(dims, args...; level = level)
     else
-        T  = _promote_tensor_eltype(args...)
+        T = _promote_tensor_eltype(args...)
         return cache(T, dims, level, sublevel)
     end
 end

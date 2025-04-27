@@ -2,18 +2,18 @@
     LatticeTypes contain essential information about the type of system we are working with,
     such as pre-defined states, operators.
 =#
-mutable struct LatticeTypes{dim, T}
+mutable struct LatticeTypes{dim,T}
     statenames::Vector{String}
-    states::Vector{SVector{dim, T}}
+    states::Vector{SVector{dim,T}}
     opnames::Vector{String}
-    ops::Vector{SMatrix{dim, dim, T}}
+    ops::Vector{SMatrix{dim,dim,T}}
     temp::Int
 end
 export LatticeTypes
 
 export dim
-dim(::LatticeTypes{d, T}) where {d, T} = d
-Base.eltype(::LatticeTypes{d, T}) where {d, T} = T
+dim(::LatticeTypes{d,T}) where {d,T} = d
+Base.eltype(::LatticeTypes{d,T}) where {d,T} = T
 
 """
     LatticeTypes(dim::Int)
@@ -24,8 +24,14 @@ Create a LatticeType with physical dimension `dim`.
 
     - `T::Type=ComplexF64`: The type for states / operators.
 """
-function LatticeTypes(dim::Int; T::Type=ComplexF64)
-    return LatticeTypes{dim, T}(Vector{String}[], Vector{SVector{dim, T}}[], Vector{String}[], Vector{SMatrix{dim, dim, T}}[], 0)
+function LatticeTypes(dim::Int; T::Type = ComplexF64)
+    return LatticeTypes{dim,T}(
+        Vector{String}[],
+        Vector{SVector{dim,T}}[],
+        Vector{String}[],
+        Vector{SMatrix{dim,dim,T}}[],
+        0,
+    )
 end
 
 
@@ -73,13 +79,13 @@ function add!(lt::LatticeTypes, name::String, A)
             throw(ArgumentError("State has the wrong dimensions."))
         end
         push!(lt.statenames, name)
-        push!(lt.states, SVector{dim(lt), eltype(lt)}(A))
+        push!(lt.states, SVector{dim(lt),eltype(lt)}(A))
     elseif ndims(A) == 2
         if size(A) != (dim(lt), dim(lt))
             throw(ArgumentError("State has the wrong dimensions."))
         end
         push!(lt.opnames, name)
-        push!(lt.ops,  SMatrix{dim(lt), dim(lt), eltype(lt)}(A))
+        push!(lt.ops, SMatrix{dim(lt),dim(lt),eltype(lt)}(A))
     else
         throw(ArgumentError("A is not a vector nor a matrix."))
     end

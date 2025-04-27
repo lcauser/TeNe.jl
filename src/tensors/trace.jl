@@ -24,7 +24,7 @@ julia> z = similar(x, (2, 4));
 julia> trace!(z, x, (2, 4));
 ```
 """
-function trace!(z, x, cix::Int...; conj::Bool=false)
+function trace!(z, x, cix::Int...; conj::Bool = false)
     # Fetch the dimensions & do checks 
     sx, rix, pos = _trace_dimensions(x, cix)
     _trace_check_args(sx, cix)
@@ -54,15 +54,15 @@ julia> size(y)
 (2, 4)
 ```
 """
-function trace(x, cix::Int...; conj::Bool=false, tocache::Bool=true, sublevel=:auto)
+function trace(x, cix::Int...; conj::Bool = false, tocache::Bool = true, sublevel = :auto)
     # Fetch the dimensions & do checks 
     sx, rix, pos = _trace_dimensions(x, cix)
     _trace_check_args(sx, cix)
-    
+
     # Create the tensor to store the result 
     dims = map(x->sx[x], rix)
     if tocache
-        z = cache(dims, x; level=2, sublevel=sublevel)
+        z = cache(dims, x; level = 2, sublevel = sublevel)
     else
         z = promote_tensor(dims, x)
     end
@@ -93,10 +93,10 @@ function _trace_dimensions(x, cix)
     pos = zeros(Int, ndims(x))
     j = 1
     for i in Base.OneTo(ndims(x))
-        if i in cix 
+        if i in cix
             pos[i] = 0
         else
-            pos[i] = j 
+            pos[i] = j
             j += 1
         end
     end

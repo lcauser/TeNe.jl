@@ -33,14 +33,14 @@ julia> size(y)
 (2, 3, 2, 3)
 ```
 """
-function TeNe.exp(x, outerdims; prefactor=1)
+function TeNe.exp(x, outerdims; prefactor = 1)
     innerdims = setdiff(Base.OneTo(ndims(x)), outerdims)
     pxs, pxs_return, sinners, souters = _exp_permuted_dimensions(x, innerdims, outerdims)
     _exp_check_dims(sinners, souters)
     return _exp(x, pxs, pxs_return, souters, sinners, prefactor)
 end
 
-function TeNe.exp(x, innerdims, outerdims; prefactor=1)
+function TeNe.exp(x, innerdims, outerdims; prefactor = 1)
     _exp_check_inds(x, innerdims, outerdims)
     pxs, pxs_return, sinners, souters = _exp_permuted_dimensions(x, innerdims, outerdims)
     _exp_check_dims(sinners, souters)
@@ -81,7 +81,11 @@ end
 ### Checks 
 function _exp_check_dims(sinners, souters)
     if prod(sinners) != prod(souters)
-        throw(ArgumentError("Dimensions $(sinners) and $(souters) do not give a square matrix."))
+        throw(
+            ArgumentError(
+                "Dimensions $(sinners) and $(souters) do not give a square matrix.",
+            ),
+        )
     end
 end
 

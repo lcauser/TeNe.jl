@@ -1,5 +1,5 @@
 using BenchmarkTools
-using TeNe 
+using TeNe
 include("benchmarks/dmrg.jl")
 include("benchmarks/stateoptimiser.jl")
 

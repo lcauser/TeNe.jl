@@ -22,11 +22,11 @@ function TeNe.trace(Os::MPO...)
 end
 
 function _mpo_trace(O::MPO)
-     # Type info...
-     T = eltype(O)
-     conjO = isconj(O)
+    # Type info...
+    T = eltype(O)
+    conjO = isconj(O)
 
-     # Do the contraction 
+    # Do the contraction 
     block = cache(T, size(O[begin], 1), 2, 1) .= 1
     for i in eachindex(O)
         block = contract(block, trace(O[i], 2, 3), 1, 1, false, conjO)
@@ -51,13 +51,25 @@ function _mpo_mpo_trace(Os::MPO...)
 
         # Contract with the central MPOs
         for j in range(firstindex(Os)+1, lastindex(Os)-1)
-            block = contract(block, Os[j][i], (1, ndims(block)-1),
-                            (1, transOs[j] ? 3 : 2), false, conjOs[j])
+            block = contract(
+                block,
+                Os[j][i],
+                (1, ndims(block)-1),
+                (1, transOs[j] ? 3 : 2),
+                false,
+                conjOs[j],
+            )
         end
 
         # Contract with final MPO 
-        block = contract(block, Os[end][i], (1, ndims(block)-1, 2),
-                         (1, transOs[end] ? 3 : 2, transOs[end] ? 2 : 3), false, conjOs[end])
+        block = contract(
+            block,
+            Os[end][i],
+            (1, ndims(block)-1, 2),
+            (1, transOs[end] ? 3 : 2, transOs[end] ? 2 : 3),
+            false,
+            conjOs[end],
+        )
     end
 
     return block[]

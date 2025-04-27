@@ -15,8 +15,16 @@
 
     ### Trace over two 
     A = randn(ComplexF64, 5, 6, 7, 6)
-    try B = trace(A, 1, 2; conj=true) catch e  @test (e isa ArgumentError) end
-    try B = trace(A, 1, 2, 3) catch e  @test (e isa ArgumentError) end
+    try
+        B = trace(A, 1, 2; conj = true)
+    catch e
+        @test (e isa ArgumentError)
+    end
+    try
+        B = trace(A, 1, 2, 3)
+    catch e
+        @test (e isa ArgumentError)
+    end
     B = trace(A, 2, 4)
     @test size(B) == (5, 7)
     C = zeros(ComplexF64, 5, 7)
@@ -31,9 +39,17 @@
 
     ### Trace over 3
     A = randn(ComplexF64, 3, 3, 4, 5, 3, 6)
-    try B = trace(A, 1, 3; conj=true) catch e  @test (e isa ArgumentError) end
-    try B = trace(A, 1, 2, 4) catch e  @test (e isa ArgumentError) end
-    B = trace(A, 1, 2, 5; conj=true)
+    try
+        B = trace(A, 1, 3; conj = true)
+    catch e
+        @test (e isa ArgumentError)
+    end
+    try
+        B = trace(A, 1, 2, 4)
+    catch e
+        @test (e isa ArgumentError)
+    end
+    B = trace(A, 1, 2, 5; conj = true)
     @test size(B) == (4, 5, 6)
     C = zeros(ComplexF64, 4, 5, 6)
     for i = 1:4

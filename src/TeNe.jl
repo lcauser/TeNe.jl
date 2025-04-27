@@ -1,7 +1,7 @@
 module TeNe
 
 # Dependancies
-using LinearAlgebra 
+using LinearAlgebra
 using LRUCache
 using StaticArrays
 using KernelAbstractions
@@ -14,7 +14,10 @@ import Base: +, -, *, /
 
 # Caching; intermediate contractions memory can be pre-allocated and reused.
 const _CACHE_MEM_LIM = 4294967296
-const _CACHE = LRU{Tuple{DataType, Int64, Int64, Int64, Int64}, Any}(maxsize=_CACHE_MEM_LIM, by=Base.summarysize)
+const _CACHE = LRU{Tuple{DataType,Int64,Int64,Int64,Int64},Any}(
+    maxsize = _CACHE_MEM_LIM,
+    by = Base.summarysize,
+)
 include("cache.jl")
 #KernelAbstractions.get_backend(::SVector) = CPU
 #KernelAbstractions.get_backend(::SMatrix) = CPU
@@ -24,8 +27,8 @@ const _TeNe_cutoff = 1e-12
 
 abstract type TensorNetworkState end
 function issimilar(ψs::TensorNetworkState...)
-    for i = Base.range(2, length(ψs))
-        length(ψs[i]) != length(ψs[1]) && return false 
+    for i in Base.range(2, length(ψs))
+        length(ψs[i]) != length(ψs[1]) && return false
         dim(ψs[1]) != dim(ψs[i]) && return false
     end
     return true
@@ -73,8 +76,8 @@ include("circuits/connectors/mps.jl")
 
 ### Type validation 
 # Type abstraction 
-const TensorNetworkVector = Union{StateVector, MPS}
-const TensorNetworkOperator = Union{StateOperator, MPO, MPSProjector, OpList}
+const TensorNetworkVector = Union{StateVector,MPS}
+const TensorNetworkOperator = Union{StateOperator,MPO,MPSProjector,OpList}
 
 # Tensor networks 
 include("validation/vec_vec.jl")

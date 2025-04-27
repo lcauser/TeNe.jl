@@ -30,7 +30,13 @@ julia> size(y)
 (4, 7, 30)
 ```
 """
-function combinedims(x, cixs; to_cache::Bool=true, return_copy::Bool=false, sublevel=:auto)
+function combinedims(
+    x,
+    cixs;
+    to_cache::Bool = true,
+    return_copy::Bool = false,
+    sublevel = :auto,
+)
     # Checks and permutations 
     _combinedims_check_dims(x, cixs)
     pixs, sr, sc = _combinedims_permuted_dims(x, cixs)
@@ -41,7 +47,7 @@ function combinedims(x, cixs; to_cache::Bool=true, return_copy::Bool=false, subl
         y = reshape(x, shape)
         if return_copy
             if to_cache
-                z = cache(shape, x; level=2, sublevel=sublevel) .= y
+                z = cache(shape, x; level = 2, sublevel = sublevel) .= y
             else
                 z = zeros(eltype(x), shape) .= y
             end
@@ -51,7 +57,7 @@ function combinedims(x, cixs; to_cache::Bool=true, return_copy::Bool=false, subl
         end
     else
         if to_cache
-            z = cache(shape, x; level=2, sublevel=sublevel)
+            z = cache(shape, x; level = 2, sublevel = sublevel)
         else
             z = zeros(eltype(x), shape...)
         end
@@ -107,7 +113,11 @@ end
 ### Checks on the indices
 function _combinedims_check_dims(x, cixs)
     if !all(y -> y <= ndims(x), cixs)
-        throw(ArgumentError("The specified dimensions $(cixs) are out of range for the rank-$(ndims(x)) tensor x."))
+        throw(
+            ArgumentError(
+                "The specified dimensions $(cixs) are out of range for the rank-$(ndims(x)) tensor x.",
+            ),
+        )
     end
 end
 
@@ -122,7 +132,7 @@ function _combinedims_check_perm(pixs)
     if all(i -> i == pixs[i], Base.OneTo(length(pixs)))
         return false
     else
-        return true 
+        return true
     end
 end
 
@@ -149,7 +159,13 @@ julia> size(z)
 (4, 5, 6, 7)
 ```
 """
-function uncombinedims(x, key; to_cache::Bool=true, return_copy::Bool=false, sublevel=:auto)
+function uncombinedims(
+    x,
+    key;
+    to_cache::Bool = true,
+    return_copy::Bool = false,
+    sublevel = :auto,
+)
     _uncombinedims_check_dims(x, key[1], key[2])
     sxs, pixs = _uncombinedims_perms(x, key[1], key[2])
     if !_combinedims_check_perm(pixs)
@@ -158,7 +174,7 @@ function uncombinedims(x, key; to_cache::Bool=true, return_copy::Bool=false, sub
             return y
         end
         if to_cache
-            z = cache(shape, y; level=2, sublevel=sublevel) .= y
+            z = cache(shape, y; level = 2, sublevel = sublevel) .= y
         else
             z = zeros(eltype(y), shape) .= y
         end
@@ -166,7 +182,7 @@ function uncombinedims(x, key; to_cache::Bool=true, return_copy::Bool=false, sub
     else
         dims = map(i -> sxs[i], pixs)
         if to_cache
-            z = cache(dims, x; level=2, sublevel=sublevel)
+            z = cache(dims, x; level = 2, sublevel = sublevel)
         else
             z = zeros(eltype(x), dims...)
         end
@@ -227,9 +243,14 @@ function _uncombinedims_perms(x, cixs, scs)
             return j.j - 1
         end
     end
-    pixs = tuple(map(i -> f(i, cixs, j, ndims(x)-length(scs)+1), Base.OneTo(ndims(x)-1+length(cixs)))...)
+    pixs = tuple(
+        map(
+            i -> f(i, cixs, j, ndims(x)-length(scs)+1),
+            Base.OneTo(ndims(x)-1+length(cixs)),
+        )...,
+    )
 
-    return sxs, pixs 
+    return sxs, pixs
 end
 
 ### Checks 
@@ -248,6 +269,10 @@ function _uncombinedims_check_result(y, sxs, pixs)
         throw(ArgumentError("Desination tensor has incorrect number of dimensions."))
     end
     if !all(i -> sxs[pixs[i]] == size(y, i), eachindex(sxs))
-        throw(ArgumentError("Desination tensor has wrong dimensions: $(size(y)) != $(sxs[pixs])"))
+        throw(
+            ArgumentError(
+                "Desination tensor has wrong dimensions: $(size(y)) != $(sxs[pixs])",
+            ),
+        )
     end
 end

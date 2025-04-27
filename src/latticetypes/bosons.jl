@@ -19,7 +19,7 @@ Operators: ["id", "n", "0", "1", "2", "a", "adag"]
 function Bosons(dim::Int)
     # Create the sitetype
     T = ComplexF64
-    lt = LatticeTypes(dim; T=T)
+    lt = LatticeTypes(dim; T = T)
 
     # Add the states
     for i in Base.OneTo(dim)

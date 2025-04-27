@@ -3,8 +3,8 @@
     degress of freedom.
 =#
 
-const StateVector = Union{GStateTensor{1}, ConjGStateTensor{1}}
-export StateVector 
+const StateVector = Union{GStateTensor{1},ConjGStateTensor{1}}
+export StateVector
 
 """
     isstatevector(ψ)
@@ -15,7 +15,7 @@ function isstatevector(ψ)
     return typeof(ψ) <: StateVector
 end
 
-export dim 
+export dim
 dim(ψ::StateVector, site::Int) = dim(ψ, 1, site)
 dims(ψ::StateVector) = dims(ψ, 1)
 
@@ -80,7 +80,7 @@ julia> ψ = productsv(lt, ["up" for _ = 1:6]);
 ```
 """
 function productsv(lt::LatticeTypes, states::AbstractVector{String})
-    tensor = ones(eltype(lt), )
+    tensor = ones(eltype(lt))
     for i in eachindex(states)
         tensor = tensorproduct(tensor, state(lt, states[i]); tocache = i!=lastindex(states))
     end
@@ -122,7 +122,7 @@ and the other with the remaining sites for StateVector `ψ`.
 """
 function entropy(ψ::StateVector, sites)
     # Checks 
-    for site in sites 
+    for site in sites
         if site < 0 || site >= length(ψ)
             throw(ArgumentError("site=$(site) is out of range."))
         end
@@ -143,7 +143,9 @@ export sample
 Sample the StateVector `ψ` with the interpretation that it is a wavefunction (or Born ansatz).
 """
 function sample(ψ::StateVector)
-    Ps = cache(Float64, size(tensor(ψ)), level=2, sublevel=1) .= abs.(tensor(ψ)) .^ 2 ./ norm(ψ)
+    Ps =
+        cache(Float64, size(tensor(ψ)), level = 2, sublevel = 1) .=
+            abs.(tensor(ψ)) .^ 2 ./ norm(ψ)
     Ps = reshape(Ps, length(tensor(ψ)))
     cum = 0.0
     r = rand()
